@@ -1,1 +1,3 @@
-recursive-include vendor/llama.cpp *
+graft vendor/llama.cpp
+prune vendor/llama.cpp/.git
+# recursive-include vendor/llama.cpp *
