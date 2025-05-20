@@ -1,2 +1,3 @@
-# llama_cpp
-llama_cpp is llama.cpp packaged as a Python Wheel
+# Llama CPP
+
+This is a Python package for Llama CPP ( https://github.com/ggml-org/llama.cpp ).
