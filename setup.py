@@ -1,10 +1,17 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='llama_cpp',
-    version='0.1.0',
+    name='llama_cpp_pydist',
+    version='0.1.3',
     packages=find_packages(),
     include_package_data=True,
+    package_data={
+        # If any package contains *.txt or *.rst files, include them:
+        "": ["*.txt", "*.rst"],
+        # And include any *.dat files found in the 'data' subdirectory
+        # of the 'mypkg' package, also:
+        "llama_cpp": ["vendor/llama.cpp/**/*"],
+    },
     install_requires=[
         # Add any dependencies here
     ],
