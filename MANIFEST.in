@@ -1,3 +1,5 @@
 graft vendor/llama.cpp
 prune vendor/llama.cpp/.git
+prune vendor/llama.cpp/models
+prune vendor/llama.cpp/examples
 # recursive-include vendor/llama.cpp *
