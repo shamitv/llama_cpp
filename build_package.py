@@ -42,7 +42,7 @@ def modify_cmake_config():
     for line in lines:
         if "option(LLAMA_BUILD_EXAMPLES" in line:
             if "OFF" not in line:
-                new_lines.append('option(LLAMA_BUILD_EXAMPLES "llama: build examples" OFF) # Modified by build script\\n')
+                new_lines.append('option(LLAMA_BUILD_EXAMPLES "llama: build examples" OFF) # Modified by build script\n')
                 print(" - Set LLAMA_BUILD_EXAMPLES to OFF")
                 modified = True
             else:
