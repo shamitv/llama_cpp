@@ -39,21 +39,34 @@ The primary goal is to create a Python wheel (`.whl`) that:
 
 ### 4. The `build_package.py` Automation Script
 
-To streamline the build process and ensure consistency, the `build_package.py` script was created. It performs the following key steps:
+To streamline the build process and ensure consistency, the `build_package.py` script was created. It performs the following key steps in a refined order:
 
-1.  **Update Submodule**:
-    -   Initializes the `vendor/llama.cpp` submodule if it hasn\'t been already.
-    -   Fetches the latest tags for the submodule.
-    -   Checks out the submodule to the most recent release tag.
-    -   Commits the submodule pointer update in the parent repository if it changed.
-2.  **Reset Submodule State**:
-    -   Runs `git reset --hard HEAD` and `git clean -fdx` in `vendor/llama.cpp` to ensure a clean, known state based on the checked-out tag, discarding any local modifications or untracked files within the submodule.
+1.  **Initial Setup & Version Reading**:
+    *   Reads the current package version from `setup.py`.
+2.  **Submodule Processing (Fetch, Clean, Checkout, Clean Again)**:
+    *   Ensures the `vendor/llama.cpp` submodule is initialized and updated (`git submodule update --init --recursive`).
+    *   Fetches the latest tags from the submodule's remote (`git fetch --tags --force` in `vendor/llama.cpp`).
+    *   Identifies the latest relevant release tag (e.g., `bXXXX` pattern).
+    *   **Crucially, it now cleans the submodule before attempting a checkout:**
+        *   If no new tag is found or the submodule is already on the latest tag, it performs a `git reset --hard <current_commit_or_tag>` and `git clean -fdx` in `vendor/llama.cpp` to ensure a pristine state.
+        *   If a new tag needs to be checked out:
+            *   It first runs `git reset --hard HEAD` and `git clean -fdx` in `vendor/llama.cpp` to avoid "local changes would be overwritten" errors.
+            *   Then, it checks out the `latest_tag`.
+            *   Immediately after checkout, it runs `git reset --hard <latest_tag>` and `git clean -fdx` again to ensure the submodule is in the exact, clean state of that tag.
 3.  **Modify CMake Configuration**:
-    -   Applies the CMake modifications mentioned in point #3 to `vendor/llama.cpp/CMakeLists.txt`.
-4.  **Clean and Build**:
-    -   Removes previous build artifacts (`dist/`, `build/`, `*.egg-info/`).
-    -   Builds the source distribution (`sdist`) using `python3 setup.py sdist`.
-    -   Builds the binary wheel (`bdist_wheel`) using `python3 setup.py bdist_wheel`.
+    *   *After* the submodule is on its correct, clean commit, the script applies the CMake modifications (disable examples) to `vendor/llama.cpp/CMakeLists.txt`.
+4.  **Versioning and Committing to Parent Repository**:
+    *   Determines if the submodule pointer in the parent repository changed (e.g., due to a new tag checkout).
+    *   If the submodule was updated to a new tag:
+        *   It increments the patch version in `setup.py`.
+        *   It stages the `setup.py` change and the submodule update (`git add setup.py vendor/llama.cpp`).
+        *   It commits these changes to the parent repository with a descriptive message.
+    *   If the submodule commit changed for other reasons (e.g., manual update not yet committed), it will also stage and commit the submodule update.
+5.  **Clean Build Artifacts**:
+    *   Removes previous build artifacts (`dist/`, `build/`, `*.egg-info/`).
+6.  **Build Distributions**:
+    *   Builds the source distribution (`sdist`) using `python3 setup.py sdist`.
+    *   Builds the binary wheel (`bdist_wheel`) using `python3 setup.py bdist_wheel`.
 
 **Using the script:**
 ```bash

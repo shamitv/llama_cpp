@@ -111,107 +111,139 @@ def main():
         print(f"Current package version from setup.py: {current_version}")
     except Exception as e:
         print(f"Fatal error: Could not retrieve current version from setup.py. {e}")
-        return # Exit if we can't get the version
+        return
 
-    # This variable will hold the version that should be used by the build.
-    # It starts as current_version and might be updated if a new tag is processed.
     effective_version_for_build = current_version
+    submodule_path_for_git_add = os.path.relpath(LLAMA_CPP_SUBMODULE_PATH, PROJECT_ROOT)
 
-    # --- 1. Update submodule to latest release tag ---
-    print("\\n--- Step 1: Updating submodule to latest release tag ---")
+    # --- Step 1: Submodule Operations (Fetch, Checkout, Clean) ---
+    print("\\n--- Step 1: Processing submodule (Fetch, Checkout, Clean) ---")
     try:
-        run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT) # Ensure submodule is initialized
-        run_command(["git", "fetch", "--tags", "--force"], cwd=LLAMA_CPP_SUBMODULE_PATH) # Force fetch tags
+        run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
+        run_command(["git", "fetch", "--tags", "--force"], cwd=LLAMA_CPP_SUBMODULE_PATH)
 
-        # Get the latest tag name (sorts tags by version and picks the last one)
-        # This assumes semantic versioning (vX.Y.Z or X.Y.Z)
-        result = run_command(
-            "git tag -l | sort -V | tail -n 1",
-            cwd=LLAMA_CPP_SUBMODULE_PATH,
-            shell=True # sort and tail are shell operations
+        tag_discovery_result = run_command(
+            "git tag -l | grep -E '^b[0-9]+$' | sort -V | tail -n 1 || true",
+            cwd=LLAMA_CPP_SUBMODULE_PATH, shell=True
         )
-        latest_tag = result.stdout.strip()
+        if tag_discovery_result.stderr:
+            print(f"Stderr from tag discovery command: {tag_discovery_result.stderr.strip()}")
+        latest_tag = tag_discovery_result.stdout.strip()
+        print(f"Raw output from tag discovery (stdout): '{latest_tag}'")
+
+        current_submodule_commit_before_ops = run_command(["git", "rev-parse", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH).stdout.strip()
+        tag_checked_out_in_this_run = None
 
         if not latest_tag:
-            print("No tags found in submodule. Skipping tag checkout.")
+            print("No matching bXXXX release tags found. Submodule will use its current commit.")
+            # Ensure current state is clean before CMake modification
+            print("Resetting submodule to current HEAD and cleaning...")
+            run_command(["git", "reset", "--hard", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+            run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
         else:
-            print(f"Latest tag found: {latest_tag}")
-            current_submodule_commit = run_command(["git", "rev-parse", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH).stdout.strip()
-            run_command(["git", "checkout", latest_tag], cwd=LLAMA_CPP_SUBMODULE_PATH)
-            new_submodule_commit = run_command(["git", "rev-parse", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH).stdout.strip()
+            print(f"Latest suitable tag found: {latest_tag}")
+            current_exact_tag_result = run_command(["git", "describe", "--tags", "--exact-match", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH, check=False)
+            current_exact_tag = current_exact_tag_result.stdout.strip() if current_exact_tag_result.returncode == 0 else None
 
-            if current_submodule_commit != new_submodule_commit:
-                print(f"Submodule updated from {current_submodule_commit[:7]} to {new_submodule_commit[:7]} (tag {latest_tag}).")
-                
-                version_changed_this_run = False
-                potential_new_version = current_version # Start with current version
-
-                # Try to increment version
-                version_parts = current_version.split('.')
-                if len(version_parts) >= 3: # Expecting at least X.Y.Z
-                    try:
-                        version_parts[-1] = str(int(version_parts[-1]) + 1)
-                        potential_new_version = ".".join(version_parts)
-                        version_changed_this_run = True
-                    except ValueError:
-                        print(f"Warning: Could not parse and increment patch version for '{current_version}'. Version not incremented.")
-                else:
-                    print(f"Warning: Version '{current_version}' from setup.py does not have at least 3 parts (X.Y.Z). Version not incremented.")
-                
-                # Stage submodule update
-                run_command(["git", "add", os.path.relpath(LLAMA_CPP_SUBMODULE_PATH, PROJECT_ROOT)], cwd=PROJECT_ROOT)
-                commit_message_parts = [f"Update {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)} to {latest_tag}"]
-
-                if version_changed_this_run:
-                    update_version_in_setup_py(SETUP_PY_PATH, potential_new_version, current_version) # Write to file
-                    run_command(["git", "add", SETUP_PY_PATH], cwd=PROJECT_ROOT) # Add setup.py
-                    commit_message_parts.append(f"bump version to {potential_new_version}")
-                    effective_version_for_build = potential_new_version # Update the version for this build run
-                
-                final_commit_message = ", ".join(commit_message_parts)
-                
-                # Check if there are staged changes before committing
-                status_result = run_command(["git", "status", "--porcelain"], cwd=PROJECT_ROOT)
-                if status_result.stdout.strip(): # Ensure there's something to commit
-                    run_command(["git", "commit", "-m", final_commit_message], cwd=PROJECT_ROOT)
-                    print(f"Committed: {final_commit_message}")
-                else:
-                    # This case might happen if the submodule was already on the tag,
-                    # but the main repo hadn't committed that submodule state yet.
-                    print("No changes staged for commit, or submodule pointer was already up-to-date and committed.")
+            if current_exact_tag == latest_tag:
+                print(f"Submodule already at tag {latest_tag}. Resetting to tag's state and cleaning.")
+                run_command(["git", "reset", "--hard", latest_tag], cwd=LLAMA_CPP_SUBMODULE_PATH)
+                run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
             else:
-                print(f"Submodule {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)} already at tag {latest_tag}.")
-        print("Submodule update process finished.")
+                print(f"Submodule not on tag {latest_tag} (current: {current_exact_tag or current_submodule_commit_before_ops[:7]}).")
+                print("Resetting submodule to current HEAD, cleaning, then checking out tag...")
+                run_command(["git", "reset", "--hard", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH) # Clean before checkout
+                run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+                
+                run_command(["git", "checkout", latest_tag], cwd=LLAMA_CPP_SUBMODULE_PATH) # Checkout the tag
+                
+                # After checkout, ensure it's on the tag's pristine state
+                run_command(["git", "reset", "--hard", latest_tag], cwd=LLAMA_CPP_SUBMODULE_PATH) 
+                run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+                tag_checked_out_in_this_run = latest_tag
+                print(f"Successfully checked out and cleaned tag {latest_tag}.")
+        
+        # --- Step 2: Modify CMake in submodule ---
+        # This happens AFTER submodule is on its intended commit (tag or previous) and is clean.
+        print("\\n--- Step 2: Modifying CMake configuration in submodule ---")
+        modify_cmake_config() # This function prints whether it made changes or not
+
+        # --- Step 3: Versioning and Committing to Parent Repo ---
+        print("\\n--- Step 3: Handling versioning and committing to parent repository ---")
+        final_submodule_commit_after_ops = run_command(["git", "rev-parse", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH).stdout.strip()
+        
+        submodule_commit_changed_in_parent = (current_submodule_commit_before_ops != final_submodule_commit_after_ops)
+        version_was_incremented = False
+        commit_actions_taken = []
+
+
+        if tag_checked_out_in_this_run: # Implies submodule_commit_changed_in_parent is true
+            action_msg = f"Update {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)} to {tag_checked_out_in_this_run}"
+            print(action_msg)
+            commit_actions_taken.append(action_msg)
+
+            version_parts = current_version.split('.')
+            if len(version_parts) >= 3:
+                try:
+                    version_parts[-1] = str(int(version_parts[-1]) + 1)
+                    potential_new_version = ".".join(version_parts)
+                    update_version_in_setup_py(SETUP_PY_PATH, potential_new_version, current_version)
+                    effective_version_for_build = potential_new_version
+                    version_was_incremented = True
+                    commit_actions_taken.append(f"bump version to {effective_version_for_build}")
+                except ValueError:
+                    print(f"Warning: Could not parse/increment patch version for '{current_version}'.")
+            else:
+                print(f"Warning: Version '{current_version}' from setup.py does not have at least 3 parts (X.Y.Z). Not incremented.")
+        
+        elif submodule_commit_changed_in_parent: # Commit changed but not due to a new tag checkout by this script
+            action_msg = f"Sync {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)} to {final_submodule_commit_after_ops[:7]}"
+            print(action_msg)
+            commit_actions_taken.append(action_msg)
+        
+        # If CMakeLists.txt was modified by modify_cmake_config(), the submodule is "dirty".
+        # The parent repo needs to record the new state of the submodule (its new commit if CMake changes were committed inside, or just its current commit).
+        # Our script does not commit *inside* the submodule. So, if modify_cmake_config changed CMakeLists.txt,
+        # the submodule's working tree is dirty. `git add vendor/llama.cpp` in parent will stage the submodule's current commit.
+        # If that commit doesn't include the CMakeLists.txt changes, those changes are "lost" from parent's perspective unless committed inside submodule.
+        # For now, we assume the state after modify_cmake_config is what we want associated with the submodule's current HEAD.
+        # The `git add submodule_path_for_git_add` will stage the current HEAD of the submodule.
+
+        if submodule_commit_changed_in_parent or version_was_incremented:
+            print("Staging changes in parent repository...")
+            run_command(["git", "add", submodule_path_for_git_add], cwd=PROJECT_ROOT)
+            if version_was_incremented:
+                run_command(["git", "add", SETUP_PY_PATH], cwd=PROJECT_ROOT)
+            
+            final_commit_message = ", ".join(filter(None, commit_actions_taken))
+            if not final_commit_message: # Fallback
+                final_commit_message = f"Automated update for {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)}"
+
+            status_result_before_commit = run_command(["git", "status", "--porcelain"], cwd=PROJECT_ROOT)
+            if status_result_before_commit.stdout.strip(): # Check if there are staged changes
+                run_command(["git", "commit", "-m", final_commit_message], cwd=PROJECT_ROOT)
+                print(f"Committed to parent repo: {final_commit_message}")
+            else:
+                print("No changes were staged in the parent repository for commit, though actions were recorded.")
+        else:
+            print(f"No changes to submodule pointer or setup.py requiring a commit to parent repo.")
+            print(f"Submodule {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)} remains at {final_submodule_commit_after_ops[:7]}.")
+
+        print("Submodule update, CMake modification, and versioning process finished.")
+
     except subprocess.CalledProcessError as e:
-        print(f"Error during submodule update: {e}")
-        print("Continuing with the build, but submodule might not be at the latest tag.")
+        print(f"ERROR during script execution: {e}")
+        if hasattr(e, 'stdout') and e.stdout: print(f"Stdout: {e.stdout.strip()}")
+        if hasattr(e, 'stderr') and e.stderr: print(f"Stderr: {e.stderr.strip()}")
+        print("Build will continue, but its state may be inconsistent or based on previous configurations.")
     except Exception as e:
-        print(f"An unexpected error occurred during submodule update: {e}")
-        print("Continuing with the build, but submodule might not be at the latest tag.")
-
-
-    # --- 2. Fetch current source from git submodule (Reset any local changes) ---
-    print("\\n--- Step 2: Resetting submodule to fetched state ---")
-    try:
-        run_command(["git", "reset", "--hard", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        print("Submodule reset to clean state.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error during submodule reset: {e}")
-        # Decide if this is a fatal error or if you can continue
-        return # Or raise
-
-    # --- 3. Modify CMake config so that it does not expect examples directory ---
-    print("\\n--- Step 3: Modifying CMake configuration ---")
-    try:
-        modify_cmake_config()
-    except Exception as e:
-        print(f"Error modifying CMake config: {e}")
-        return # Or raise
-
-    print(f"Proceeding to build with version: {effective_version_for_build}")
+        print(f"UNEXPECTED ERROR during script execution: {e}")
+        import traceback
+        traceback.print_exc()
+        print("Build will continue, but its state may be inconsistent or based on previous configurations.")
+    
+    print(f"\\n--- Step 4: Building the wheel (using version: {effective_version_for_build}) ---")
     # --- 4. Generate source and binary wheel ---
-    print("\\n--- Step 4: Building the wheel ---")
     # Clean previous builds
     print("Cleaning previous build artifacts...")
     if os.path.exists(os.path.join(PROJECT_ROOT, "dist")):
