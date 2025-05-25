@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='llama_cpp_pydist',
-    version='0.1.5',
+    version='0.1.9',
     packages=find_packages(),
     include_package_data=True,
     package_data={
@@ -10,7 +10,7 @@ setup(
         "": ["*.txt", "*.rst"],
         # And include any *.dat files found in the 'data' subdirectory
         # of the 'mypkg' package, also:
-        "llama_cpp": ["vendor/llama.cpp/**/*"],
+        "llama_cpp": ["vendor_llama_cpp_pydist/llama.cpp/**/*", "binaries/*"],  # Added binaries/*
     },
     install_requires=[
         # Add any dependencies here
