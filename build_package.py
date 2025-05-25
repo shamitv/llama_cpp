@@ -47,6 +47,18 @@ def download_and_place_windows_binary(tag_name):
             logging.warning(f"Failed to delete {item_path}. Reason: {e}")
 
 
+    # Skip download if binary for this tag already exists
+    match = re.search(r'(b\d+[a-fA-F0-9]*)$', tag_name)
+    if match:
+        processed_tag_name_for_file = match.group(1)
+    else:
+        processed_tag_name_for_file = tag_name
+    binary_filename = f"llama-{processed_tag_name_for_file}-bin-win-cpu-x64.zip"
+    binary_dest_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, binary_filename)
+    if os.path.exists(binary_dest_path):
+        logging.info(f"Binary {binary_filename} already exists at {binary_dest_path}. Skipping download.")
+        return
+
     # Construct binary filename and URL
     # Example tag from user: b5479. Releases use full tags like 'master-b5479' or 'b5479'
     # We need to handle if the tag from `git describe` has a prefix or not.
