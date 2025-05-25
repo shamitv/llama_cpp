@@ -38,6 +38,25 @@ else:
 # os.environ["PATH"] += os.pathsep + os.path.join(target_dir, "bin")
 ```
 
+## Conversion Library Installation
+
+To perform Hugging Face to GGUF model conversions, you need to install additional Python libraries. You can install them via pip:
+
+```bash
+pip install transformers numpy torch safetensors sentencepiece
+```
+
+Alternatively, you can install them programmatically in Python:
+
+```python
+from llama_cpp.install_conversion_libs import install_conversion_libs
+
+if install_conversion_libs():
+    print("Conversion libraries installed successfully.")
+else:
+    print("Failed to install conversion libraries.")
+```
+
 For more detailed examples and advanced usage, please refer to the documentation of the underlying `llama.cpp` project and explore the examples provided there.
 
 ## Building and Development
