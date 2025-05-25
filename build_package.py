@@ -8,7 +8,7 @@ import glob # For finding .egg-info directories
 
 # --- Configuration ---
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) # Assumes script is in project root
-LLAMA_CPP_SUBMODULE_PATH = os.path.join(PROJECT_ROOT, "vendor", "llama.cpp")
+LLAMA_CPP_SUBMODULE_PATH = os.path.join(PROJECT_ROOT, "vendor_llama_cpp_pydist", "llama.cpp")  # Updated to actual submodule path
 LLAMA_CPP_PACKAGE_BINARIES_PATH = os.path.join(PROJECT_ROOT, "llama_cpp", "binaries") # For storing downloaded binaries
 LLAMA_CPP_EXAMPLES_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "examples")
 LLAMA_CPP_MODELS_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "models")
@@ -243,7 +243,7 @@ def main():
 
     # --- Step 2: Modify CMake Configuration in submodule (if needed) ---
     print("\\n--- Step 2: Modifying CMake config in submodule (if applicable) ---")
-    # modify_cmake_config() # Call your CMake modification function if it's still needed
+    modify_cmake_config()  # Call the CMake modification function
 
     # --- Step 3: Versioning and Committing to Parent Repository (Simplified) ---
     # This section is simplified. Original script had more complex logic for version bumping
