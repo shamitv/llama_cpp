@@ -2,75 +2,44 @@
 
 This is a Python package for Llama CPP ( https://github.com/ggml-org/llama.cpp ).
 
-## Updating the `llama.cpp` Submodule
+## Installation
 
-To update the `vendor/llama.cpp` submodule to a new release tag, follow these steps:
+You can install the pre-built wheel from the releases page or build it from source.
 
-1.  Navigate to the submodule directory:
-    ```bash
-    cd vendor/llama.cpp
-    ```
-
-2.  Fetch the latest tags from the upstream repository:
-    ```bash
-    git fetch --tags origin
-    ```
-
-3.  Check out the desired new tag. Replace `new_tag_name` with the actual tag you want to use (e.g., `bxxxx`):
-    ```bash
-    git checkout new_tag_name
-    ```
-
-4.  Navigate back to the root directory of the main project:
-    ```bash
-    cd ../..
-    ```
-
-5.  Stage the changes to the submodule in the main project:
-    ```bash
-    git add vendor/llama.cpp
-    ```
-
-6.  Commit the update in the main project:
-    ```bash
-    git commit -m "Update llama.cpp submodule to tag new_tag_name"
-    ```
-
-This will ensure that the main project now points to the updated version of the `llama.cpp` submodule.
-
-## Building the Wheel
-
-To build the Python wheel for this package, follow these steps:
-
-1.  **Ensure `vendor` is a Package**:
-    Make sure you have an empty `__init__.py` file in the `vendor` directory (`vendor/__init__.py`). This is necessary for the build system to recognize the `vendor` directory as a Python package and include its contents. If it doesn't exist, create it:
-    ```bash
-    touch vendor/__init__.py
-    ```
-
-2.  **Configure `setup.py` and `MANIFEST.in`**:
-    *   In your `setup.py` file, ensure that `include_package_data=True` is set within the `setup()` function.
-    *   Your `MANIFEST.in` file should include a line to recursively add all files from the `vendor/llama.cpp` directory. For example:
-        ```
-        graft vendor/llama.cpp
-        ```
-        You might also want to include other necessary files or prune unwanted ones using other `MANIFEST.in` commands.
-
-3.  **Clean Previous Builds (Optional but Recommended)**:
-    Before building, it's a good practice to clean any artifacts from previous builds:
-    ```bash
-    rm -rf dist build *.egg-info
-    ```
-
-4.  **Build the Wheel**:
-    Run the following command from the root directory of the project (where `setup.py` is located):
-    ```bash
-    python3 setup.py bdist_wheel
-    ```
-
-This command will generate a `.whl` file in the `dist/` directory. This wheel file will contain the `vendor/llama.cpp` directory and its contents, which are essential for the C++ backend.
-
-You can then install the wheel using pip:
 ```bash
-pip install dist/llama_cpp_pydist-*.whl
+pip install llama-cpp-pydist
 ```
+
+## Usage
+
+This section provides a basic overview of how to use the `llama_cpp_pydist` library.
+
+### Deploying Windows Binaries
+
+If you are on Windows, the package attempts to automatically deploy pre-compiled binaries. You can also manually trigger this process.
+
+```python
+from llama_cpp import deploy_windows_binary
+
+# Specify the target directory for the binaries
+# This is typically within your Python environment's site-packages
+# or a custom location if you prefer.
+target_dir = "./my_llama_cpp_binaries" 
+
+if deploy_windows_binary(target_dir):
+    print(f"Windows binaries deployed successfully to {target_dir}")
+else:
+    print(f"Failed to deploy Windows binaries or no binaries were found for your system.")
+
+# Once deployed, you would typically add the directory containing llama.dll (or similar)
+# to your system's PATH or ensure your application can find it.
+# For example, if llama.dll is in target_dir/bin:
+# import os
+# os.environ["PATH"] += os.pathsep + os.path.join(target_dir, "bin")
+```
+
+For more detailed examples and advanced usage, please refer to the documentation of the underlying `llama.cpp` project and explore the examples provided there.
+
+## Building and Development
+
+For instructions on how to build the package from source, update the `llama.cpp` submodule, or other development-related tasks, please see [BUILDING.md](./BUILDING.md).
