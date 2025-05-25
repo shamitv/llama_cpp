@@ -92,7 +92,7 @@ def download_and_place_windows_binary(tag_name):
 
 def modify_cmake_config():
     """
-    Modifies the CMakeLists.txt in vendor/llama.cpp to:
+    Modifies the CMakeLists.txt in vendor_llama_cpp_pydist/llama.cpp to:
     1. Set LLAMA_BUILD_EXAMPLES to OFF.
     2. Comment out `add_subdirectory(examples)`.
     """
@@ -215,7 +215,7 @@ def main():
             process_result = run_command(["git", "rev-parse", "--short", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
             submodule_tag = process_result.stdout.strip()
 
-        print(f"Submodule vendor/llama.cpp is at ref: {submodule_tag}")
+        print(f"Submodule vendor_llama_cpp_pydist/llama.cpp is at ref: {submodule_tag}")
 
         # Check if submodule is dirty
         status_process = run_command(["git", "status", "--porcelain"], cwd=LLAMA_CPP_SUBMODULE_PATH, check=False)

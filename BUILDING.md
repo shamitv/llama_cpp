@@ -4,11 +4,11 @@ This document provides instructions for building the `llama-cpp-pydist` package 
 
 ## Updating the `llama.cpp` Submodule
 
-The `llama.cpp` C++ library is included as a git submodule in the `vendor/` directory. To update `vendor/llama.cpp` to a new release tag, follow these steps:
+The `llama.cpp` C++ library is included as a git submodule in the `vendor/` directory. To update `vendor_llama_cpp_pydist/llama.cpp` to a new release tag, follow these steps:
 
 1.  Navigate to the submodule directory:
     ```bash
-    cd vendor/llama.cpp
+    cd vendor_llama_cpp_pydist/llama.cpp
     ```
 
 2.  Fetch the latest tags from the upstream repository:
@@ -28,7 +28,7 @@ The `llama.cpp` C++ library is included as a git submodule in the `vendor/` dire
 
 5.  Stage the changes to the submodule in the main project:
     ```bash
-    git add vendor/llama.cpp
+    git add vendor_llama_cpp_pydist/llama.cpp
     ```
 
 6.  Commit the update in the main project:
@@ -50,9 +50,9 @@ To build the Python wheel for this package, follow these steps:
 
 2.  **Configure `setup.py` and `MANIFEST.in`**:
     *   In your `setup.py` file, ensure that `include_package_data=True` is set within the `setup()` function.
-    *   Your `MANIFEST.in` file should include a line to recursively add all files from the `vendor/llama.cpp` directory. For example:
+    *   Your `MANIFEST.in` file should include a line to recursively add all files from the `vendor_llama_cpp_pydist/llama.cpp` directory. For example:
         ```
-        graft vendor/llama.cpp
+        graft vendor_llama_cpp_pydist/llama.cpp
         ```
         You might also want to include other necessary files or prune unwanted ones using other `MANIFEST.in` commands.
 
@@ -68,7 +68,7 @@ To build the Python wheel for this package, follow these steps:
     python3 setup.py bdist_wheel
     ```
 
-This command will generate a `.whl` file in the `dist/` directory. This wheel file will contain the `vendor/llama.cpp` directory and its contents, which are essential for the C++ backend.
+This command will generate a `.whl` file in the `dist/` directory. This wheel file will contain the `vendor_llama_cpp_pydist/llama.cpp` directory and its contents, which are essential for the C++ backend.
 
 You can then install the wheel using pip:
 ```bash
