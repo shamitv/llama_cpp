@@ -10,7 +10,7 @@ setup(
         "": ["*.txt", "*.rst"],
         # And include any *.dat files found in the 'data' subdirectory
         # of the 'mypkg' package, also:
-        "llama_cpp": ["vendor/llama.cpp/**/*"],
+        "llama_cpp": ["vendor/llama.cpp/**/*", "binaries/*"],  # Added binaries/*
     },
     install_requires=[
         # Add any dependencies here

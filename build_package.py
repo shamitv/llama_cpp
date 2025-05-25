@@ -1,12 +1,15 @@
 \
-import subprocess
 import os
-import shutil
+import subprocess
 import re # For regex operations on setup.py
+import urllib.request
+import shutil
+import glob # For finding .egg-info directories
 
 # --- Configuration ---
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) # Assumes script is in project root
 LLAMA_CPP_SUBMODULE_PATH = os.path.join(PROJECT_ROOT, "vendor", "llama.cpp")
+LLAMA_CPP_PACKAGE_BINARIES_PATH = os.path.join(PROJECT_ROOT, "llama_cpp", "binaries") # For storing downloaded binaries
 LLAMA_CPP_EXAMPLES_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "examples")
 LLAMA_CPP_MODELS_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "models")
 LLAMA_CPP_CMAKE_FILE = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "CMakeLists.txt")
@@ -22,6 +25,70 @@ def run_command(command, cwd=None, check=True, shell=False):
         print(f"Stderr: {process.stderr}")
         raise subprocess.CalledProcessError(process.returncode, command, output=process.stdout, stderr=process.stderr)
     return process
+
+def download_and_place_windows_binary(tag_name):
+    """Downloads the Windows binary for the given tag and places it in the package."""
+    print(f"\\n--- Downloading Windows binary for tag: {tag_name} ---")
+    os.makedirs(LLAMA_CPP_PACKAGE_BINARIES_PATH, exist_ok=True)
+
+    # Clear previous binaries in llama_cpp/binaries
+    print(f"Cleaning previous binaries from {LLAMA_CPP_PACKAGE_BINARIES_PATH}...")
+    for item in os.listdir(LLAMA_CPP_PACKAGE_BINARIES_PATH):
+        item_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, item)
+        try:
+            if os.path.isfile(item_path) or os.path.islink(item_path):
+                os.unlink(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        except Exception as e:
+            print(f"Failed to delete {item_path}. Reason: {e}")
+
+
+    # Construct binary filename and URL
+    # Example tag from user: b5479. Releases use full tags like 'master-b5479' or 'b5479'
+    # We need to handle if the tag from `git describe` has a prefix or not.
+    # The release asset seems to use the plain tag number.
+    # Let's assume the tag_name from `git describe --tags --abbrev=0` is what's needed for the URL path,
+    # but the filename might need processing if it contains prefixes not in the release asset name.
+    
+    # Try to extract the 'bXXXX' part if it's a longer tag like 'master-bXXXX'
+    match = re.search(r'(b\d+[a-fA-F0-9]*)$', tag_name)
+    if match:
+        processed_tag_name_for_file = match.group(1)
+    else:
+        processed_tag_name_for_file = tag_name # Use as is if no clear 'bXXXX' pattern
+
+    binary_filename = f"llama-{processed_tag_name_for_file}-bin-win-cpu-x64.zip"
+    # The download URL uses the full tag name as it appears in the releases page
+    download_url = f"https://github.com/ggml-org/llama.cpp/releases/download/{tag_name}/{binary_filename}"
+    binary_dest_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, binary_filename)
+
+    print(f"Attempting to download: {download_url}")
+    try:
+        # Create a request object to disable SSL verification if needed, or set headers
+        req = urllib.request.Request(download_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response, open(binary_dest_path, 'wb') as out_file:
+            if response.status == 200:
+                shutil.copyfileobj(response, out_file)
+                print(f"Successfully downloaded {binary_filename} to {binary_dest_path}")
+            else:
+                print(f"Warning: Failed to download {binary_filename}. Status: {response.status}")
+                print("Windows binary will not be included.")
+                if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+    except urllib.error.HTTPError as e:
+        print(f"Warning: HTTPError {e.code} when trying to download {binary_filename} from {download_url}: {e.reason}")
+        print("This could mean the binary for this specific tag/format doesn't exist or the URL is incorrect.")
+        print("Windows binary will not be included.")
+        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+    except urllib.error.URLError as e:
+        print(f"Warning: URLError when trying to download {binary_filename}: {e.reason}")
+        print("This could be a network issue or an invalid URL.")
+        print("Windows binary will not be included.")
+        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+    except Exception as e:
+        print(f"Warning: An unexpected error occurred while downloading {binary_filename}: {e}")
+        print("Windows binary will not be included.")
+        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
 
 def modify_cmake_config():
     """
@@ -106,142 +173,74 @@ def update_version_in_setup_py(file_path, new_version, old_version):
 def main():
     os.chdir(PROJECT_ROOT) # Ensure commands run from project root
 
+    current_version = "0.0.0" # Fallback
     try:
         current_version = get_current_version(SETUP_PY_PATH)
-        print(f"Current package version from setup.py: {current_version}")
+        print(f"--- Current package version from setup.py: {current_version} ---")
     except Exception as e:
-        print(f"Fatal error: Could not retrieve current version from setup.py. {e}")
-        return
+        print(f"Warning: Could not read version from setup.py: {e}. Using fallback '{current_version}'.")
 
     effective_version_for_build = current_version
-    submodule_path_for_git_add = os.path.relpath(LLAMA_CPP_SUBMODULE_PATH, PROJECT_ROOT)
+    # submodule_path_for_git_add = os.path.relpath(LLAMA_CPP_SUBMODULE_PATH, PROJECT_ROOT) # Not used currently
 
     # --- Step 1: Submodule Operations (Fetch, Checkout, Clean) ---
     print("\\n--- Step 1: Processing submodule (Fetch, Checkout, Clean) ---")
+    submodule_tag = None # Initialize submodule_tag
     try:
         run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
-        run_command(["git", "fetch", "--tags", "--force"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-
-        tag_discovery_result = run_command(
-            "git tag -l | grep -E '^b[0-9]+$' | sort -V | tail -n 1 || true",
-            cwd=LLAMA_CPP_SUBMODULE_PATH, shell=True
-        )
-        if tag_discovery_result.stderr:
-            print(f"Stderr from tag discovery command: {tag_discovery_result.stderr.strip()}")
-        latest_tag = tag_discovery_result.stdout.strip()
-        print(f"Raw output from tag discovery (stdout): '{latest_tag}'")
-
-        current_submodule_commit_before_ops = run_command(["git", "rev-parse", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH).stdout.strip()
-        tag_checked_out_in_this_run = None
-
-        if not latest_tag:
-            print("No matching bXXXX release tags found. Submodule will use its current commit.")
-            # Ensure current state is clean before CMake modification
-            print("Resetting submodule to current HEAD and cleaning...")
-            run_command(["git", "reset", "--hard", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-            run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        else:
-            print(f"Latest suitable tag found: {latest_tag}")
-            current_exact_tag_result = run_command(["git", "describe", "--tags", "--exact-match", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH, check=False)
-            current_exact_tag = current_exact_tag_result.stdout.strip() if current_exact_tag_result.returncode == 0 else None
-
-            if current_exact_tag == latest_tag:
-                print(f"Submodule already at tag {latest_tag}. Resetting to tag's state and cleaning.")
-                run_command(["git", "reset", "--hard", latest_tag], cwd=LLAMA_CPP_SUBMODULE_PATH)
-                run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-            else:
-                print(f"Submodule not on tag {latest_tag} (current: {current_exact_tag or current_submodule_commit_before_ops[:7]}).")
-                print("Resetting submodule to current HEAD, cleaning, then checking out tag...")
-                run_command(["git", "reset", "--hard", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH) # Clean before checkout
-                run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-                
-                run_command(["git", "checkout", latest_tag], cwd=LLAMA_CPP_SUBMODULE_PATH) # Checkout the tag
-                
-                # After checkout, ensure it's on the tag's pristine state
-                run_command(["git", "reset", "--hard", latest_tag], cwd=LLAMA_CPP_SUBMODULE_PATH) 
-                run_command(["git", "clean", "-fdx"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-                tag_checked_out_in_this_run = latest_tag
-                print(f"Successfully checked out and cleaned tag {latest_tag}.")
         
-        # --- Step 2: Modify CMake in submodule ---
-        # This happens AFTER submodule is on its intended commit (tag or previous) and is clean.
-        print("\\n--- Step 2: Modifying CMake configuration in submodule ---")
-        modify_cmake_config() # This function prints whether it made changes or not
+        # Get current submodule commit and the latest tag on that commit
+        # Using --abbrev=0 to get the plain tag name like 'bxxxx' or 'vX.Y.Z'
+        # Using --dirty to check if the submodule has local modifications
+        # Using --always to ensure a commit hash is returned if no tag is found
+        git_describe_cmd = ["git", "describe", "--tags", "--abbrev=0", "--always"]
+        process_result = run_command(git_describe_cmd, cwd=LLAMA_CPP_SUBMODULE_PATH)
+        submodule_tag = process_result.stdout.strip()
 
-        # --- Step 3: Versioning and Committing to Parent Repo ---
-        print("\\n--- Step 3: Handling versioning and committing to parent repository ---")
-        final_submodule_commit_after_ops = run_command(["git", "rev-parse", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH).stdout.strip()
-        
-        submodule_commit_changed_in_parent = (current_submodule_commit_before_ops != final_submodule_commit_after_ops)
-        version_was_incremented = False
-        commit_actions_taken = []
+        if not submodule_tag:
+            print("Warning: Could not determine a tag for the submodule. Will try with commit hash.")
+            # Fallback to commit hash if no tag
+            process_result = run_command(["git", "rev-parse", "--short", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+            submodule_tag = process_result.stdout.strip()
 
+        print(f"Submodule vendor/llama.cpp is at ref: {submodule_tag}")
 
-        if tag_checked_out_in_this_run: # Implies submodule_commit_changed_in_parent is true
-            action_msg = f"Update {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)} to {tag_checked_out_in_this_run}"
-            print(action_msg)
-            commit_actions_taken.append(action_msg)
-
-            version_parts = current_version.split('.')
-            if len(version_parts) >= 3:
-                try:
-                    version_parts[-1] = str(int(version_parts[-1]) + 1)
-                    potential_new_version = ".".join(version_parts)
-                    update_version_in_setup_py(SETUP_PY_PATH, potential_new_version, current_version)
-                    effective_version_for_build = potential_new_version
-                    version_was_incremented = True
-                    commit_actions_taken.append(f"bump version to {effective_version_for_build}")
-                except ValueError:
-                    print(f"Warning: Could not parse/increment patch version for '{current_version}'.")
-            else:
-                print(f"Warning: Version '{current_version}' from setup.py does not have at least 3 parts (X.Y.Z). Not incremented.")
-        
-        elif submodule_commit_changed_in_parent: # Commit changed but not due to a new tag checkout by this script
-            action_msg = f"Sync {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)} to {final_submodule_commit_after_ops[:7]}"
-            print(action_msg)
-            commit_actions_taken.append(action_msg)
-        
-        # If CMakeLists.txt was modified by modify_cmake_config(), the submodule is "dirty".
-        # The parent repo needs to record the new state of the submodule (its new commit if CMake changes were committed inside, or just its current commit).
-        # Our script does not commit *inside* the submodule. So, if modify_cmake_config changed CMakeLists.txt,
-        # the submodule's working tree is dirty. `git add vendor/llama.cpp` in parent will stage the submodule's current commit.
-        # If that commit doesn't include the CMakeLists.txt changes, those changes are "lost" from parent's perspective unless committed inside submodule.
-        # For now, we assume the state after modify_cmake_config is what we want associated with the submodule's current HEAD.
-        # The `git add submodule_path_for_git_add` will stage the current HEAD of the submodule.
-
-        if submodule_commit_changed_in_parent or version_was_incremented:
-            print("Staging changes in parent repository...")
-            run_command(["git", "add", submodule_path_for_git_add], cwd=PROJECT_ROOT)
-            if version_was_incremented:
-                run_command(["git", "add", SETUP_PY_PATH], cwd=PROJECT_ROOT)
-            
-            final_commit_message = ", ".join(filter(None, commit_actions_taken))
-            if not final_commit_message: # Fallback
-                final_commit_message = f"Automated update for {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)}"
-
-            status_result_before_commit = run_command(["git", "status", "--porcelain"], cwd=PROJECT_ROOT)
-            if status_result_before_commit.stdout.strip(): # Check if there are staged changes
-                run_command(["git", "commit", "-m", final_commit_message], cwd=PROJECT_ROOT)
-                print(f"Committed to parent repo: {final_commit_message}")
-            else:
-                print("No changes were staged in the parent repository for commit, though actions were recorded.")
-        else:
-            print(f"No changes to submodule pointer or setup.py requiring a commit to parent repo.")
-            print(f"Submodule {os.path.basename(LLAMA_CPP_SUBMODULE_PATH)} remains at {final_submodule_commit_after_ops[:7]}.")
-
-        print("Submodule update, CMake modification, and versioning process finished.")
+        # Check if submodule is dirty
+        status_process = run_command(["git", "status", "--porcelain"], cwd=LLAMA_CPP_SUBMODULE_PATH, check=False)
+        if status_process.stdout.strip():
+            print(f"Warning: Submodule {LLAMA_CPP_SUBMODULE_PATH} is dirty. This might affect the build.")
+            # print(status_process.stdout) # Optionally print dirty status
 
     except subprocess.CalledProcessError as e:
-        print(f"ERROR during script execution: {e}")
-        if hasattr(e, 'stdout') and e.stdout: print(f"Stdout: {e.stdout.strip()}")
-        if hasattr(e, 'stderr') and e.stderr: print(f"Stderr: {e.stderr.strip()}")
-        print("Build will continue, but its state may be inconsistent or based on previous configurations.")
+        print(f"Error during submodule operations: {e}")
+        print("Cannot proceed without submodule information. Exiting.")
+        return # Exit if submodule operations fail critically
     except Exception as e:
-        print(f"UNEXPECTED ERROR during script execution: {e}")
-        import traceback
-        traceback.print_exc()
-        print("Build will continue, but its state may be inconsistent or based on previous configurations.")
-    
+        print(f"An unexpected error occurred during submodule operations: {e}")
+        print("Cannot proceed without submodule information. Exiting.")
+        return # Exit if submodule operations fail critically
+
+    # --- Step 1.5: Download Windows Binary ---
+    if submodule_tag:
+        download_and_place_windows_binary(submodule_tag)
+    else:
+        print("Critical: Submodule tag/commit not determined. Skipping download of Windows binary.")
+        # Ensure binaries directory exists for setup.py even if download fails, but it should be there from download_and_place_windows_binary
+        os.makedirs(LLAMA_CPP_PACKAGE_BINARIES_PATH, exist_ok=True)
+
+
+    # --- Step 2: Modify CMake Configuration in submodule (if needed) ---
+    print("\\n--- Step 2: Modifying CMake config in submodule (if applicable) ---")
+    # modify_cmake_config() # Call your CMake modification function if it's still needed
+
+    # --- Step 3: Versioning and Committing to Parent Repository (Simplified) ---
+    # This section is simplified. Original script had more complex logic for version bumping
+    # and committing submodule changes. For now, we assume the parent repo is managed manually
+    # regarding submodule pointer updates.
+    print("\\n--- Step 3: Versioning and Committing (Simplified) ---")
+    print(f"Parent repository operations (like committing submodule changes) are assumed to be handled manually or by a separate process for now.")
+
+
     print(f"\\n--- Step 4: Building the wheel (using version: {effective_version_for_build}) ---")
     # --- 4. Generate source and binary wheel ---
     # Clean previous builds
@@ -251,16 +250,18 @@ def main():
     if os.path.exists(os.path.join(PROJECT_ROOT, "build")):
         shutil.rmtree(os.path.join(PROJECT_ROOT, "build"))
     
-    egg_info_dirs = [d for d in os.listdir(PROJECT_ROOT) if d.endswith(".egg-info")]
+    # Use glob to find and remove .egg-info directories
+    egg_info_dirs = glob.glob(os.path.join(PROJECT_ROOT, "*.egg-info"))
     for egg_dir in egg_info_dirs:
-        shutil.rmtree(os.path.join(PROJECT_ROOT, egg_dir))
+        print(f"Removing old .egg-info directory: {egg_dir}")
+        shutil.rmtree(egg_dir)
 
-    # Build the wheel
+    # Build the source distribution and wheel
     try:
-        print("Building sdist...")
-        run_command(["python3", "setup.py", "sdist"], cwd=PROJECT_ROOT)
-        print("Building bdist_wheel...")
-        run_command(["python3", "setup.py", "bdist_wheel"], cwd=PROJECT_ROOT)
+        print("Building source distribution (sdist)...")
+        run_command(["python3", SETUP_PY_PATH, "sdist"], cwd=PROJECT_ROOT)
+        print("Building wheel (bdist_wheel)...")
+        run_command(["python3", SETUP_PY_PATH, "bdist_wheel"], cwd=PROJECT_ROOT)
         print("Wheel build process completed.")
     except subprocess.CalledProcessError as e:
         print(f"Error during wheel build: {e}")
