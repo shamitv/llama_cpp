@@ -189,6 +189,16 @@ def main():
     try:
         run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
         
+        # Update submodule to the latest from remote
+        print(f"Fetching latest changes for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
+        run_command(["git", "fetch"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+        print(f"Checking out master branch for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
+        run_command(["git", "checkout", "master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+        print(f"Pulling latest changes for submodule at {LLAMA_CPP_SUBMODULE_PATH} (discarding local changes)...")
+        run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH) # This will fast-forward or merge. For a hard reset: git reset --hard origin/master
+        print(f"Fetching all tags for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
+        run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+
         # Get current submodule commit and the latest tag on that commit
         # Using --abbrev=0 to get the plain tag name like 'bxxxx' or 'vX.Y.Z'
         # Using --dirty to check if the submodule has local modifications
