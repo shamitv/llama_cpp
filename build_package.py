@@ -194,8 +194,10 @@ def main():
         run_command(["git", "fetch"], cwd=LLAMA_CPP_SUBMODULE_PATH)
         print(f"Checking out master branch for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
         run_command(["git", "checkout", "master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        print(f"Pulling latest changes for submodule at {LLAMA_CPP_SUBMODULE_PATH} (discarding local changes)...")
-        run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH) # This will fast-forward or merge. For a hard reset: git reset --hard origin/master
+        print(f"Resetting submodule at {LLAMA_CPP_SUBMODULE_PATH} to origin/master (discarding local changes)...")
+        run_command(["git", "reset", "--hard", "origin/master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+        print(f"Pulling latest changes for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
+        run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH)
         print(f"Fetching all tags for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
         run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
 
