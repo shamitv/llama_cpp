@@ -144,18 +144,21 @@ def modify_cmake_config():
         logging.info("CMake config already up-to-date.")
 
 def get_current_version(file_path):
-    """Reads setup.py and extracts the version."""
+    """Reads setup.py and extracts the version, returning a fallback if unavailable."""
+    fallback_version = "0.0.0"
     try:
         with open(file_path, 'r') as f:
             content = f.read()
         match = re.search(r"version\s*=\s*['\"]([^'\"]+)['\"]", content)
         if match:
-            return match.group(1)
-        raise ValueError(f"Could not find version pattern in {file_path}")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Error: {file_path} not found.")
+            version = match.group(1)
+            logging.info(f"--- Current package version from setup.py: {version} ---")
+            return version
+        logging.warning(f"Warning: Could not find version in {file_path}. Using fallback '{fallback_version}'.")
+        return fallback_version
     except Exception as e:
-        raise Exception(f"Error reading version from {file_path}: {e}")
+        logging.warning(f"Warning: Could not read version from {file_path}: {e}. Using fallback '{fallback_version}'.")
+        return fallback_version
 
 def update_version_in_setup_py(file_path, new_version, old_version):
     """Writes the new version to setup.py."""
@@ -185,67 +188,47 @@ def update_version_in_setup_py(file_path, new_version, old_version):
         logging.error(f"Error updating version in {file_path}: {e}")
 
 
+def get_submodule_tag():
+    """Gets the current tag or short commit hash for the llama.cpp submodule, logging status."""
+    try:
+        # Try getting the latest tag
+        describe_cmd = ["git", "describe", "--tags", "--abbrev=0", "--always"]
+        result = run_command(describe_cmd, cwd=LLAMA_CPP_SUBMODULE_PATH)
+        tag = result.stdout.strip()
+        if not tag:
+            logging.warning("Could not determine a tag for the submodule. Falling back to commit hash.")
+            result = run_command(["git", "rev-parse", "--short", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+            tag = result.stdout.strip()
+        logging.info(f"Submodule vendor_llama_cpp_pydist/llama.cpp is at ref: {tag}")
+        # Warn if dirty
+        status = run_command(["git", "status", "--porcelain"], cwd=LLAMA_CPP_SUBMODULE_PATH, check=False)
+        if status.stdout.strip():
+            logging.warning(f"Submodule {LLAMA_CPP_SUBMODULE_PATH} is dirty. This might affect the build.")
+        return tag
+    except Exception as e:
+        logging.error(f"Error determining submodule tag: {e}")
+        return None
+
+
 def main():
     os.chdir(PROJECT_ROOT) # Ensure commands run from project root
 
-    current_version = "0.0.0" # Fallback
-    try:
-        current_version = get_current_version(SETUP_PY_PATH)
-        logging.info(f"--- Current package version from setup.py: {current_version} ---")
-    except Exception as e:
-        logging.warning(f"Warning: Could not read version from setup.py: {e}. Using fallback '{current_version}'.")
+    current_version = get_current_version(SETUP_PY_PATH)
 
     effective_version_for_build = current_version
     # submodule_path_for_git_add = os.path.relpath(LLAMA_CPP_SUBMODULE_PATH, PROJECT_ROOT) # Not used currently
 
     # --- Step 1: Submodule Operations (Fetch, Checkout, Clean) ---
     logging.info("\n--- Step 1: Processing submodule (Fetch, Checkout, Clean) ---")
-    submodule_tag = None # Initialize submodule_tag
-    try:
-        run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
-        
-        # Update submodule to the latest from remote
-        logging.info(f"Fetching latest changes for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
-        run_command(["git", "fetch"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        logging.info(f"Checking out master branch for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
-        run_command(["git", "checkout", "master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        logging.info(f"Resetting submodule at {LLAMA_CPP_SUBMODULE_PATH} to origin/master (discarding local changes)...")
-        run_command(["git", "reset", "--hard", "origin/master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        logging.info(f"Pulling latest changes for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
-        run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        logging.info(f"Fetching all tags for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
-        run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-
-        # Get current submodule commit and the latest tag on that commit
-        # Using --abbrev=0 to get the plain tag name like 'bxxxx' or 'vX.Y.Z'
-        # Using --dirty to check if the submodule has local modifications
-        # Using --always to ensure a commit hash is returned if no tag is found
-        git_describe_cmd = ["git", "describe", "--tags", "--abbrev=0", "--always"]
-        process_result = run_command(git_describe_cmd, cwd=LLAMA_CPP_SUBMODULE_PATH)
-        submodule_tag = process_result.stdout.strip()
-
-        if not submodule_tag:
-            logging.warning("Warning: Could not determine a tag for the submodule. Will try with commit hash.")
-            # Fallback to commit hash if no tag
-            process_result = run_command(["git", "rev-parse", "--short", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-            submodule_tag = process_result.stdout.strip()
-
-        logging.info(f"Submodule vendor_llama_cpp_pydist/llama.cpp is at ref: {submodule_tag}")
-
-        # Check if submodule is dirty
-        status_process = run_command(["git", "status", "--porcelain"], cwd=LLAMA_CPP_SUBMODULE_PATH, check=False)
-        if status_process.stdout.strip():
-            logging.warning(f"Warning: Submodule {LLAMA_CPP_SUBMODULE_PATH} is dirty. This might affect the build.")
-            # print(status_process.stdout) # Optionally print dirty status
-
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Error during submodule operations: {e}")
-        logging.info("Cannot proceed without submodule information. Exiting.")
-        return # Exit if submodule operations fail critically
-    except Exception as e:
-        logging.error(f"An unexpected error occurred during submodule operations: {e}")
-        logging.info("Cannot proceed without submodule information. Exiting.")
-        return # Exit if submodule operations fail critically
+    # Initialize and update submodule
+    run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
+    run_command(["git", "fetch"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "checkout", "master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "reset", "--hard", "origin/master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    # Determine submodule tag
+    submodule_tag = get_submodule_tag()
 
     # --- Step 1.5: Download Windows Binary ---
     if submodule_tag:
