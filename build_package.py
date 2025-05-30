@@ -209,6 +209,15 @@ def get_submodule_tag():
         logging.error(f"Error determining submodule tag: {e}")
         return None
 
+def init_and_update_submodule():
+    """Initializes and updates the llama.cpp submodule to latest origin/master."""
+    run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
+    run_command(["git", "fetch"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "checkout", "master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "reset", "--hard", "origin/master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+
 
 def main():
     os.chdir(PROJECT_ROOT) # Ensure commands run from project root
@@ -216,17 +225,11 @@ def main():
     current_version = get_current_version(SETUP_PY_PATH)
 
     effective_version_for_build = current_version
-    # submodule_path_for_git_add = os.path.relpath(LLAMA_CPP_SUBMODULE_PATH, PROJECT_ROOT) # Not used currently
 
     # --- Step 1: Submodule Operations (Fetch, Checkout, Clean) ---
     logging.info("\n--- Step 1: Processing submodule (Fetch, Checkout, Clean) ---")
     # Initialize and update submodule
-    run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
-    run_command(["git", "fetch"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-    run_command(["git", "checkout", "master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-    run_command(["git", "reset", "--hard", "origin/master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-    run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-    run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    init_and_update_submodule()
     # Determine submodule tag
     submodule_tag = get_submodule_tag()
 
