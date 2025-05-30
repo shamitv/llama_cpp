@@ -34,9 +34,22 @@ def download_and_place_windows_binary(tag_name):
     logging.info(f"\n--- Downloading Windows binary for tag: {tag_name} ---")
     os.makedirs(LLAMA_CPP_PACKAGE_BINARIES_PATH, exist_ok=True)
 
-    # Clear previous binaries in llama_cpp/binaries
-    logging.info(f"Cleaning previous binaries from {LLAMA_CPP_PACKAGE_BINARIES_PATH}...")
+    # Determine the binary filename for the current tag_name first
+    # This is used to avoid deleting it if it already exists and matches the current tag.
+    match_current_tag = re.search(r'(b\\d+[a-fA-F0-9]*)$', tag_name)
+    if match_current_tag:
+        processed_tag_name_for_current_file = match_current_tag.group(1)
+    else:
+        processed_tag_name_for_current_file = tag_name
+    binary_filename_for_current_tag = f"llama-{processed_tag_name_for_current_file}-bin-win-cpu-x64.zip"
+
+    # Clear previous binaries in llama_cpp/binaries, but not the one for the current tag
+    logging.info(f"Cleaning previous binaries from {LLAMA_CPP_PACKAGE_BINARIES_PATH} (excluding {binary_filename_for_current_tag} if present)...")
     for item in os.listdir(LLAMA_CPP_PACKAGE_BINARIES_PATH):
+        if item == binary_filename_for_current_tag:
+            logging.info(f"Skipping deletion of existing binary for current tag: {item}")
+            continue # Skip deleting the binary for the current tag
+
         item_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, item)
         try:
             if os.path.isfile(item_path) or os.path.islink(item_path):
@@ -48,15 +61,12 @@ def download_and_place_windows_binary(tag_name):
 
 
     # Skip download if binary for this tag already exists
-    match = re.search(r'(b\d+[a-fA-F0-9]*)$', tag_name)
-    if match:
-        processed_tag_name_for_file = match.group(1)
-    else:
-        processed_tag_name_for_file = tag_name
-    binary_filename = f"llama-{processed_tag_name_for_file}-bin-win-cpu-x64.zip"
-    binary_dest_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, binary_filename)
+    # The filename construction logic is similar to what's done above for the exclusion.
+    # Re-using binary_filename_for_current_tag and processed_tag_name_for_current_file
+    # for clarity, though the values would be the same as derived from tag_name.
+    binary_dest_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, binary_filename_for_current_tag)
     if os.path.exists(binary_dest_path):
-        logging.info(f"Binary {binary_filename} already exists at {binary_dest_path}. Skipping download.")
+        logging.info(f"Binary {binary_filename_for_current_tag} already exists at {binary_dest_path}. Skipping download.")
         return
 
     # Construct binary filename and URL
@@ -66,17 +76,14 @@ def download_and_place_windows_binary(tag_name):
     # Let's assume the tag_name from `git describe --tags --abbrev=0` is what's needed for the URL path,
     # but the filename might need processing if it contains prefixes not in the release asset name.
     
-    # Try to extract the 'bXXXX' part if it's a longer tag like 'master-bXXXX'
-    match = re.search(r'(b\d+[a-fA-F0-9]*)$', tag_name)
-    if match:
-        processed_tag_name_for_file = match.group(1)
-    else:
-        processed_tag_name_for_file = tag_name # Use as is if no clear 'bXXXX' pattern
+    # Use the already processed tag name for the filename
+    # processed_tag_name_for_file = processed_tag_name_for_current_file (from above)
 
-    binary_filename = f"llama-{processed_tag_name_for_file}-bin-win-cpu-x64.zip"
+    # The binary_filename is already determined as binary_filename_for_current_tag
+    # binary_filename = binary_filename_for_current_tag
     # The download URL uses the full tag name as it appears in the releases page
-    download_url = f"https://github.com/ggml-org/llama.cpp/releases/download/{tag_name}/{binary_filename}"
-    binary_dest_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, binary_filename)
+    download_url = f"https://github.com/ggml-org/llama.cpp/releases/download/{tag_name}/{binary_filename_for_current_tag}"
+    # binary_dest_path is already defined above
 
     logging.info(f"Attempting to download: {download_url}")
     try:
@@ -85,25 +92,45 @@ def download_and_place_windows_binary(tag_name):
         with urllib.request.urlopen(req) as response, open(binary_dest_path, 'wb') as out_file:
             if response.status == 200:
                 shutil.copyfileobj(response, out_file)
-                logging.info(f"Successfully downloaded {binary_filename} to {binary_dest_path}")
+                logging.info(f"Successfully downloaded {binary_filename_for_current_tag} to {binary_dest_path}")
             else:
-                logging.warning(f"Warning: Failed to download {binary_filename}. Status: {response.status}")
-                logging.warning("Windows binary will not be included.")
-                if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+                logging.error(f"Failed to download {binary_filename_for_current_tag} from {download_url}. Status: {response.status}")
+                if os.path.exists(binary_dest_path):
+                    try:
+                        os.remove(binary_dest_path)
+                        logging.info(f"Removed partially downloaded file: {binary_dest_path}")
+                    except Exception as rm_err:
+                        logging.error(f"Failed to remove partially downloaded file {binary_dest_path}: {rm_err}")
+                raise RuntimeError(f"Failed to download {binary_filename_for_current_tag} from {download_url}. Status: {response.status}")
     except urllib.error.HTTPError as e:
-        logging.warning(f"Warning: HTTPError {e.code} when trying to download {binary_filename} from {download_url}: {e.reason}")
-        logging.warning("This could mean the binary for this specific tag/format doesn't exist or the URL is incorrect.")
-        logging.warning("Windows binary will not be included.")
-        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+        logging.error(f"HTTPError {e.code} when trying to download {binary_filename_for_current_tag} from {download_url}: {e.reason}")
+        logging.error("This could mean the binary for this specific tag/format doesn't exist or the URL is incorrect.")
+        if os.path.exists(binary_dest_path):
+            try:
+                os.remove(binary_dest_path)
+                logging.info(f"Removed partially downloaded file: {binary_dest_path}")
+            except Exception as rm_err:
+                logging.error(f"Failed to remove partially downloaded file {binary_dest_path}: {rm_err}")
+        raise RuntimeError(f"HTTPError {e.code} downloading {binary_filename_for_current_tag} from {download_url}: {e.reason}") from e
     except urllib.error.URLError as e:
-        logging.warning(f"Warning: URLError when trying to download {binary_filename}: {e.reason}")
-        logging.warning("This could be a network issue or an invalid URL.")
-        logging.warning("Windows binary will not be included.")
-        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+        logging.error(f"URLError when trying to download {binary_filename_for_current_tag} from {download_url}: {e.reason}")
+        logging.error("This could be a network issue or an invalid URL.")
+        if os.path.exists(binary_dest_path):
+            try:
+                os.remove(binary_dest_path)
+                logging.info(f"Removed partially downloaded file: {binary_dest_path}")
+            except Exception as rm_err:
+                logging.error(f"Failed to remove partially downloaded file {binary_dest_path}: {rm_err}")
+        raise RuntimeError(f"URLError downloading {binary_filename_for_current_tag} from {download_url}: {e.reason}") from e
     except Exception as e:
-        logging.warning(f"Warning: An unexpected error occurred while downloading {binary_filename}: {e}")
-        logging.warning("Windows binary will not be included.")
-        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+        logging.error(f"An unexpected error occurred while downloading {binary_filename_for_current_tag} from {download_url}: {e}")
+        if os.path.exists(binary_dest_path):
+            try:
+                os.remove(binary_dest_path)
+                logging.info(f"Removed partially downloaded file: {binary_dest_path}")
+            except Exception as rm_err:
+                logging.error(f"Failed to remove partially downloaded file {binary_dest_path}: {rm_err}")
+        raise RuntimeError(f"Unexpected error downloading {binary_filename_for_current_tag} from {download_url}: {e}") from e
 
 def modify_cmake_config():
     """
