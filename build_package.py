@@ -218,20 +218,65 @@ def init_and_update_submodule():
     run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH)
     run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
 
+def handle_version_increment_on_tag_change(old_tag, new_tag, current_version_str, setup_py_path):
+    """
+    Compares submodule tags and increments package version if they differ.
+    Returns the effective version for build and the (potentially updated) current package version.
+    """
+    effective_build_version = current_version_str
+    updated_current_version = current_version_str
+
+    if old_tag and new_tag and old_tag != new_tag:
+        logging.info(f"Submodule tag changed from {old_tag} to {new_tag}. Incrementing package version.")
+        try:
+            parts = current_version_str.split('.')
+            if len(parts) == 3 and all(p.isdigit() for p in parts):
+                major, minor, patch = map(int, parts)
+                minor += 1
+                patch = 0 # Reset patch version
+                new_package_version_str = f"{major}.{minor}.{patch}"
+            else:
+                logging.warning(f"Current version '{current_version_str}' is not in expected major.minor.patch format. Setting to 0.1.0.")
+                new_package_version_str = "0.1.0"
+            
+            update_version_in_setup_py(setup_py_path, new_package_version_str, current_version_str)
+            effective_build_version = new_package_version_str
+            updated_current_version = new_package_version_str
+        except Exception as e:
+            logging.error(f"Failed to update version: {e}. Using original version {current_version_str} for build.")
+            # effective_build_version remains current_version_str
+            # updated_current_version remains current_version_str
+    elif old_tag and new_tag and old_tag == new_tag:
+        logging.info(f"Submodule tag '{new_tag}' unchanged. Package version remains {current_version_str}.")
+    else:
+        logging.warning("Could not reliably determine submodule tag change. Package version remains the same.")
+    
+    return effective_build_version, updated_current_version
 
 def main():
     os.chdir(PROJECT_ROOT) # Ensure commands run from project root
 
-    current_version = get_current_version(SETUP_PY_PATH)
-
-    effective_version_for_build = current_version
+    current_package_version = get_current_version(SETUP_PY_PATH)
+    # effective_version_for_build = current_package_version # Initialized by handle_version_increment
 
     # --- Step 1: Submodule Operations (Fetch, Checkout, Clean) ---
-    logging.info("\n--- Step 1: Processing submodule (Fetch, Checkout, Clean) ---")
+    logging.info("\\\\n--- Step 1: Processing submodule (Fetch, Checkout, Clean) ---")
+    
+    logging.info("Getting submodule tag before update...")
+    old_submodule_tag = get_submodule_tag()
+
     # Initialize and update submodule
     init_and_update_submodule()
-    # Determine submodule tag
-    submodule_tag = get_submodule_tag()
+    
+    logging.info("Getting submodule tag after update...")
+    new_submodule_tag = get_submodule_tag()
+
+    effective_version_for_build, current_package_version = handle_version_increment_on_tag_change(
+        old_submodule_tag, new_submodule_tag, current_package_version, SETUP_PY_PATH
+    )
+
+    # Determine submodule tag (this is now effectively new_submodule_tag)
+    submodule_tag = new_submodule_tag 
 
     # --- Step 1.5: Download Windows Binary ---
     if submodule_tag:
