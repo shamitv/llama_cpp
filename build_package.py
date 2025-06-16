@@ -34,9 +34,22 @@ def download_and_place_windows_binary(tag_name):
     logging.info(f"\n--- Downloading Windows binary for tag: {tag_name} ---")
     os.makedirs(LLAMA_CPP_PACKAGE_BINARIES_PATH, exist_ok=True)
 
-    # Clear previous binaries in llama_cpp/binaries
-    logging.info(f"Cleaning previous binaries from {LLAMA_CPP_PACKAGE_BINARIES_PATH}...")
+    # Determine the binary filename for the current tag_name first
+    # This is used to avoid deleting it if it already exists and matches the current tag.
+    match_current_tag = re.search(r'(b\\d+[a-fA-F0-9]*)$', tag_name)
+    if match_current_tag:
+        processed_tag_name_for_current_file = match_current_tag.group(1)
+    else:
+        processed_tag_name_for_current_file = tag_name
+    binary_filename_for_current_tag = f"llama-{processed_tag_name_for_current_file}-bin-win-cpu-x64.zip"
+
+    # Clear previous binaries in llama_cpp/binaries, but not the one for the current tag
+    logging.info(f"Cleaning previous binaries from {LLAMA_CPP_PACKAGE_BINARIES_PATH} (excluding {binary_filename_for_current_tag} if present)...")
     for item in os.listdir(LLAMA_CPP_PACKAGE_BINARIES_PATH):
+        if item == binary_filename_for_current_tag:
+            logging.info(f"Skipping deletion of existing binary for current tag: {item}")
+            continue # Skip deleting the binary for the current tag
+
         item_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, item)
         try:
             if os.path.isfile(item_path) or os.path.islink(item_path):
@@ -48,15 +61,12 @@ def download_and_place_windows_binary(tag_name):
 
 
     # Skip download if binary for this tag already exists
-    match = re.search(r'(b\d+[a-fA-F0-9]*)$', tag_name)
-    if match:
-        processed_tag_name_for_file = match.group(1)
-    else:
-        processed_tag_name_for_file = tag_name
-    binary_filename = f"llama-{processed_tag_name_for_file}-bin-win-cpu-x64.zip"
-    binary_dest_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, binary_filename)
+    # The filename construction logic is similar to what's done above for the exclusion.
+    # Re-using binary_filename_for_current_tag and processed_tag_name_for_current_file
+    # for clarity, though the values would be the same as derived from tag_name.
+    binary_dest_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, binary_filename_for_current_tag)
     if os.path.exists(binary_dest_path):
-        logging.info(f"Binary {binary_filename} already exists at {binary_dest_path}. Skipping download.")
+        logging.info(f"Binary {binary_filename_for_current_tag} already exists at {binary_dest_path}. Skipping download.")
         return
 
     # Construct binary filename and URL
@@ -66,17 +76,14 @@ def download_and_place_windows_binary(tag_name):
     # Let's assume the tag_name from `git describe --tags --abbrev=0` is what's needed for the URL path,
     # but the filename might need processing if it contains prefixes not in the release asset name.
     
-    # Try to extract the 'bXXXX' part if it's a longer tag like 'master-bXXXX'
-    match = re.search(r'(b\d+[a-fA-F0-9]*)$', tag_name)
-    if match:
-        processed_tag_name_for_file = match.group(1)
-    else:
-        processed_tag_name_for_file = tag_name # Use as is if no clear 'bXXXX' pattern
+    # Use the already processed tag name for the filename
+    # processed_tag_name_for_file = processed_tag_name_for_current_file (from above)
 
-    binary_filename = f"llama-{processed_tag_name_for_file}-bin-win-cpu-x64.zip"
+    # The binary_filename is already determined as binary_filename_for_current_tag
+    # binary_filename = binary_filename_for_current_tag
     # The download URL uses the full tag name as it appears in the releases page
-    download_url = f"https://github.com/ggml-org/llama.cpp/releases/download/{tag_name}/{binary_filename}"
-    binary_dest_path = os.path.join(LLAMA_CPP_PACKAGE_BINARIES_PATH, binary_filename)
+    download_url = f"https://github.com/ggml-org/llama.cpp/releases/download/{tag_name}/{binary_filename_for_current_tag}"
+    # binary_dest_path is already defined above
 
     logging.info(f"Attempting to download: {download_url}")
     try:
@@ -85,25 +92,45 @@ def download_and_place_windows_binary(tag_name):
         with urllib.request.urlopen(req) as response, open(binary_dest_path, 'wb') as out_file:
             if response.status == 200:
                 shutil.copyfileobj(response, out_file)
-                logging.info(f"Successfully downloaded {binary_filename} to {binary_dest_path}")
+                logging.info(f"Successfully downloaded {binary_filename_for_current_tag} to {binary_dest_path}")
             else:
-                logging.warning(f"Warning: Failed to download {binary_filename}. Status: {response.status}")
-                logging.warning("Windows binary will not be included.")
-                if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+                logging.error(f"Failed to download {binary_filename_for_current_tag} from {download_url}. Status: {response.status}")
+                if os.path.exists(binary_dest_path):
+                    try:
+                        os.remove(binary_dest_path)
+                        logging.info(f"Removed partially downloaded file: {binary_dest_path}")
+                    except Exception as rm_err:
+                        logging.error(f"Failed to remove partially downloaded file {binary_dest_path}: {rm_err}")
+                raise RuntimeError(f"Failed to download {binary_filename_for_current_tag} from {download_url}. Status: {response.status}")
     except urllib.error.HTTPError as e:
-        logging.warning(f"Warning: HTTPError {e.code} when trying to download {binary_filename} from {download_url}: {e.reason}")
-        logging.warning("This could mean the binary for this specific tag/format doesn't exist or the URL is incorrect.")
-        logging.warning("Windows binary will not be included.")
-        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+        logging.error(f"HTTPError {e.code} when trying to download {binary_filename_for_current_tag} from {download_url}: {e.reason}")
+        logging.error("This could mean the binary for this specific tag/format doesn't exist or the URL is incorrect.")
+        if os.path.exists(binary_dest_path):
+            try:
+                os.remove(binary_dest_path)
+                logging.info(f"Removed partially downloaded file: {binary_dest_path}")
+            except Exception as rm_err:
+                logging.error(f"Failed to remove partially downloaded file {binary_dest_path}: {rm_err}")
+        raise RuntimeError(f"HTTPError {e.code} downloading {binary_filename_for_current_tag} from {download_url}: {e.reason}") from e
     except urllib.error.URLError as e:
-        logging.warning(f"Warning: URLError when trying to download {binary_filename}: {e.reason}")
-        logging.warning("This could be a network issue or an invalid URL.")
-        logging.warning("Windows binary will not be included.")
-        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+        logging.error(f"URLError when trying to download {binary_filename_for_current_tag} from {download_url}: {e.reason}")
+        logging.error("This could be a network issue or an invalid URL.")
+        if os.path.exists(binary_dest_path):
+            try:
+                os.remove(binary_dest_path)
+                logging.info(f"Removed partially downloaded file: {binary_dest_path}")
+            except Exception as rm_err:
+                logging.error(f"Failed to remove partially downloaded file {binary_dest_path}: {rm_err}")
+        raise RuntimeError(f"URLError downloading {binary_filename_for_current_tag} from {download_url}: {e.reason}") from e
     except Exception as e:
-        logging.warning(f"Warning: An unexpected error occurred while downloading {binary_filename}: {e}")
-        logging.warning("Windows binary will not be included.")
-        if os.path.exists(binary_dest_path): os.remove(binary_dest_path)
+        logging.error(f"An unexpected error occurred while downloading {binary_filename_for_current_tag} from {download_url}: {e}")
+        if os.path.exists(binary_dest_path):
+            try:
+                os.remove(binary_dest_path)
+                logging.info(f"Removed partially downloaded file: {binary_dest_path}")
+            except Exception as rm_err:
+                logging.error(f"Failed to remove partially downloaded file {binary_dest_path}: {rm_err}")
+        raise RuntimeError(f"Unexpected error downloading {binary_filename_for_current_tag} from {download_url}: {e}") from e
 
 def modify_cmake_config():
     """
@@ -144,18 +171,21 @@ def modify_cmake_config():
         logging.info("CMake config already up-to-date.")
 
 def get_current_version(file_path):
-    """Reads setup.py and extracts the version."""
+    """Reads setup.py and extracts the version, returning a fallback if unavailable."""
+    fallback_version = "0.0.0"
     try:
         with open(file_path, 'r') as f:
             content = f.read()
         match = re.search(r"version\s*=\s*['\"]([^'\"]+)['\"]", content)
         if match:
-            return match.group(1)
-        raise ValueError(f"Could not find version pattern in {file_path}")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Error: {file_path} not found.")
+            version = match.group(1)
+            logging.info(f"--- Current package version from setup.py: {version} ---")
+            return version
+        logging.warning(f"Warning: Could not find version in {file_path}. Using fallback '{fallback_version}'.")
+        return fallback_version
     except Exception as e:
-        raise Exception(f"Error reading version from {file_path}: {e}")
+        logging.warning(f"Warning: Could not read version from {file_path}: {e}. Using fallback '{fallback_version}'.")
+        return fallback_version
 
 def update_version_in_setup_py(file_path, new_version, old_version):
     """Writes the new version to setup.py."""
@@ -185,67 +215,95 @@ def update_version_in_setup_py(file_path, new_version, old_version):
         logging.error(f"Error updating version in {file_path}: {e}")
 
 
+def get_submodule_tag():
+    """Gets the current tag or short commit hash for the llama.cpp submodule, logging status."""
+    try:
+        # Try getting the latest tag
+        describe_cmd = ["git", "describe", "--tags", "--abbrev=0", "--always"]
+        result = run_command(describe_cmd, cwd=LLAMA_CPP_SUBMODULE_PATH)
+        tag = result.stdout.strip()
+        if not tag:
+            logging.warning("Could not determine a tag for the submodule. Falling back to commit hash.")
+            result = run_command(["git", "rev-parse", "--short", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+            tag = result.stdout.strip()
+        logging.info(f"Submodule vendor_llama_cpp_pydist/llama.cpp is at ref: {tag}")
+        # Warn if dirty
+        status = run_command(["git", "status", "--porcelain"], cwd=LLAMA_CPP_SUBMODULE_PATH, check=False)
+        if status.stdout.strip():
+            logging.warning(f"Submodule {LLAMA_CPP_SUBMODULE_PATH} is dirty. This might affect the build.")
+        return tag
+    except Exception as e:
+        logging.error(f"Error determining submodule tag: {e}")
+        return None
+
+def init_and_update_submodule():
+    """Initializes and updates the llama.cpp submodule to latest origin/master."""
+    run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
+    run_command(["git", "fetch"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "checkout", "master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "reset", "--hard", "origin/master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+
+def handle_version_increment_on_tag_change(old_tag, new_tag, current_version_str, setup_py_path):
+    """
+    Compares submodule tags and increments package version if they differ.
+    Returns the effective version for build and the (potentially updated) current package version.
+    """
+    effective_build_version = current_version_str
+    updated_current_version = current_version_str
+
+    if old_tag and new_tag and old_tag != new_tag:
+        logging.info(f"Submodule tag changed from {old_tag} to {new_tag}. Incrementing package version.")
+        try:
+            parts = current_version_str.split('.')
+            if len(parts) == 3 and all(p.isdigit() for p in parts):
+                major, minor, patch = map(int, parts)
+                minor += 1
+                patch = 0 # Reset patch version
+                new_package_version_str = f"{major}.{minor}.{patch}"
+            else:
+                logging.warning(f"Current version '{current_version_str}' is not in expected major.minor.patch format. Setting to 0.1.0.")
+                new_package_version_str = "0.1.0"
+            
+            update_version_in_setup_py(setup_py_path, new_package_version_str, current_version_str)
+            effective_build_version = new_package_version_str
+            updated_current_version = new_package_version_str
+        except Exception as e:
+            logging.error(f"Failed to update version: {e}. Using original version {current_version_str} for build.")
+            # effective_build_version remains current_version_str
+            # updated_current_version remains current_version_str
+    elif old_tag and new_tag and old_tag == new_tag:
+        logging.info(f"Submodule tag '{new_tag}' unchanged. Package version remains {current_version_str}.")
+    else:
+        logging.warning("Could not reliably determine submodule tag change. Package version remains the same.")
+    
+    return effective_build_version, updated_current_version
+
 def main():
     os.chdir(PROJECT_ROOT) # Ensure commands run from project root
 
-    current_version = "0.0.0" # Fallback
-    try:
-        current_version = get_current_version(SETUP_PY_PATH)
-        logging.info(f"--- Current package version from setup.py: {current_version} ---")
-    except Exception as e:
-        logging.warning(f"Warning: Could not read version from setup.py: {e}. Using fallback '{current_version}'.")
-
-    effective_version_for_build = current_version
-    # submodule_path_for_git_add = os.path.relpath(LLAMA_CPP_SUBMODULE_PATH, PROJECT_ROOT) # Not used currently
+    current_package_version = get_current_version(SETUP_PY_PATH)
+    # effective_version_for_build = current_package_version # Initialized by handle_version_increment
 
     # --- Step 1: Submodule Operations (Fetch, Checkout, Clean) ---
-    logging.info("\n--- Step 1: Processing submodule (Fetch, Checkout, Clean) ---")
-    submodule_tag = None # Initialize submodule_tag
-    try:
-        run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=PROJECT_ROOT)
-        
-        # Update submodule to the latest from remote
-        logging.info(f"Fetching latest changes for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
-        run_command(["git", "fetch"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        logging.info(f"Checking out master branch for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
-        run_command(["git", "checkout", "master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        logging.info(f"Resetting submodule at {LLAMA_CPP_SUBMODULE_PATH} to origin/master (discarding local changes)...")
-        run_command(["git", "reset", "--hard", "origin/master"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        logging.info(f"Pulling latest changes for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
-        run_command(["git", "pull"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-        logging.info(f"Fetching all tags for submodule at {LLAMA_CPP_SUBMODULE_PATH}...")
-        run_command(["git", "fetch", "--tags"], cwd=LLAMA_CPP_SUBMODULE_PATH)
+    logging.info("\\\\n--- Step 1: Processing submodule (Fetch, Checkout, Clean) ---")
+    
+    logging.info("Getting submodule tag before update...")
+    old_submodule_tag = get_submodule_tag()
 
-        # Get current submodule commit and the latest tag on that commit
-        # Using --abbrev=0 to get the plain tag name like 'bxxxx' or 'vX.Y.Z'
-        # Using --dirty to check if the submodule has local modifications
-        # Using --always to ensure a commit hash is returned if no tag is found
-        git_describe_cmd = ["git", "describe", "--tags", "--abbrev=0", "--always"]
-        process_result = run_command(git_describe_cmd, cwd=LLAMA_CPP_SUBMODULE_PATH)
-        submodule_tag = process_result.stdout.strip()
+    # Initialize and update submodule
+    init_and_update_submodule()
+    
+    logging.info("Getting submodule tag after update...")
+    new_submodule_tag = get_submodule_tag()
 
-        if not submodule_tag:
-            logging.warning("Warning: Could not determine a tag for the submodule. Will try with commit hash.")
-            # Fallback to commit hash if no tag
-            process_result = run_command(["git", "rev-parse", "--short", "HEAD"], cwd=LLAMA_CPP_SUBMODULE_PATH)
-            submodule_tag = process_result.stdout.strip()
+    effective_version_for_build, current_package_version = handle_version_increment_on_tag_change(
+        old_submodule_tag, new_submodule_tag, current_package_version, SETUP_PY_PATH
+    )
 
-        logging.info(f"Submodule vendor_llama_cpp_pydist/llama.cpp is at ref: {submodule_tag}")
-
-        # Check if submodule is dirty
-        status_process = run_command(["git", "status", "--porcelain"], cwd=LLAMA_CPP_SUBMODULE_PATH, check=False)
-        if status_process.stdout.strip():
-            logging.warning(f"Warning: Submodule {LLAMA_CPP_SUBMODULE_PATH} is dirty. This might affect the build.")
-            # print(status_process.stdout) # Optionally print dirty status
-
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Error during submodule operations: {e}")
-        logging.info("Cannot proceed without submodule information. Exiting.")
-        return # Exit if submodule operations fail critically
-    except Exception as e:
-        logging.error(f"An unexpected error occurred during submodule operations: {e}")
-        logging.info("Cannot proceed without submodule information. Exiting.")
-        return # Exit if submodule operations fail critically
+    # Determine submodule tag (this is now effectively new_submodule_tag)
+    submodule_tag = new_submodule_tag 
 
     # --- Step 1.5: Download Windows Binary ---
     if submodule_tag:
