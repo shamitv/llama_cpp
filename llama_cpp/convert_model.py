@@ -1,4 +1,3 @@
-\
 import subprocess
 import sys
 import os
@@ -11,7 +10,7 @@ LLAMA_CPP_SUBMODULE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__
 CONVERSION_SCRIPT_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "convert_hf_to_gguf.py")
 
 def convert_hf_to_gguf(model_path_or_name: str, output_dir: str, output_filename: str = None, outtype: str = "f16", use_temp_dir: bool = False):
-    \"\"\"
+    """
     Converts a Hugging Face model (potentially using safetensors) to GGUF format.
 
     This function calls the convert_hf_to_gguf.py script from the llama.cpp submodule.
@@ -30,9 +29,10 @@ def convert_hf_to_gguf(model_path_or_name: str, output_dir: str, output_filename
                                        Defaults to False.
 
     Returns:
-        bool: True if conversion was successful, False otherwise.
-        str: Path to the generated GGUF file if successful, else an error message.
-    \"\"\"
+        tuple[bool, str]: A tuple containing:
+                            - bool: True if conversion was successful, False otherwise.
+                            - str: Path to the generated GGUF file if successful, else an error message.
+    """
     if not os.path.exists(CONVERSION_SCRIPT_PATH):
         error_msg = f"Conversion script not found at {CONVERSION_SCRIPT_PATH}"
         logging.error(error_msg)

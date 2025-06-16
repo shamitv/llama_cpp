@@ -57,6 +57,57 @@ else:
     print("Failed to install conversion libraries.")
 ```
 
+### Converting Hugging Face Models to GGUF
+
+This package provides a utility to convert Hugging Face models (including those using Safetensors) into the GGUF format, which is used by `llama.cpp`. This process leverages the conversion scripts from the underlying `llama.cpp` submodule.
+
+**1. Install Conversion Libraries:**
+
+Before converting models, ensure you have the necessary Python libraries. You can install them using a helper function:
+
+```python
+from llama_cpp import install_conversion_libs
+
+if install_conversion_libs():
+    print("Conversion libraries installed successfully.")
+else:
+    print("Failed to install conversion libraries. Please check the output for errors.")
+```
+
+**2. Convert the Model:**
+
+Once the dependencies are installed, you can use the `convert_hf_to_gguf` function:
+
+```python
+from llama_cpp import convert_hf_to_gguf
+
+# Specify the Hugging Face model name or local path
+model_name_or_path = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"  # Example: A small model from Hugging Face Hub
+# Or, a local path: model_name_or_path = "/path/to/your/hf_model_directory"
+
+output_directory = "./converted_gguf_models" # Directory to save the GGUF file
+output_filename = "tinyllama_1.1b_chat_q8_0.gguf" # Optional: specify a filename
+quantization_type = "q8_0"  # Example: 8-bit quantization. Common types: "f16", "q4_0", "q4_K_M", "q5_K_M", "q8_0"
+
+print(f"Starting conversion for model: {model_name_or_path}")
+success, result_message = convert_hf_to_gguf(
+    model_path_or_name=model_name_or_path,
+    output_dir=output_directory,
+    output_filename=output_filename, # Can be None to auto-generate
+    outtype=quantization_type
+)
+
+if success:
+    print(f"Model converted successfully! GGUF file saved at: {result_message}")
+else:
+    print(f"Model conversion failed: {result_message}")
+
+# The `result_message` will contain the path to the GGUF file on success,
+# or an error message on failure.
+```
+
+This function will download the model from Hugging Face Hub if a model name is provided and it's not already cached locally by Hugging Face `transformers`. It then invokes the `convert_hf_to_gguf.py` script from `llama.cpp`.
+
 For more detailed examples and advanced usage, please refer to the documentation of the underlying `llama.cpp` project and explore the examples provided there.
 
 ## Building and Development
