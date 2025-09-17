@@ -405,21 +405,75 @@ def collect_llama_changes_between_tags(old_tag: str, new_tag: str):
 
 
 def _extract_bullets_from_markdown(md: str):
-    """Extract bullet lines from markdown body.
-    Returns list of strings for lines starting with '-', '*', or numeric lists.
+    """Extract bullet-like lines from markdown body.
+    - Handles -, *, +, •, –, — and numeric lists (1. ...)
+    - Strips GitHub checkbox markers like [ ] or [x]
+    - Skips headings and code fences
+    Returns list[str].
     """
     if not md:
         return []
+
     bullets = []
-    for line in md.splitlines():
+    in_code_block = False
+    for raw_line in md.splitlines():
+        line = raw_line.rstrip()
         s = line.strip()
         if not s:
             continue
-        if s.startswith(('-', '*')):
-            bullets.append(s.lstrip('-* ').strip())
-        elif re.match(r"^\d+\.\s+", s):
-            bullets.append(re.sub(r"^\d+\.\s+", "", s))
+        # Code block fences
+        if s.startswith("```"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+        # Skip headings and quote banners
+        if s.startswith(('#', '>')):
+            continue
+
+        # Recognize bullet markers
+        if re.match(r"^[\-\*\+•–—]\s+", s):
+            content = re.sub(r"^[\-\*\+•–—]\s+", "", s)
+            content = re.sub(r"^\[([ xX])\]\s+", "", content)  # strip checkboxes
+            bullets.append(content.strip())
+            continue
+
+        # Ordered list
+        if re.match(r"^\d+\.\s+", s):
+            content = re.sub(r"^\d+\.\s+", "", s)
+            bullets.append(content.strip())
+            continue
+
     return bullets
+
+
+def _extract_summary_lines(md: str, max_lines: int = 10):
+    """Fallback: extract up to max_lines of plain text lines from markdown, excluding
+    headings, images, links-only lines, and code blocks. Useful when no bullets exist."""
+    if not md:
+        return []
+    lines = []
+    in_code_block = False
+    for raw_line in md.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("```"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+        if line.startswith(('#', '>', '![', '<')):
+            continue
+        # skip lines that are just links
+        if re.fullmatch(r"\[.*?\]\(.*?\)", line):
+            continue
+        # keep short reasonable lines
+        text = re.sub(r"\s+", " ", line)
+        lines.append(text)
+        if len(lines) >= max_lines:
+            break
+    return lines
 
 
 def update_changelog(old_tag: str, new_tag: str):
@@ -431,15 +485,12 @@ def update_changelog(old_tag: str, new_tag: str):
         logging.info("No new tag resolved; skipping changelog update.")
         return
 
-    # Read existing changelog if present to avoid duplicate entries
+    # Read existing changelog if present
     existing = ""
     if os.path.exists(CHANGELOG_PATH):
         try:
             with open(CHANGELOG_PATH, "r", encoding="utf-8") as f:
                 existing = f.read()
-            if f"llama.cpp {new_norm}" in existing:
-                logging.info(f"CHANGELOG already has an entry for {new_norm}; skipping update.")
-                return
         except Exception as e:
             logging.warning(f"Could not read existing CHANGELOG.md: {e}")
 
@@ -448,8 +499,6 @@ def update_changelog(old_tag: str, new_tag: str):
         logging.info("No changes collected from llama.cpp releases; skipping changelog update.")
         return
 
-    today = datetime.now(timezone.utc).date().isoformat()
-    header = f"## {today}: Update to llama.cpp {new_norm}\n\n"
     body_lines = []
     for rel in changes:
         rel_date = rel.get("published_at")
@@ -463,9 +512,17 @@ def update_changelog(old_tag: str, new_tag: str):
         title = rel.get("name") or rel.get("tag_name")
         url = rel.get("html_url")
         body_lines.append(f"- {title} ({rel.get('tag_name')}) – {rel_date} – {url}")
-        bullets = _extract_bullets_from_markdown(rel.get("body", ""))
-        for b in bullets[:50]:  # cap to avoid overly long sections
-            body_lines.append(f"  - {b}")
+        md_body = rel.get("body", "")
+        bullets = _extract_bullets_from_markdown(md_body)
+        if bullets:
+            for b in bullets[:50]:  # cap to avoid overly long sections
+                # use nested bullet for readability
+                body_lines.append(f"  - {b}")
+        else:
+            # Fallback to a few summary lines if no bullets were discovered
+            summary = _extract_summary_lines(md_body, max_lines=8)
+            for s in summary:
+                body_lines.append(f"  - {s}")
     body = "\n".join(body_lines) + "\n\n"
 
     intro = (
@@ -474,20 +531,49 @@ def update_changelog(old_tag: str, new_tag: str):
         "Each entry corresponds to the vendor submodule update in this package.\n\n"
     )
 
-    new_content = header + body
-    if existing:
-        if existing.lstrip().startswith("# Changelog"):
-            combined = existing
-            # Insert new_content after the first header line
-            idx = combined.find("\n")
-            if idx != -1:
-                combined = combined[:idx+1] + "\n" + new_content + combined[idx+1:]
+    # If the section for this tag already exists, replace its contents with detailed bullets
+    if existing and f"llama.cpp {new_norm}" in existing:
+        try:
+            # Find the header line for this tag
+            m = re.search(rf"^## .*?Update to llama\\.cpp {re.escape(new_norm)}\s*$", existing, flags=re.MULTILINE)
+            if not m:
+                raise ValueError("Header for existing section not found")
+
+            header_start = m.start()
+            # Find end of header line
+            nl_idx = existing.find("\n", m.end())
+            header_end = len(existing) if nl_idx == -1 else nl_idx + 1
+
+            # Find the start of next section or EOF
+            m_next = re.search(r"^## ", existing[header_end:], flags=re.MULTILINE)
+            section_end = len(existing) if not m_next else header_end + m_next.start()
+
+            original_header_line = existing[header_start:header_end]
+            replacement = original_header_line + "\n" + body
+            combined = existing[:header_start] + replacement + existing[section_end:]
+        except Exception as e:
+            logging.warning(f"Failed to enrich existing changelog section: {e}; will prepend a new section instead.")
+            today = datetime.now(timezone.utc).date().isoformat()
+            header = f"## {today}: Update to llama.cpp {new_norm}\n\n"
+            new_content = header + body
+            combined = intro + new_content + (existing or "")
+    else:
+        today = datetime.now(timezone.utc).date().isoformat()
+        header = f"## {today}: Update to llama.cpp {new_norm}\n\n"
+        new_content = header + body
+        if existing:
+            if existing.lstrip().startswith("# Changelog"):
+                combined = existing
+                # Insert new_content after the first header line
+                idx = combined.find("\n")
+                if idx != -1:
+                    combined = combined[:idx+1] + "\n" + new_content + combined[idx+1:]
+                else:
+                    combined = intro + new_content + existing
             else:
                 combined = intro + new_content + existing
         else:
-            combined = intro + new_content + existing
-    else:
-        combined = intro + new_content
+            combined = intro + new_content
 
     try:
         with open(CHANGELOG_PATH, "w", encoding="utf-8") as f:
