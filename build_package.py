@@ -5,6 +5,8 @@ import urllib.request
 import shutil
 import glob # For finding .egg-info directories
 import logging  # Added for logging
+import json
+from datetime import datetime, timezone
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -17,6 +19,12 @@ LLAMA_CPP_EXAMPLES_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "examples")
 LLAMA_CPP_MODELS_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "models")
 LLAMA_CPP_CMAKE_FILE = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "CMakeLists.txt")
 SETUP_PY_PATH = os.path.join(PROJECT_ROOT, "setup.py")
+CHANGELOG_PATH = os.path.join(PROJECT_ROOT, "CHANGELOG.md")
+GITHUB_API_BASE = "https://api.github.com"
+
+# Repo to collect release notes from (llama.cpp)
+LLAMA_CPP_REPO_OWNER = "ggml-org"
+LLAMA_CPP_REPO_NAME = "llama.cpp"
 
 def run_command(command, cwd=None, check=True, shell=False):
     """Helper function to run a shell command."""
@@ -280,6 +288,214 @@ def handle_version_increment_on_tag_change(old_tag, new_tag, current_version_str
     
     return effective_build_version, updated_current_version
 
+
+# --------------------------- Changelog Helpers ---------------------------
+
+def _normalize_llama_tag(tag: str) -> str:
+    """Normalize tag to a form used in llama.cpp releases, e.g., 'b6497'.
+    Accepts variants like 'master-b6497' and returns 'b6497'.
+    """
+    if not tag:
+        return tag
+    m = re.search(r"(b\d+[a-fA-F0-9]*)$", tag)
+    return m.group(1) if m else tag
+
+
+def _parse_llama_tag_number(tag: str) -> int:
+    """Return the numeric component of a llama.cpp tag like 'b6497' -> 6497.
+    Returns -1 if not parseable.
+    """
+    if not tag:
+        return -1
+    m = re.search(r"b(\d+)", tag)
+    try:
+        return int(m.group(1)) if m else -1
+    except Exception:
+        return -1
+
+
+def _http_get_json(url: str):
+    headers = {"User-Agent": "llama_cpp_pydist/1.0"}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+        headers["Accept"] = "application/vnd.github+json"
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req) as resp:
+        if resp.status != 200:
+            raise RuntimeError(f"HTTP {resp.status} for {url}")
+        data = resp.read()
+        return json.loads(data.decode("utf-8"))
+
+
+def fetch_release_by_tag(tag: str):
+    """Fetch a single GitHub release by tag. Returns dict or None if not found.
+    Uses the public GitHub API without auth (subject to rate limits)."""
+    api = f"{GITHUB_API_BASE}/repos/{LLAMA_CPP_REPO_OWNER}/{LLAMA_CPP_REPO_NAME}/releases/tags/{tag}"
+    try:
+        return _http_get_json(api)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            logging.warning(f"Release for tag {tag} not found via API.")
+            return None
+        logging.error(f"HTTPError fetching release for tag {tag}: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Error fetching release for tag {tag}: {e}")
+        return None
+
+
+def fetch_releases_paginated(max_pages: int = 5, per_page: int = 100):
+    """Fetch recent releases list, paginated. Returns list (most recent first)."""
+    releases = []
+    for page in range(1, max_pages + 1):
+        url = f"{GITHUB_API_BASE}/repos/{LLAMA_CPP_REPO_OWNER}/{LLAMA_CPP_REPO_NAME}/releases?per_page={per_page}&page={page}"
+        try:
+            data = _http_get_json(url)
+            if not isinstance(data, list) or not data:
+                break
+            releases.extend(data)
+            if len(data) < per_page:
+                break
+        except Exception as e:
+            logging.error(f"Error fetching releases page {page}: {e}")
+            break
+    return releases
+
+
+def collect_llama_changes_between_tags(old_tag: str, new_tag: str):
+    """Collect release notes for llama.cpp tags between old_tag (exclusive) and new_tag (inclusive).
+    If old_tag is None or can't be parsed, only includes new_tag if found.
+    Returns a list of dicts with keys: tag_name, name, body, html_url, published_at.
+    """
+    new_norm = _normalize_llama_tag(new_tag) if new_tag else None
+    old_norm = _normalize_llama_tag(old_tag) if old_tag else None
+    new_num = _parse_llama_tag_number(new_norm)
+    old_num = _parse_llama_tag_number(old_norm)
+
+    if new_num < 0:
+        logging.warning(f"New submodule tag '{new_tag}' not parseable; skipping changelog collection.")
+        return []
+
+    releases = fetch_releases_paginated()
+    if not releases:
+        logging.warning("No releases fetched from GitHub; skipping changelog collection.")
+        return []
+
+    selected = []
+    for rel in releases:
+        tag = rel.get("tag_name") or ""
+        tag_norm = _normalize_llama_tag(tag)
+        num = _parse_llama_tag_number(tag_norm)
+        if num < 0:
+            continue
+        # Include those strictly greater than old_num and <= new_num
+        if (old_num < 0 and num == new_num) or (old_num >= 0 and old_num < num <= new_num):
+            selected.append({
+                "tag_name": tag_norm,
+                "name": rel.get("name") or tag_norm,
+                "body": rel.get("body") or "",
+                "html_url": rel.get("html_url") or f"https://github.com/{LLAMA_CPP_REPO_OWNER}/{LLAMA_CPP_REPO_NAME}/releases/tag/{tag_norm}",
+                "published_at": rel.get("published_at") or "",
+            })
+
+    # Sort ascending by numeric tag for chronological order
+    selected.sort(key=lambda r: _parse_llama_tag_number(r.get("tag_name", "")))
+    return selected
+
+
+def _extract_bullets_from_markdown(md: str):
+    """Extract bullet lines from markdown body.
+    Returns list of strings for lines starting with '-', '*', or numeric lists.
+    """
+    if not md:
+        return []
+    bullets = []
+    for line in md.splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        if s.startswith(('-', '*')):
+            bullets.append(s.lstrip('-* ').strip())
+        elif re.match(r"^\d+\.\s+", s):
+            bullets.append(re.sub(r"^\d+\.\s+", "", s))
+    return bullets
+
+
+def update_changelog(old_tag: str, new_tag: str):
+    """Prepend a new section to CHANGELOG.md with llama.cpp changes since last release.
+    Idempotent: if an entry for new_tag already exists in the file, skip.
+    """
+    new_norm = _normalize_llama_tag(new_tag) if new_tag else None
+    if not new_norm:
+        logging.info("No new tag resolved; skipping changelog update.")
+        return
+
+    # Read existing changelog if present to avoid duplicate entries
+    existing = ""
+    if os.path.exists(CHANGELOG_PATH):
+        try:
+            with open(CHANGELOG_PATH, "r", encoding="utf-8") as f:
+                existing = f.read()
+            if f"llama.cpp {new_norm}" in existing:
+                logging.info(f"CHANGELOG already has an entry for {new_norm}; skipping update.")
+                return
+        except Exception as e:
+            logging.warning(f"Could not read existing CHANGELOG.md: {e}")
+
+    changes = collect_llama_changes_between_tags(old_tag, new_tag)
+    if not changes:
+        logging.info("No changes collected from llama.cpp releases; skipping changelog update.")
+        return
+
+    today = datetime.now(timezone.utc).date().isoformat()
+    header = f"## {today}: Update to llama.cpp {new_norm}\n\n"
+    body_lines = []
+    for rel in changes:
+        rel_date = rel.get("published_at")
+        try:
+            # Normalize date display
+            if rel_date:
+                rel_date = datetime.fromisoformat(rel_date.replace("Z", "+00:00")).date().isoformat()
+        except Exception:
+            rel_date = rel.get("published_at") or ""
+
+        title = rel.get("name") or rel.get("tag_name")
+        url = rel.get("html_url")
+        body_lines.append(f"- {title} ({rel.get('tag_name')}) – {rel_date} – {url}")
+        bullets = _extract_bullets_from_markdown(rel.get("body", ""))
+        for b in bullets[:50]:  # cap to avoid overly long sections
+            body_lines.append(f"  - {b}")
+    body = "\n".join(body_lines) + "\n\n"
+
+    intro = (
+        "# Changelog\n\n"
+        "This file lists notable changes synchronized from upstream llama.cpp releases.\n"
+        "Each entry corresponds to the vendor submodule update in this package.\n\n"
+    )
+
+    new_content = header + body
+    if existing:
+        if existing.lstrip().startswith("# Changelog"):
+            combined = existing
+            # Insert new_content after the first header line
+            idx = combined.find("\n")
+            if idx != -1:
+                combined = combined[:idx+1] + "\n" + new_content + combined[idx+1:]
+            else:
+                combined = intro + new_content + existing
+        else:
+            combined = intro + new_content + existing
+    else:
+        combined = intro + new_content
+
+    try:
+        with open(CHANGELOG_PATH, "w", encoding="utf-8") as f:
+            f.write(combined)
+        logging.info(f"CHANGELOG.md updated with llama.cpp changes up to {new_norm}.")
+    except Exception as e:
+        logging.error(f"Failed to write CHANGELOG.md: {e}")
+
 def main():
     os.chdir(PROJECT_ROOT) # Ensure commands run from project root
 
@@ -313,20 +529,27 @@ def main():
         # Ensure binaries directory exists for setup.py even if download fails, but it should be there from download_and_place_windows_binary
         os.makedirs(LLAMA_CPP_PACKAGE_BINARIES_PATH, exist_ok=True)
 
+    # --- Step 2: Update CHANGELOG with upstream changes ---
+    logging.info("\n--- Step 2: Updating CHANGELOG.md with llama.cpp release notes ---")
+    try:
+        update_changelog(old_submodule_tag, new_submodule_tag)
+    except Exception as e:
+        logging.error(f"Changelog update failed (non-fatal): {e}")
 
-    # --- Step 2: Modify CMake Configuration in submodule (if needed) ---
-    logging.info("\n--- Step 2: Modifying CMake config in submodule (if applicable) ---")
+
+    # --- Step 3: Modify CMake Configuration in submodule (if needed) ---
+    logging.info("\n--- Step 3: Modifying CMake config in submodule (if applicable) ---")
     modify_cmake_config()  # Call the CMake modification function
 
-    # --- Step 3: Versioning and Committing to Parent Repository (Simplified) ---
+    # --- Step 4: Versioning and Committing to Parent Repository (Simplified) ---
     # This section is simplified. Original script had more complex logic for version bumping
     # and committing submodule changes. For now, we assume the parent repo is managed manually
     # regarding submodule pointer updates.
-    logging.info("\n--- Step 3: Versioning and Committing (Simplified) ---")
+    logging.info("\n--- Step 4: Versioning and Committing (Simplified) ---")
     logging.info(f"Parent repository operations (like committing submodule changes) are assumed to be handled manually or by a separate process for now.")
 
 
-    logging.info(f"\n--- Step 4: Building the wheel (using version: {effective_version_for_build}) ---")
+    logging.info(f"\n--- Step 5: Building the wheel (using version: {effective_version_for_build}) ---")
     # --- 4. Generate source and binary wheel ---
     # Clean previous builds
     logging.info("Cleaning previous build artifacts...")
