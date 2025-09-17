@@ -1,5 +1,12 @@
 from setuptools import setup, find_packages
 
+def _read_text(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return ""
+
 setup(
     name='llama_cpp_pydist',
     version='0.9.0',
@@ -23,9 +30,18 @@ setup(
     author='Shamit Verma',
     author_email='oss@shamit.in',
     description='A Python package for Llama CPP.',
-    long_description=open('README.md').read(),
+    long_description=(
+        (_read_text('README.md') or '')
+        + "\n\n"
+        + (_read_text('CHANGELOG.md') or '')
+    ),
     long_description_content_type='text/markdown',
     url='https://github.com/shamitv/llama_cpp',
+    project_urls={
+        'Changelog': 'https://github.com/shamitv/llama_cpp/blob/main/CHANGELOG.md',
+        'Source': 'https://github.com/shamitv/llama_cpp',
+        'Issues': 'https://github.com/shamitv/llama_cpp/issues',
+    },
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: Apache Software License',
