@@ -1,0 +1,162 @@
+# Changelog Generation Configuration
+
+github:
+  repo: "ggml-org/llama.cpp"
+  token_env: "GITHUB_TOKEN"  # Optional, for higher rate limits
+
+changelog:
+  file: "CHANGELOG.md"
+  
+categories:
+  breaking:
+    name: "Breaking Changes"
+    icon: "⚠️"
+    priority: 1
+    keywords:
+      - breaking
+      - break
+      - remove
+      - deprecate
+      - incompatible
+    labels:
+      - breaking-change
+      - breaking
+    prefixes:
+      - "breaking:"
+      - "BREAKING:"
+    markers:
+      - "BREAKING CHANGE:"
+      - "BREAKING:"
+  
+  feature:
+    name: "New Features"
+    icon: "🆕"
+    priority: 2
+    keywords:
+      - add
+      - new
+      - implement
+      - support
+      - introduce
+    labels:
+      - enhancement
+      - feature
+      - new-feature
+    prefixes:
+      - "feat:"
+      - "feature:"
+    paths: []
+  
+  performance:
+    name: "Performance Improvements"
+    icon: "🚀"
+    priority: 3
+    keywords:
+      - optimize
+      - performance
+      - faster
+      - speed
+      - improve
+      - acceleration
+    labels:
+      - performance
+      - optimization
+      - perf
+    prefixes:
+      - "perf:"
+      - "opt:"
+      - "optimize:"
+    paths: []
+  
+  bugfix:
+    name: "Bug Fixes"
+    icon: "🐛"
+    priority: 4
+    keywords:
+      - fix
+      - bug
+      - issue
+      - crash
+      - error
+      - problem
+      - resolve
+    labels:
+      - bug
+      - bugfix
+      - fix
+    prefixes:
+      - "fix:"
+      - "bugfix:"
+    paths: []
+  
+  documentation:
+    name: "Documentation"
+    icon: "📚"
+    priority: 5
+    keywords:
+      - doc
+      - docs
+      - documentation
+      - readme
+      - comment
+      - guide
+    labels:
+      - documentation
+      - docs
+    prefixes:
+      - "docs:"
+      - "doc:"
+    paths:
+      - "docs/"
+      - "README"
+  
+  example:
+    name: "Examples"
+    icon: "🎨"
+    priority: 6
+    keywords:
+      - example
+      - demo
+      - sample
+      - tutorial
+    labels:
+      - examples
+      - example
+    prefixes:
+      - "example:"
+      - "examples:"
+    paths:
+      - "examples/"
+  
+  maintenance:
+    name: "Maintenance"
+    icon: "🔧"
+    priority: 7
+    keywords:
+      - chore
+      - refactor
+      - cleanup
+      - update
+      - maintenance
+    labels:
+      - maintenance
+      - refactor
+      - chore
+    prefixes:
+      - "chore:"
+      - "refactor:"
+      - "maint:"
+    paths: []
+
+formatting:
+  max_pr_title_length: 100
+  include_pr_links: true
+  include_commit_links: false
+  group_minor_changes: true
+  minor_change_threshold: 5
+  show_full_version_list: false
+
+cache:
+  enabled: true
+  directory: ".cache/changelog"
+  ttl_hours: 24
