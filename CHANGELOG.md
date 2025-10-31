@@ -1,5 +1,95 @@
 # Changelog
 
+## 2025-10-31: Update to llama.cpp b6900
+
+- b6793 (b6793) – 2025-10-18 – https://github.com/ggml-org/llama.cpp/releases/tag/b6793
+- b6794 (b6794) – 2025-10-18 – https://github.com/ggml-org/llama.cpp/releases/tag/b6794
+- b6795 (b6795) – 2025-10-18 – https://github.com/ggml-org/llama.cpp/releases/tag/b6795
+- b6799 (b6799) – 2025-10-19 – https://github.com/ggml-org/llama.cpp/releases/tag/b6799
+- b6800 (b6800) – 2025-10-19 – https://github.com/ggml-org/llama.cpp/releases/tag/b6800
+- b6801 (b6801) – 2025-10-20 – https://github.com/ggml-org/llama.cpp/releases/tag/b6801
+- b6802 (b6802) – 2025-10-20 – https://github.com/ggml-org/llama.cpp/releases/tag/b6802
+- b6804 (b6804) – 2025-10-20 – https://github.com/ggml-org/llama.cpp/releases/tag/b6804
+- b6808 (b6808) – 2025-10-20 – https://github.com/ggml-org/llama.cpp/releases/tag/b6808
+- b6810 (b6810) – 2025-10-20 – https://github.com/ggml-org/llama.cpp/releases/tag/b6810
+- b6811 (b6811) – 2025-10-20 – https://github.com/ggml-org/llama.cpp/releases/tag/b6811
+- b6812 (b6812) – 2025-10-21 – https://github.com/ggml-org/llama.cpp/releases/tag/b6812
+- b6813 (b6813) – 2025-10-21 – https://github.com/ggml-org/llama.cpp/releases/tag/b6813
+- b6814 (b6814) – 2025-10-21 – https://github.com/ggml-org/llama.cpp/releases/tag/b6814
+- b6815 (b6815) – 2025-10-21 – https://github.com/ggml-org/llama.cpp/releases/tag/b6815
+- b6816 (b6816) – 2025-10-21 – https://github.com/ggml-org/llama.cpp/releases/tag/b6816
+- b6817 (b6817) – 2025-10-22 – https://github.com/ggml-org/llama.cpp/releases/tag/b6817
+- b6818 (b6818) – 2025-10-22 – https://github.com/ggml-org/llama.cpp/releases/tag/b6818
+- b6821 (b6821) – 2025-10-22 – https://github.com/ggml-org/llama.cpp/releases/tag/b6821
+- b6822 (b6822) – 2025-10-22 – https://github.com/ggml-org/llama.cpp/releases/tag/b6822
+- b6823 (b6823) – 2025-10-23 – https://github.com/ggml-org/llama.cpp/releases/tag/b6823
+- b6824 (b6824) – 2025-10-23 – https://github.com/ggml-org/llama.cpp/releases/tag/b6824
+- b6825 (b6825) – 2025-10-23 – https://github.com/ggml-org/llama.cpp/releases/tag/b6825
+- b6826 (b6826) – 2025-10-23 – https://github.com/ggml-org/llama.cpp/releases/tag/b6826
+- b6827 (b6827) – 2025-10-23 – https://github.com/ggml-org/llama.cpp/releases/tag/b6827
+- b6829 (b6829) – 2025-10-23 – https://github.com/ggml-org/llama.cpp/releases/tag/b6829
+- b6833 (b6833) – 2025-10-24 – https://github.com/ggml-org/llama.cpp/releases/tag/b6833
+- b6834 (b6834) – 2025-10-24 – https://github.com/ggml-org/llama.cpp/releases/tag/b6834
+- b6836 (b6836) – 2025-10-25 – https://github.com/ggml-org/llama.cpp/releases/tag/b6836
+- b6837 (b6837) – 2025-10-25 – https://github.com/ggml-org/llama.cpp/releases/tag/b6837
+- b6838 (b6838) – 2025-10-25 – https://github.com/ggml-org/llama.cpp/releases/tag/b6838
+- b6840 (b6840) – 2025-10-26 – https://github.com/ggml-org/llama.cpp/releases/tag/b6840
+- b6841 (b6841) – 2025-10-26 – https://github.com/ggml-org/llama.cpp/releases/tag/b6841
+- b6843 (b6843) – 2025-10-26 – https://github.com/ggml-org/llama.cpp/releases/tag/b6843
+- b6844 (b6844) – 2025-10-26 – https://github.com/ggml-org/llama.cpp/releases/tag/b6844
+- b6845 (b6845) – 2025-10-26 – https://github.com/ggml-org/llama.cpp/releases/tag/b6845
+- b6846 (b6846) – 2025-10-26 – https://github.com/ggml-org/llama.cpp/releases/tag/b6846
+- b6847 (b6847) – 2025-10-26 – https://github.com/ggml-org/llama.cpp/releases/tag/b6847
+- b6848 (b6848) – 2025-10-26 – https://github.com/ggml-org/llama.cpp/releases/tag/b6848
+- b6849 (b6849) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6849
+- b6850 (b6850) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6850
+- b6851 (b6851) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6851
+- b6852 (b6852) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6852
+- b6853 (b6853) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6853
+- b6854 (b6854) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6854
+- b6855 (b6855) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6855
+- b6856 (b6856) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6856
+- b6857 (b6857) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6857
+- b6858 (b6858) – 2025-10-27 – https://github.com/ggml-org/llama.cpp/releases/tag/b6858
+- b6859 (b6859) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6859
+- b6860 (b6860) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6860
+- b6861 (b6861) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6861
+- b6862 (b6862) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6862
+- b6863 (b6863) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6863
+- b6864 (b6864) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6864
+- b6865 (b6865) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6865
+- b6866 (b6866) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6866
+- b6868 (b6868) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6868
+- b6869 (b6869) – 2025-10-28 – https://github.com/ggml-org/llama.cpp/releases/tag/b6869
+- b6870 (b6870) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6870
+- b6871 (b6871) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6871
+- b6872 (b6872) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6872
+- b6873 (b6873) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6873
+- b6874 (b6874) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6874
+- b6875 (b6875) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6875
+- b6876 (b6876) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6876
+- b6877 (b6877) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6877
+- b6878 (b6878) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6878
+- b6879 (b6879) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6879
+- b6880 (b6880) – 2025-10-29 – https://github.com/ggml-org/llama.cpp/releases/tag/b6880
+- b6881 (b6881) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6881
+- b6882 (b6882) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6882
+- b6883 (b6883) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6883
+- b6884 (b6884) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6884
+- b6885 (b6885) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6885
+- b6886 (b6886) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6886
+- b6887 (b6887) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6887
+- b6888 (b6888) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6888
+- b6889 (b6889) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6889
+- b6890 (b6890) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6890
+- b6891 (b6891) – 2025-10-30 – https://github.com/ggml-org/llama.cpp/releases/tag/b6891
+- b6895 (b6895) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6895
+- b6896 (b6896) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6896
+- b6897 (b6897) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6897
+- b6898 (b6898) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6898
+- b6900 (b6900) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6900
+
+
 ## 2025-10-18: Update to llama.cpp b6792
 
 - b6670 (b6670) – 2025-10-02 – https://github.com/ggml-org/llama.cpp/releases/tag/b6670
