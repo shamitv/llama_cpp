@@ -9,7 +9,7 @@ def _read_text(path):
 
 setup(
     name='llama_cpp_pydist',
-    version='0.12.0',
+    version='0.13.0',
     packages=find_packages(),
     include_package_data=True,
     package_data={

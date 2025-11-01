@@ -1,5 +1,19 @@
 # Changelog
 
+## 2025-11-01: Update to llama.cpp b6916
+
+- b6904 (b6904) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6904
+- b6905 (b6905) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6905
+- b6906 (b6906) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6906
+- b6907 (b6907) – 2025-10-31 – https://github.com/ggml-org/llama.cpp/releases/tag/b6907
+- b6908 (b6908) – 2025-11-01 – https://github.com/ggml-org/llama.cpp/releases/tag/b6908
+- b6909 (b6909) – 2025-11-01 – https://github.com/ggml-org/llama.cpp/releases/tag/b6909
+- b6910 (b6910) – 2025-11-01 – https://github.com/ggml-org/llama.cpp/releases/tag/b6910
+- b6912 (b6912) – 2025-11-01 – https://github.com/ggml-org/llama.cpp/releases/tag/b6912
+- b6915 (b6915) – 2025-11-01 – https://github.com/ggml-org/llama.cpp/releases/tag/b6915
+- b6916 (b6916) – 2025-11-01 – https://github.com/ggml-org/llama.cpp/releases/tag/b6916
+
+
 ## 2025-10-31: Update to llama.cpp b6900
 
 - b6793 (b6793) – 2025-10-18 – https://github.com/ggml-org/llama.cpp/releases/tag/b6793
