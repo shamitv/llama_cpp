@@ -1,5 +1,1106 @@
 # Changelog
 
+## 2025-12-13: Update to llama.cpp b7376
+
+- b7285 (b7285) – 2025-12-05 – https://github.com/ggml-org/llama.cpp/releases/tag/b7285
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7285/llama-b7285-bin-win-hip-radeon-x64.zip)
+- b7296 (b7296) – 2025-12-06 – https://github.com/ggml-org/llama.cpp/releases/tag/b7296
+  - metal : fix build
+  - tests : fix context destruction
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7296/llama-b7296-bin-win-hip-radeon-x64.zip)
+- b7298 (b7298) – 2025-12-06 – https://github.com/ggml-org/llama.cpp/releases/tag/b7298
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7298/llama-b7298-bin-win-hip-radeon-x64.zip)
+- b7300 (b7300) – 2025-12-06 – https://github.com/ggml-org/llama.cpp/releases/tag/b7300
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7300/llama-b7300-bin-win-hip-radeon-x64.zip)
+- b7301 (b7301) – 2025-12-06 – https://github.com/ggml-org/llama.cpp/releases/tag/b7301
+  - llama : remove quantization sanity check
+  - llama : remove unused pruned_attention_w and is_clip_model vars
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7301/llama-b7301-bin-win-hip-radeon-x64.zip)
+- b7302 (b7302) – 2025-12-06 – https://github.com/ggml-org/llama.cpp/releases/tag/b7302
+  - Improve error handling for search path existence checks
+  - Improve cache file existence check with error code
+  - Simplify existence check for search paths
+  - Fix logging path in error message for posix_stat
+  - Update ggml/src/ggml-backend-reg.cpp
+  - Adapt to the coding standard
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7302/llama-b7302-bin-win-hip-radeon-x64.zip)
+- b7306 (b7306) – 2025-12-06 – https://github.com/ggml-org/llama.cpp/releases/tag/b7306
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7306/llama-b7306-bin-win-hip-radeon-x64.zip)
+- b7307 (b7307) – 2025-12-06 – https://github.com/ggml-org/llama.cpp/releases/tag/b7307
+  - Feat: Added vulkan circular tiling support
+  - Feat: Added cpu circular
+  - Feat: Added cuda kernels
+  - Added tests
+  - Added tests
+  - Removed non-pad operations
+  - Removed unneded changes
+  - removed backend non pad tests
+  - Update test-backend-ops.cpp
+  - Fixed comment on pad test
+  - removed trailing whitespace
+  - Removed unneded test in test-backend-ops
+  - Removed removed test from calls
+  - Update ggml/src/ggml-vulkan/vulkan-shaders/pad.comp
+  - Fixed alignment
+  - Formatting
+  - Format pad
+  - Format
+  - Clang format
+  - format
+  - format
+  - don't change so much stuff
+  - clang format and update to bool
+  - fix duplicates
+  - don't need to fix the padding
+  - make circular bool
+  - duplicate again
+  - rename vulkan to wrap around
+  - Don't need indent
+  - moved to const expr
+  - removed unneded extra line break
+  - More readable method calls
+  - Minor wording changes
+  - Added final newline
+  - Update ggml/include/ggml.h
+  - Update ggml/include/ggml.h
+  - Added circular pad ext tests
+  - Gate non circular pad devices
+  - Cleaned gating of non-circular pad devices
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7307/llama-b7307-bin-win-sycl-x64.zip)
+- b7310 (b7310) – 2025-12-06 – https://github.com/ggml-org/llama.cpp/releases/tag/b7310
+  - vulkan: perf_logger improvements
+  - Move perf_logger from device to ctx.
+  - Add an env var to control the frequency we dump the stats. If you set a very
+  - Add a fusion info string to the tracking, only log one item per fused op.
+  - Fix MUL_MAT_ID flops calculation.
+  - fix vector sizes
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7310/llama-b7310-bin-win-hip-radeon-x64.zip)
+- b7311 (b7311) – 2025-12-07 – https://github.com/ggml-org/llama.cpp/releases/tag/b7311
+  - sycl: add missing BF16 conversion support for Intel oneAPI
+  - Fix Line 645: Trailing whitespace
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7311/llama-b7311-bin-win-hip-radeon-x64.zip)
+- b7312 (b7312) – 2025-12-07 – https://github.com/ggml-org/llama.cpp/releases/tag/b7312
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7312/llama-b7312-bin-win-hip-radeon-x64.zip)
+- b7313 (b7313) – 2025-12-07 – https://github.com/ggml-org/llama.cpp/releases/tag/b7313
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7313/llama-b7313-bin-win-hip-radeon-x64.zip)
+- b7314 (b7314) – 2025-12-07 – https://github.com/ggml-org/llama.cpp/releases/tag/b7314
+  - Optimize Vulkan shader for matrix-vector multiplication
+  - Revert changes on compute_outputs and main
+  - Fix trailing whitespace
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7314/llama-b7314-bin-win-hip-radeon-x64.zip)
+- b7315 (b7315) – 2025-12-07 – https://github.com/ggml-org/llama.cpp/releases/tag/b7315
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7315/llama-b7315-bin-win-hip-radeon-x64.zip)
+- b7316 (b7316) – 2025-12-08 – https://github.com/ggml-org/llama.cpp/releases/tag/b7316
+  - ggml-cpu: add ggml_thread_cpu_relax with Zihintpause support
+  - cmake: enable RISC-V zihintpause extension for Spacemit builds
+  - readme : add ZIHINTPAUSE support for RISC-V
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7316/llama-b7316-bin-win-hip-radeon-x64.zip)
+- b7317 (b7317) – 2025-12-08 – https://github.com/ggml-org/llama.cpp/releases/tag/b7317
+  - ggml-cuda: optimize solve_tri_f32_fast and fix stride handling
+  - Switch from using shared memory for the RHS/solution matrix to a register-based approach (x_low, x_high), reducing shared memory pressure and bank conflicts.
+  - Implement explicit `fmaf` instructions for the reduction loop.
+  - Update kernel arguments to pass strides in bytes rather than elements to align with standard ggml tensor arithmetic (casting to `char *` before addition).
+  - Remove unused `MAX_K_FAST` definition.
+  - Small cleanup
+  - Remove comments in solve_tri.cu
+  - Update ggml/src/ggml-cuda/solve_tri.cu
+  - Update ggml/src/ggml-cuda/solve_tri.cu
+  - Update ggml/src/ggml-cuda/solve_tri.cu
+  - Use const for variables in solve_tri.cu
+  - Replace fmaf with more readable code
+  - remove last fmaf
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7317/llama-b7317-bin-win-hip-radeon-x64.zip)
+- b7318 (b7318) – 2025-12-08 – https://github.com/ggml-org/llama.cpp/releases/tag/b7318
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7318/llama-b7318-bin-win-hip-radeon-x64.zip)
+- b7324 (b7324) – 2025-12-08 – https://github.com/ggml-org/llama.cpp/releases/tag/b7324
+  - support bfloat16 release package
+  - add fallback file
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7324/llama-b7324-bin-win-hip-radeon-x64.zip)
+- b7325 (b7325) – 2025-12-08 – https://github.com/ggml-org/llama.cpp/releases/tag/b7325
+  - server: delegate result_state creation to server_task
+  - remove unued states
+  - add more docs
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7325/llama-b7325-bin-win-hip-radeon-x64.zip)
+- b7327 (b7327) – 2025-12-08 – https://github.com/ggml-org/llama.cpp/releases/tag/b7327
+  - use fill instead of scale_bias in grouped expert selection
+  - do not explicitly use _inplace
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7327/llama-b7327-bin-win-hip-radeon-x64.zip)
+- b7328 (b7328) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7328
+  - add support for rnj1
+  - refactor gemma3 to support rnj-1
+  - address review comments
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7328/llama-b7328-bin-win-hip-radeon-x64.zip)
+- b7329 (b7329) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7329
+  - llama : add token support to llama-grammar
+  - fix inverse token comment
+  - refactor trigger_patterns to replay tokens instead of the entire string
+  - add token documentation
+  - fix test-llama-grammar
+  - improve test cases for tokens
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7329/llama-b7329-bin-win-hip-radeon-x64.zip)
+- b7330 (b7330) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7330
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7330/llama-b7330-bin-win-hip-radeon-x64.zip)
+- b7331 (b7331) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7331
+  - cann: add support for partial RoPE and Vision mode
+  - Support for partial RoPE (rope_dims < ne0):
+  - Split tensor into head (first rope_dims dimensions) and tail portions
+  - Apply rotation only to head portion using RotaryPositionEmbedding operator
+  - Copy unrotated tail portion directly from source to destination
+  - Handle both contiguous and non-contiguous tensor layouts
+  - Support for Vision mode (GGML_ROPE_TYPE_VISION):
+  - Set rope_dims = ne0 for Vision mode to rotate entire tensor
+  - Vision mode pairs dimension i with dimension i+n_dims (where n_dims = ne0/2)
+  - No tail handling needed since entire tensor is rotated
+  - Use has_tail flag to determine execution path: head/tail splitting when
+  - Support both F32 and F16 data types with intermediate F32 conversion
+  - Copy non-contiguous tensors to contiguous buffers before calling
+  - Improve cache invalidation logic to include rope_dims and indep_sects
+  - cann: fix review comment
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7331/llama-b7331-bin-win-hip-radeon-x64.zip)
+- b7332 (b7332) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7332
+  - console: allow using arrow left/right to edit the line (with UTF-8 support)
+  - console: fix arrow keys on Windows using private-use Unicode
+  - console: add Home/End key support for Windows and Linux
+  - console: add basic Up/Down history navigation
+  - fix build
+  - console: allow using arrow left/right to edit the line (with UTF-8 support)
+  - console: fix arrow keys on Windows using private-use Unicode
+  - console: add Home/End key support for Windows and Linux
+  - console: add basic Up/Down history navigation
+  - console: remove unreachable wc == 0 check after VK switch
+  - console: add Ctrl+Left/Right word navigation
+  - Add KEY_CTRL_ARROW_LEFT and KEY_CTRL_ARROW_RIGHT codes
+  - Windows: detect CTRL modifier via dwControlKeyState
+  - Linux: parse ANSI sequences with modifier (1;5D/C)
+  - Implement move_word_left/right with space-skipping logic
+  - Refactor escape sequence parsing to accumulate params
+  - console: add Delete key support
+  - Windows: VK_DELETE detection
+  - Linux: ESC[3~ sequence parsing
+  - Forward character deletion with UTF-8 support
+  - console: implement bash-style history editing
+  - Edit any history line during UP/DOWN navigation, edits persist
+  - Pressing Enter appends edited version as new history entry
+  - Original line stay untouched in their positions
+  - clean up
+  - better history impl
+  - fix decode_utf8
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7332/llama-b7332-bin-win-hip-radeon-x64.zip)
+- b7333 (b7333) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7333
+  - nit, DeepSeek V1 MoE is 16B
+  - base type on n_ff_exp instead
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7333/llama-b7333-bin-win-hip-radeon-x64.zip)
+- b7334 (b7334) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7334
+  - This just sets the Mach-O current version to 0 to get it building
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7334/llama-b7334-bin-win-hip-radeon-x64.zip)
+- b7335 (b7335) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7335
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7335/llama-b7335-bin-win-hip-radeon-x64.zip)
+- b7336 (b7336) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7336
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7336/llama-b7336-bin-win-hip-radeon-x64.zip)
+- b7337 (b7337) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7337
+  - fix: Provide macos-specific backtrace printing to avoid terminal death
+  - fix: Add GGML_BACKTRACE_LLDB env var to enable using lldb for backtrace
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7337/llama-b7337-bin-win-hip-radeon-x64.zip)
+- b7339 (b7339) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7339
+  - Add DIAG for CUDA
+  - Refactor parameters
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7339/llama-b7339-bin-win-hip-radeon-x64.zip)
+- b7340 (b7340) – 2025-12-09 – https://github.com/ggml-org/llama.cpp/releases/tag/b7340
+  - feat: Add a batched version of ssm_conv
+  - feat: Optimized SSM_SCAN kernel for metal
+  - test: Add test-backend-ops perf tests for SSM_CONV
+  - test: Real representitive tests for SSM_CONV
+  - refactor: Use function constant for ssm_conv batch size
+  - test: backend op tests for ssm_scan from granite4 1b-h
+  - style: remove commented out templates
+  - feat: float4 version of ssm_conv_batched
+  - fix: Add missing ggml_metal_cv_free
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7340/llama-b7340-bin-win-hip-radeon-x64.zip)
+- b7342 (b7342) – 2025-12-10 – https://github.com/ggml-org/llama.cpp/releases/tag/b7342
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7342/llama-b7342-bin-win-hip-radeon-x64.zip)
+- b7343 (b7343) – 2025-12-10 – https://github.com/ggml-org/llama.cpp/releases/tag/b7343
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7343/llama-b7343-bin-win-hip-radeon-x64.zip)
+- b7345 (b7345) – 2025-12-10 – https://github.com/ggml-org/llama.cpp/releases/tag/b7345
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7345/llama-b7345-bin-win-hip-radeon-x64.zip)
+- b7347 (b7347) – 2025-12-10 – https://github.com/ggml-org/llama.cpp/releases/tag/b7347
+  - model : Qwen3-Next-80B-A3B has 48 layers
+  - model : Add 80B-A3B type name
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7347/llama-b7347-bin-win-hip-radeon-x64.zip)
+- b7348 (b7348) – 2025-12-10 – https://github.com/ggml-org/llama.cpp/releases/tag/b7348
+  - wip
+  - wip
+  - fix logging, add display info
+  - handle commands
+  - add args
+  - wip
+  - move old cli to llama-completion
+  - rm deprecation notice
+  - move server to a shared library
+  - move ci to llama-completion
+  - add loading animation
+  - add --show-timings arg
+  - add /read command, improve LOG_ERR
+  - add args for speculative decoding, enable show timings by default
+  - add arg --image and --audio
+  - fix windows build
+  - support reasoning_content
+  - fix llama2c workflow
+  - color default is auto
+  - fix merge conflicts
+  - properly fix color problem
+  - better loading spinner
+  - make sure to clean color on force-exit
+  - also clear input files on "/clear"
+  - simplify common_log_flush
+  - add warning in mtmd-cli
+  - implement console writter
+  - fix data race
+  - add attribute
+  - fix llama-completion and mtmd-cli
+  - add some notes about console::log
+  - fix compilation
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7348/llama-b7348-bin-win-hip-radeon-x64.zip)
+- b7349 (b7349) – 2025-12-10 – https://github.com/ggml-org/llama.cpp/releases/tag/b7349
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7349/llama-b7349-bin-win-hip-radeon-x64.zip)
+- b7350 (b7350) – 2025-12-11 – https://github.com/ggml-org/llama.cpp/releases/tag/b7350
+  - ggml : remove GGML_KQ_MASK_PAD constant
+  - cont : remove comment
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7350/llama-b7350-bin-win-hip-radeon-x64.zip)
+- b7351 (b7351) – 2025-12-11 – https://github.com/ggml-org/llama.cpp/releases/tag/b7351
+  - tests: update barrier test to check for race condition in active threads
+  - cpu: combine n_graph and n_threads into a single atomic update
+  - tests: add multi-graph test for test_barrier
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7351/llama-b7351-bin-win-hip-radeon-x64.zip)
+- b7352 (b7352) – 2025-12-11 – https://github.com/ggml-org/llama.cpp/releases/tag/b7352
+  - llama-server: recursive GGUF loading
+  - server : router config POC (INI-based per-model settings)
+  - server: address review feedback from @aldehir and @ngxson
+  - Simplify parser instantiation (remove arena indirection)
+  - Optimize grammar usage (ws instead of zero_or_more, remove optional wrapping)
+  - Fix last line without newline bug (+ operator instead of <<)
+  - Remove redundant end position check
+  - Remove auto-reload feature (will be separate PR per @ngxson)
+  - Keep config.ini auto-creation and template generation
+  - Preserve per-model customization logic
+  - server: adopt aldehir's line-oriented PEG parser
+  - Use p.chars(), p.negate(), p.any() instead of p.until()
+  - Support end-of-line comments (key=value # comment)
+  - Handle EOF without trailing newline correctly
+  - Strict identifier validation ([a-zA-Z_][a-zA-Z0-9_.-]*)
+  - Simplified visitor (no pending state, no trim needed)
+  - Grammar handles whitespace natively via eol rule
+  - Reject section names starting with LLAMA_ARG_*
+  - Accept only keys starting with LLAMA_ARG_*
+  - Require explicit section before key-value pairs
+  - server: fix CLI/env duplication in child processes
+  - add common/preset.cpp
+  - fix compile
+  - cont
+  - allow custom-path models
+  - add falsey check
+  - server: fix router model discovery and child process spawning
+  - Sanitize model names: replace / and \ with _ for display
+  - Recursive directory scan with relative path storage
+  - Convert relative paths to absolute when spawning children
+  - Filter router control args from child processes
+  - Refresh args after port assignment for correct port value
+  - Fallback preset lookup for compatibility
+  - Fix missing argv[0]: store server binary path before base_args parsing
+  - Revert "server: fix router model discovery and child process spawning"
+  - clarify about "no-" prefix
+  - correct render_args() to include binary path
+  - also remove arg LLAMA_ARG_MODELS_PRESET for child
+  - add co-author for ini parser code
+  - also set LLAMA_ARG_HOST
+  - add CHILD_ADDR
+  - Remove dead code
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7352/llama-b7352-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7352/llama-b7352-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7352/llama-b7352-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7352/llama-b7352-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7352/llama-b7352-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7352/llama-b7352-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7352/llama-b7352-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7352/llama-b7352-bin-win-cpu-arm64.zip)
+- b7353 (b7353) – 2025-12-11 – https://github.com/ggml-org/llama.cpp/releases/tag/b7353
+  - cli: enable jinja by default
+  - Update common/arg.cpp
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7353/llama-b7353-bin-win-hip-radeon-x64.zip)
+- b7354 (b7354) – 2025-12-11 – https://github.com/ggml-org/llama.cpp/releases/tag/b7354
+  - clip: add support for fused qkv in build_vit
+  - use bulid_ffn whenever possible
+  - fix internvl
+  - mtmd-cli: move image to beginning
+  - test script: support custom args
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7354/llama-b7354-bin-win-hip-radeon-x64.zip)
+- b7356 (b7356) – 2025-12-11 – https://github.com/ggml-org/llama.cpp/releases/tag/b7356
+  - fix test failure
+  - fix: correct scaling calculations in rope_cache_init
+  - fix: optimize element copying in rope_hex_f32 using memcpy
+  - fix: optimize loop boundaries in rope_hex_f32 for better performance
+  - feat: add profiling macros for performance measurement in operations
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7356/llama-b7356-bin-win-hip-radeon-x64.zip)
+- b7358 (b7358) – 2025-12-11 – https://github.com/ggml-org/llama.cpp/releases/tag/b7358
+  - batch : fix sequence id ownage
+  - cont : reduce allocations
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7358/llama-b7358-bin-win-hip-radeon-x64.zip)
+- b7360 (b7360) – 2025-12-11 – https://github.com/ggml-org/llama.cpp/releases/tag/b7360
+  - Extended TRI
+  - Fix whitespace
+  - chore: update webui build output
+  - Just use cuBLAS for everything...
+  - Merge both versions
+  - Remove incorrect imports causing failures for CI
+  - Still failing... remove all direct cublas imports and rely on common imports from "common.cuh"
+  - Defines for hipBlas
+  - Aaaand MUSA defines...
+  - I hate this job...
+  - Stupid typo...
+  - Update ggml/src/ggml-cuda/solve_tri.cu
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7360/llama-b7360-bin-win-hip-radeon-x64.zip)
+- b7362 (b7362) – 2025-12-12 – https://github.com/ggml-org/llama.cpp/releases/tag/b7362
+  - enable mmf for RDNA3
+  - disable mmf for some shape
+  - move some mmvf to mmf
+  - more mmfv to mmf
+  - 3 is good in mmvf
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7362/llama-b7362-bin-win-hip-radeon-x64.zip)
+- b7363 (b7363) – 2025-12-12 – https://github.com/ggml-org/llama.cpp/releases/tag/b7363
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7363/llama-b7363-bin-win-hip-radeon-x64.zip)
+- b7364 (b7364) – 2025-12-12 – https://github.com/ggml-org/llama.cpp/releases/tag/b7364
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7364/llama-b7364-bin-win-hip-radeon-x64.zip)
+- b7366 (b7366) – 2025-12-13 – https://github.com/ggml-org/llama.cpp/releases/tag/b7366
+  - arg: add -mm and -mmu as short form of --mmproj and --mmproj-url
+  - correct order
+  - update docs
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7366/llama-b7366-bin-win-hip-radeon-x64.zip)
+- b7368 (b7368) – 2025-12-12 – https://github.com/ggml-org/llama.cpp/releases/tag/b7368
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7368/llama-b7368-bin-win-hip-radeon-x64.zip)
+- b7369 (b7369) – 2025-12-12 – https://github.com/ggml-org/llama.cpp/releases/tag/b7369
+  - ggml-cpu:fix RISC-V Q4_0 repack select and RVV feature reporting
+  - using the name VLEN instead of CNT
+  - Update ggml/include/ggml-cpu.h
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7369/llama-b7369-bin-win-hip-radeon-x64.zip)
+- b7370 (b7370) – 2025-12-12 – https://github.com/ggml-org/llama.cpp/releases/tag/b7370
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7370/llama-b7370-bin-win-hip-radeon-x64.zip)
+- b7371 (b7371) – 2025-12-12 – https://github.com/ggml-org/llama.cpp/releases/tag/b7371
+  - models : fix the attn_factor for mistral3 graphs
+  - cont : rework attn_factor correction logic
+  - cont : make deepseek2 consistent
+  - cont : add TODO
+  - cont : special-case DSv2
+  - cont : revert Mistral 3 Large changes
+  - cont : fix DS2 to use the original attn_factor
+  - cont : minor comments
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7371/llama-b7371-bin-win-hip-radeon-x64.zip)
+- b7372 (b7372) – 2025-12-13 – https://github.com/ggml-org/llama.cpp/releases/tag/b7372
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7372/llama-b7372-bin-win-hip-radeon-x64.zip)
+- b7374 (b7374) – 2025-12-13 – https://github.com/ggml-org/llama.cpp/releases/tag/b7374
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7374/llama-b7374-bin-910b-openEuler-aarch64.tar.gz)
+- b7375 (b7375) – 2025-12-13 – https://github.com/ggml-org/llama.cpp/releases/tag/b7375
+  - clip: move model cgraphs into their own files
+  - more explicit enums
+  - fix linux build
+  - fix naming
+  - missing headers
+  - nits: add comments for contributors
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7375/llama-b7375-bin-910b-openEuler-aarch64.tar.gz)
+- b7376 (b7376) – 2025-12-13 – https://github.com/ggml-org/llama.cpp/releases/tag/b7376
+  - args: support negated args
+  - update docs
+  - fix typo
+  - add more neg options
+  - Apply suggestions from code review
+  - rm duplicated arg
+  - fix LLAMA_ARG_NO_HOST
+  - add test
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-xcframework.tar.gz)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7376/llama-b7376-bin-910b-openEuler-aarch64.tar.gz)
+
+
 ## 2025-12-05: Update to llama.cpp b7278
 
 - b7218 (b7218) – 2025-12-01 – https://github.com/ggml-org/llama.cpp/releases/tag/b7218
