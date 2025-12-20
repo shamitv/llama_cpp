@@ -8,6 +8,7 @@ and summaries.
 """
 
 import os
+import re
 import sys
 import logging
 from pathlib import Path
@@ -29,6 +30,8 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+DOWNLOAD_LINK_PATTERN = re.compile(r'https://github\.com/ggml-org/llama\.cpp/releases/download/')
 
 
 class ChangelogManager:
@@ -138,6 +141,8 @@ class ChangelogManager:
         
         for line in lines[:10]:  # First 10 lines only
             line = line.strip()
+            if self._is_download_link(line):
+                continue
             if line and not line.startswith('#'):
                 if line.startswith(('- ', '* ', '+ ')):
                     description_lines.append(line[2:])
@@ -145,6 +150,11 @@ class ChangelogManager:
                     description_lines.append(line)
         
         return description_lines if description_lines else None
+
+    @staticmethod
+    def _is_download_link(line: str) -> bool:
+        """Skip lines that look like release download entries."""
+        return bool(DOWNLOAD_LINK_PATTERN.search(line))
     
     def categorize_changes(self, changes: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
         """
