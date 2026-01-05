@@ -1,5 +1,150 @@
 # Changelog
 
+## 2026-01-05: Update to llama.cpp b7631
+
+- b7622 (b7622) – 2026-01-03 – https://github.com/ggml-org/llama.cpp/releases/tag/b7622
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-xcframework.zip)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-win-cuda-12.4-x64.zip) - [CUDA 12.4 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7622/cudart-llama-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-win-cuda-13.1-x64.zip) - [CUDA 13.1 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7622/cudart-llama-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7622/llama-b7622-bin-910b-openEuler-aarch64.tar.gz)
+- b7624 (b7624) – 2026-01-04 – https://github.com/ggml-org/llama.cpp/releases/tag/b7624
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-xcframework.zip)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-win-cuda-12.4-x64.zip) - [CUDA 12.4 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7624/cudart-llama-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-win-cuda-13.1-x64.zip) - [CUDA 13.1 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7624/cudart-llama-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7624/llama-b7624-bin-910b-openEuler-aarch64.tar.gz)
+- b7625 (b7625) – 2026-01-04 – https://github.com/ggml-org/llama.cpp/releases/tag/b7625
+  - CUDA: disable cuda graph when using n-cpu-moe
+  - call ggml_cuda_set_device
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-xcframework.zip)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-win-cuda-12.4-x64.zip) - [CUDA 12.4 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7625/cudart-llama-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-win-cuda-13.1-x64.zip) - [CUDA 13.1 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7625/cudart-llama-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7625/llama-b7625-bin-910b-openEuler-aarch64.tar.gz)
+- b7626 (b7626) – 2026-01-04 – https://github.com/ggml-org/llama.cpp/releases/tag/b7626
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-xcframework.zip)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-win-cuda-12.4-x64.zip) - [CUDA 12.4 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7626/cudart-llama-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-win-cuda-13.1-x64.zip) - [CUDA 13.1 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7626/cudart-llama-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7626/llama-b7626-bin-910b-openEuler-aarch64.tar.gz)
+- b7628 (b7628) – 2026-01-05 – https://github.com/ggml-org/llama.cpp/releases/tag/b7628
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-xcframework.zip)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-win-cuda-12.4-x64.zip) - [CUDA 12.4 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7628/cudart-llama-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-win-cuda-13.1-x64.zip) - [CUDA 13.1 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7628/cudart-llama-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7628/llama-b7628-bin-910b-openEuler-aarch64.tar.gz)
+- b7630 (b7630) – 2026-01-05 – https://github.com/ggml-org/llama.cpp/releases/tag/b7630
+  - Implement ggml_cann_op_add_rms_norm_fused() using ACLNN AddRmsNorm
+  - Add ggml_cann_can_fuse() to check fusion eligibility
+  - Integrate fusion logic into computation graph evaluation
+  - Add test cases for ADD + RMS_NORM fusion
+  - Update documentation with new environment variable
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-xcframework.zip)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-win-cuda-12.4-x64.zip) - [CUDA 12.4 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7630/cudart-llama-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-win-cuda-13.1-x64.zip) - [CUDA 13.1 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7630/cudart-llama-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7630/llama-b7630-bin-910b-openEuler-aarch64.tar.gz)
+- b7631 (b7631) – 2026-01-05 – https://github.com/ggml-org/llama.cpp/releases/tag/b7631
+  - refactor rope_freq_base/scale_swa conversion and init
+  - safe defaults for unknowns
+  - update relevant models
+  - grammar
+  - add get_rope_freq_scale to modern-bert
+  - const
+  - const
+  - log swa info
+  - [macOS Apple Silicon (arm64)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-macos-arm64.tar.gz)
+  - [macOS Intel (x64)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-macos-x64.tar.gz)
+  - [iOS XCFramework](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-xcframework.zip)
+  - [Ubuntu x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-ubuntu-x64.tar.gz)
+  - [Ubuntu x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-ubuntu-vulkan-x64.tar.gz)
+  - [Ubuntu s390x (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-ubuntu-s390x.tar.gz)
+  - [Windows x64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-win-cpu-x64.zip)
+  - [Windows arm64 (CPU)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-win-cpu-arm64.zip)
+  - [Windows x64 (CUDA 12)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-win-cuda-12.4-x64.zip) - [CUDA 12.4 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7631/cudart-llama-bin-win-cuda-12.4-x64.zip)
+  - [Windows x64 (CUDA 13)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-win-cuda-13.1-x64.zip) - [CUDA 13.1 DLLs](https://github.com/ggml-org/llama.cpp/releases/download/b7631/cudart-llama-bin-win-cuda-13.1-x64.zip)
+  - [Windows x64 (Vulkan)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-win-vulkan-x64.zip)
+  - [Windows x64 (SYCL)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-win-sycl-x64.zip)
+  - [Windows x64 (HIP)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-win-hip-radeon-x64.zip)
+  - [openEuler x86 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-310p-openEuler-x86.tar.gz)
+  - [openEuler x86 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-910b-openEuler-x86.tar.gz)
+  - [openEuler aarch64 (310p)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-310p-openEuler-aarch64.tar.gz)
+  - [openEuler aarch64 (910b)](https://github.com/ggml-org/llama.cpp/releases/download/b7631/llama-b7631-bin-910b-openEuler-aarch64.tar.gz)
+
+
 ## 2026-01-03: Update to llama.cpp b7621
 
 - b7489 (b7489) – 2025-12-20 – https://github.com/ggml-org/llama.cpp/releases/tag/b7489
