@@ -6,9 +6,14 @@ import shutil
 import glob # For finding .egg-info directories
 import logging  # Added for logging
 import json
+import sys
 from datetime import datetime, timezone
 
-from scripts.generate_changelog import ChangelogManager
+SCRIPTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
+if SCRIPTS_PATH not in sys.path:
+    sys.path.insert(0, SCRIPTS_PATH)
+
+from generate_changelog import ChangelogManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
