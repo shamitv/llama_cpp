@@ -8,6 +8,8 @@ import logging  # Added for logging
 import json
 from datetime import datetime, timezone
 
+from scripts.generate_changelog import ChangelogManager
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -477,108 +479,40 @@ def _extract_summary_lines(md: str, max_lines: int = 10):
 
 
 def update_changelog(old_tag: str, new_tag: str):
-    """Prepend a new section to CHANGELOG.md with llama.cpp changes since last release.
-    Idempotent: if an entry for new_tag already exists in the file, skip.
-    """
+    """Prepend a new section to CHANGELOG.md using the newer changelog generator."""
     new_norm = _normalize_llama_tag(new_tag) if new_tag else None
     if not new_norm:
         logging.info("No new tag resolved; skipping changelog update.")
         return
 
-    # Read existing changelog if present
-    existing = ""
-    if os.path.exists(CHANGELOG_PATH):
-        try:
-            with open(CHANGELOG_PATH, "r", encoding="utf-8") as f:
-                existing = f.read()
-        except Exception as e:
-            logging.warning(f"Could not read existing CHANGELOG.md: {e}")
+    from_norm = _normalize_llama_tag(old_tag) if old_tag else new_norm
+    if not from_norm:
+        from_norm = new_norm
 
-    changes = collect_llama_changes_between_tags(old_tag, new_tag)
-    if not changes:
-        logging.info("No changes collected from llama.cpp releases; skipping changelog update.")
+    if _parse_llama_tag_number(new_norm) < 0:
+        logging.warning(f"New submodule tag '{new_tag}' not parseable; skipping changelog update.")
         return
 
-    body_lines = []
-    for rel in changes:
-        rel_date = rel.get("published_at")
-        try:
-            # Normalize date display
-            if rel_date:
-                rel_date = datetime.fromisoformat(rel_date.replace("Z", "+00:00")).date().isoformat()
-        except Exception:
-            rel_date = rel.get("published_at") or ""
+    if _parse_llama_tag_number(from_norm) < 0:
+        logging.warning(f"Old submodule tag '{old_tag}' not parseable; using {new_norm} only.")
+        from_norm = new_norm
 
-        title = rel.get("name") or rel.get("tag_name")
-        url = rel.get("html_url")
-        body_lines.append(f"- {title} ({rel.get('tag_name')}) – {rel_date} – {url}")
-        md_body = rel.get("body", "")
-        bullets = _extract_bullets_from_markdown(md_body)
-        if bullets:
-            for b in bullets[:50]:  # cap to avoid overly long sections
-                # use nested bullet for readability
-                body_lines.append(f"  - {b}")
-        else:
-            # Fallback to a few summary lines if no bullets were discovered
-            summary = _extract_summary_lines(md_body, max_lines=8)
-            for s in summary:
-                body_lines.append(f"  - {s}")
-    body = "\n".join(body_lines) + "\n\n"
+    config_path = os.path.join(PROJECT_ROOT, "scripts", "changelog", "config.yaml")
+    manager = ChangelogManager(config_path=config_path)
 
-    intro = (
-        "# Changelog\n\n"
-        "This file lists notable changes synchronized from upstream llama.cpp releases.\n"
-        "Each entry corresponds to the vendor submodule update in this package.\n\n"
-    )
+    today = datetime.now(timezone.utc).date().isoformat()
+    section = manager.generate_changelog_section(from_norm, new_norm, date=today)
 
-    # If the section for this tag already exists, replace its contents with detailed bullets
-    if existing and f"llama.cpp {new_norm}" in existing:
-        try:
-            # Find the header line for this tag
-            m = re.search(rf"^## .*?Update to llama\\.cpp {re.escape(new_norm)}\s*$", existing, flags=re.MULTILINE)
-            if not m:
-                raise ValueError("Header for existing section not found")
-
-            header_start = m.start()
-            # Find end of header line
-            nl_idx = existing.find("\n", m.end())
-            header_end = len(existing) if nl_idx == -1 else nl_idx + 1
-
-            # Find the start of next section or EOF
-            m_next = re.search(r"^## ", existing[header_end:], flags=re.MULTILINE)
-            section_end = len(existing) if not m_next else header_end + m_next.start()
-
-            original_header_line = existing[header_start:header_end]
-            replacement = original_header_line + "\n" + body
-            combined = existing[:header_start] + replacement + existing[section_end:]
-        except Exception as e:
-            logging.warning(f"Failed to enrich existing changelog section: {e}; will prepend a new section instead.")
-            today = datetime.now(timezone.utc).date().isoformat()
-            header = f"## {today}: Update to llama.cpp {new_norm}\n\n"
-            new_content = header + body
-            combined = intro + new_content + (existing or "")
-    else:
-        today = datetime.now(timezone.utc).date().isoformat()
-        header = f"## {today}: Update to llama.cpp {new_norm}\n\n"
-        new_content = header + body
-        if existing:
-            if existing.lstrip().startswith("# Changelog"):
-                combined = existing
-                # Insert new_content after the first header line
-                idx = combined.find("\n")
-                if idx != -1:
-                    combined = combined[:idx+1] + "\n" + new_content + combined[idx+1:]
-                else:
-                    combined = intro + new_content + existing
-            else:
-                combined = intro + new_content + existing
-        else:
-            combined = intro + new_content
+    if not section.strip():
+        logging.info("Generated changelog section is empty; skipping changelog update.")
+        return
 
     try:
-        with open(CHANGELOG_PATH, "w", encoding="utf-8") as f:
-            f.write(combined)
-        logging.info(f"CHANGELOG.md updated with llama.cpp changes up to {new_norm}.")
+        updated = manager.generator.update_changelog(CHANGELOG_PATH, section)
+        if updated:
+            logging.info(f"CHANGELOG.md updated with llama.cpp changes up to {new_norm}.")
+        else:
+            logging.warning("Changelog generator did not update CHANGELOG.md.")
     except Exception as e:
         logging.error(f"Failed to write CHANGELOG.md: {e}")
 
