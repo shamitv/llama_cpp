@@ -113,7 +113,13 @@ class ChangeCategorizer:
         # Combine text for analysis
         text = title.lower()
         if description:
-            text += ' ' + description.lower()
+            if isinstance(description, list):
+                description_text = ' '.join(str(item) for item in description)
+            elif isinstance(description, str):
+                description_text = description
+            else:
+                description_text = str(description)
+            text += ' ' + description_text.lower()
         
         labels = labels or []
         file_paths = file_paths or []
