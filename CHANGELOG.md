@@ -1,5 +1,75 @@
 # Changelog
 
+## 2026-01-21: Update to llama.cpp b7788
+
+### Summary
+Updated llama.cpp from b7772 to b7788, incorporating 13 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b7782**: ggml : cleanup path_str() ([#18928](https://github.com/ggml-org/llama.cpp/pull/18928))
+  - Remove pragmas as `std::codecvt_utf8` is not used.
+  - Avoid implicit `strlen()`.
+
+#### 🆕 New Features
+- **b7774**: ggml : add ggml_build_forward_select ([#18550](https://github.com/ggml-org/llama.cpp/pull/18550))
+  - target #18547
+  - alt #18549
+  - Add `GGML_TENSOR_FLAG_COMPUTE` flag indicating that a tensor in the graph must be computed
+- **b7777**: jinja : fix undefined keys and attributes and int/float as bool ([#18924](https://github.com/ggml-org/llama.cpp/pull/18924))
+  - Return `undefined` on undefined keys and attributes.
+  - Integers and floats can be represented as bools.
+  - Added `falsy` tests.
+
+#### 🚀 Performance Improvements
+- **b7781**: metal : enable FA for MLA heads ([#18950](https://github.com/ggml-org/llama.cpp/pull/18950))
+  - ref #18936
+  - Re-enable FA for K head size of 576 (MQA mode of MLA) and adjust simdgroups and loop unrolling for performance.
+- **b7783**: CUDA: Replace init_offsets kernel with iterators in cub-based argsort ([#18930](https://github.com/ggml-org/llama.cpp/pull/18930))
+  - This is mostly a QOL improvement, saving us the cost of materializing the iterator.
+  - --- before
+  - ```
+
+#### 🐛 Bug Fixes
+- **b7772**: DirectIO Model Loading: Extend and fix Fallback ([#18887](https://github.com/ggml-org/llama.cpp/pull/18887))
+  - Due to issues with the DirectIO model loading path on Android this PR adds `EINVAL` errors to the fallback condition. Also there was a bug in the fallback to `mmap` in case `open` with the DirectIO flag fails.
+- **b7787**: gguf: display strerrno when cant load a model ([#18884](https://github.com/ggml-org/llama.cpp/pull/18884))
+  - I've had issues loading models with llama-server:
+  - [44039] E gguf_init_from_file: failed to open GGUF file 'mistral-7b-v0.1.Q8_0.gguf'
+  - and I was sure it could access the file. Seems like --models-dir and --models-presets dont interact like I thought they would but I salvaged this snippet that helps troubleshooting
+- **b7788**: Fix GLM 4.7 Lite MoE gating func ([#18980](https://github.com/ggml-org/llama.cpp/pull/18980))
+  - GLM 4.7 Lite uses SIGMOID, not SOFTMAX like Deepseek.
+
+
+### Additional Changes
+5 minor improvements: 1 documentation, 4 examples.
+
+- **b7786**: CUDA: Fix builds for older CCCL versions by ifdefing strided_iterator ([#18964](https://github.com/ggml-org/llama.cpp/pull/18964))
+  - Strided iterator was added in [CCCL 3.1](https://github.com/NVIDIA/cccl/releases/tag/v3.1.0), which is packaged into [CTK
+  - 13.1](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#id5)
+  - Should fix #18960
+- **b7775**: server: fix memory reservations in populate_token_probs ([#18787](https://github.com/ggml-org/llama.cpp/pull/18787))
+  - Fixes the two Vector::reserve calls in the populate_token_probs function.
+  - In case post_sampling is true the code now only reserves as much space in the Vector as is needed for the requested number of logprobs. This prevents reserving large amounts of memory that are not used.
+  - In case post_sampling is false the code now clamps the reserved size to the maximum number of tokens the model supports. This prevents reserving large amounts of unused memory when the client requests more token logprobs than the model supports and, in extreme cases, crashes from invalid memory allocations.
+- **b7779**: server : refactor oai_parser_opt, move it to server_chat_params ([#18937](https://github.com/ggml-org/llama.cpp/pull/18937))
+  - In this PR:
+  - Rename `oaicompat_parser_options` --> `server_chat_params`
+  - Store `common_chat_templates_ptr` inside it
+- **b7784**: cli : fix reasoning responses in CLI ([#18961](https://github.com/ggml-org/llama.cpp/pull/18961))
+  - The chat format was not populate to task state in CLI, so reasoning content was not parsed correctly
+  - With this PR, GLM-4.7 now works correctly on CLI:
+  - <img width="996" height="304" alt="image" src="https://github.com/user-attachments/assets/a03545a5-1f32-4c53-acf5-81e58580057d" />
+- **b7785**: common, server : use the same User-Agent by default ([#18957](https://github.com/ggml-org/llama.cpp/pull/18957))
+  - This commit also ensures that if a custom User-Agent is used, it will be the only one sent.
+
+### Full Commit Range
+- b7772 to b7788 (13 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7772...b7788
+
+---
+
 ## 2026-01-05: Update to llama.cpp b7631
 
 - b7622 (b7622) – 2026-01-03 – https://github.com/ggml-org/llama.cpp/releases/tag/b7622
