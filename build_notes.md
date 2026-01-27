@@ -75,6 +75,9 @@ chmod +x build_package.py
 
 # Run the script from the project root
 python3 build_package.py
+
+# Regenerate setup.py with the current version (no bump), then build
+python3 build_package.py --regenerate-current-version
 ```
 The resulting distributions will be in the `dist/` directory.
 

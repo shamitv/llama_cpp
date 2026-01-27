@@ -1,4 +1,5 @@
 import os
+import argparse
 import subprocess
 import re # For regex operations on setup.py
 import urllib.request
@@ -522,6 +523,17 @@ def update_changelog(old_tag: str, new_tag: str):
         logging.error(f"Failed to write CHANGELOG.md: {e}")
 
 def main():
+    parser = argparse.ArgumentParser(description="Build llama_cpp_pydist package")
+    parser.add_argument(
+        "--regenerate-current-version",
+        action="store_true",
+        help=(
+            "Rewrite setup.py with the current version and use it for the build "
+            "(no version bump even if submodule tag changes)."
+        ),
+    )
+    args = parser.parse_args()
+
     os.chdir(PROJECT_ROOT) # Ensure commands run from project root
 
     current_package_version = get_current_version(SETUP_PY_PATH)
@@ -539,9 +551,14 @@ def main():
     logging.info("Getting submodule tag after update...")
     new_submodule_tag = get_submodule_tag()
 
-    effective_version_for_build, current_package_version = handle_version_increment_on_tag_change(
-        old_submodule_tag, new_submodule_tag, current_package_version, SETUP_PY_PATH
-    )
+    if args.regenerate_current_version:
+        logging.info("Regenerating current package version in setup.py (no bump).")
+        update_version_in_setup_py(SETUP_PY_PATH, current_package_version, current_package_version)
+        effective_version_for_build = current_package_version
+    else:
+        effective_version_for_build, current_package_version = handle_version_increment_on_tag_change(
+            old_submodule_tag, new_submodule_tag, current_package_version, SETUP_PY_PATH
+        )
 
     # Determine submodule tag (this is now effectively new_submodule_tag)
     submodule_tag = new_submodule_tag 
