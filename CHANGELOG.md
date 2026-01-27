@@ -1,5 +1,178 @@
 # Changelog
 
+## 2026-01-27: Update to llama.cpp b7845
+
+### Summary
+Updated llama.cpp from b7837 to b7845, incorporating 8 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b7839**: graph : fix nkvo offload with FA ([#19105](https://github.com/ggml-org/llama.cpp/pull/19105))
+  - fix #19096
+  - The `ggml_flash_attn_ext` was not being offloaded to the CPU when `-nkvo` is specified.
+  - Also remove obsolete `strcmp(name, "kqv_merged_cont")` check in the graph callback.
+
+#### 🆕 New Features
+- **b7837**: model : add correct type for GLM 4.7 Flash ([#19106](https://github.com/ggml-org/llama.cpp/pull/19106))
+  - Fix the displayed model type in the logs:
+  - ```bash
+  - deepseek2 ?B Q8_0
+- **b7843**: common : clarify HTTPS build options in error message ([#19103](https://github.com/ggml-org/llama.cpp/pull/19103))
+  - This commit updates the https error message to provide clearer instructions for users who encounter the "HTTPS is not supported" error.
+  - The motivation for this is that it might not be clear to users that only one of these options are needed to enable HTTPS support. The LLAMA_OPENSSL option is also added to the message to cover all possible build configurations.
+- **b7845**: ggml-cpu: aarm64: q5_K repack gemm and gemv (and generic) implementations (i8mm) ([#18860](https://github.com/ggml-org/llama.cpp/pull/18860))
+  - This PR implements the REPACK version of q5_K, following most of the existing design used for q4_K, since Q5_K only differs from q4_K in having the `qh` field with the additional bit.
+  - Most of the code is shared, but I didn't know how to abstract the common patterns without creating a convoluted mess of functions. Since only Q4_K and Q5_K share the same 6bit scales and mins decode, I opted to duplicate the code.
+  - I also moved around some declarations for Q2_K because the structure seemed weird (it's inverted with what I've seen in quants.c). The Q2_K function declarations were left where they were to avoid polluting the diff and messing the blame. If you want me to revert it, just say so.
+- **b7845**: ggml-cpu: aarm64: q6_K repack gemm and gemv (and generic) implementations (i8mm) #18860 ([#18888](https://github.com/ggml-org/llama.cpp/pull/18888))
+  - Continuation of repack work  for ARM, since `q4_K_M` and `q5_K_M` quantizations spend ~%20 of compute time on q6_K layers.
+  - [x] Still pending rebasing on top of #18860 if that gets merged.
+  - Same testing practices from the other repack implementations.
+
+#### 🚀 Performance Improvements
+- **b7841**: opencl: add flattened q6_K mv ([#19054](https://github.com/ggml-org/llama.cpp/pull/19054))
+  - This PR adds flattened q6_K mv and renames the existing q6_K mv kernel file to better reflect what the kernel does. There should be no performance improvement, but will enable further optimizations.
+- **b7842**: ggml-cpu: Enable FP16 MMA kernels on PPC ([#19060](https://github.com/ggml-org/llama.cpp/pull/19060))
+  - This change introduces a unified FP16/BF16 MMA kernel selection via mma_instr,
+  - allowing FP16 models to leverage Power MMA instructions instead of falling back to scalar/vector paths.
+  - Performance impact (Power10, 10 threads, Mistral-7B FP16, llama-batched-bench):
+
+
+### Additional Changes
+1 minor improvements: 1 documentation.
+
+- **b7844**: [CUDA] Reduce CPU-side stalls due to the CUDA command buffer being full ([#19042](https://github.com/ggml-org/llama.cpp/pull/19042))
+  - With pipeline parallelism, during prompt processing, the CPU-side CUDA command buffer gets full, stalling the CPU. Due to this, enough work doesn't get submitted to the GPU, resulting in bubbles in the GPU timeline. This PR fixes this by setting the CUDA environment variable CUDA_SCALE_LAUNCH_QUEUES to 4x to increase the command buffer size.
+  - The NSight profile below shows the issue in more detail:
+  - <img width="1958" height="983" alt="image" src="https://github.com/user-attachments/assets/3efdaaf3-dd58-464b-a9d1-3cd31d3f0030" />
+
+### Full Commit Range
+- b7837 to b7845 (8 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7837...b7845
+
+---
+
+## 2026-01-26: Update to llama.cpp b7837
+
+### Summary
+Updated llama.cpp from b7837 to b7837, incorporating 1 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b7837**: model : add correct type for GLM 4.7 Flash ([#19106](https://github.com/ggml-org/llama.cpp/pull/19106))
+  - Fix the displayed model type in the logs:
+  - ```bash
+  - deepseek2 ?B Q8_0
+
+
+### Full Commit Range
+- b7837 to b7837 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7837...b7837
+
+---
+
+## 2026-01-26: Update to llama.cpp b7837
+
+### Summary
+Updated llama.cpp from b7837 to b7837, incorporating 1 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b7837**: model : add correct type for GLM 4.7 Flash ([#19106](https://github.com/ggml-org/llama.cpp/pull/19106))
+  - Fix the displayed model type in the logs:
+  - ```bash
+  - deepseek2 ?B Q8_0
+
+
+### Full Commit Range
+- b7837 to b7837 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7837...b7837
+
+---
+
+## 2026-01-26: Update to llama.cpp b7837
+
+### Summary
+Updated llama.cpp from b7837 to b7837, incorporating 1 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b7837**: model : add correct type for GLM 4.7 Flash ([#19106](https://github.com/ggml-org/llama.cpp/pull/19106))
+  - Fix the displayed model type in the logs:
+  - ```bash
+  - deepseek2 ?B Q8_0
+
+
+### Full Commit Range
+- b7837 to b7837 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7837...b7837
+
+---
+
+## 2026-01-26: Update to llama.cpp b7836
+
+### Summary
+Updated llama.cpp from b7836 to b7836, incorporating 1 upstream commits with performance improvements.
+
+### Notable Changes
+
+#### 🚀 Performance Improvements
+- **b7836**: CUDA: faster FA for GQA > 1 but not power of 2 ([#19092](https://github.com/ggml-org/llama.cpp/pull/19092))
+  - This PR generalizes the CUDA MMA FlashAttention kernel to enable the GQA optimizations for models where the ratio between the number of Q heads and the number of K/V heads is not a power of 2. This is done by simply padding the Q columns per CUDA block to the next higher power of 2. This wastes a bit of compute but particularly for small batch sizes the kernel is I/O-bound anyways.
+  - On Ampere or newer this improves performance of GLM 4.7 Flash as well as some random models like Granite 3.0 with a GQA ratio of 3. On Volta the new code path is slower than master so it's disabled. On RDNA4 it seems to be faster but as of right now the performance of the MMA kernel is bad on RDNA for head sizes > 128 so there is no benefit for GLM 4.7 Flash.
+  - <details>
+
+
+### Full Commit Range
+- b7836 to b7836 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7836...b7836
+
+---
+
+## 2026-01-26: Update to llama.cpp b7836
+
+### Summary
+Updated llama.cpp from b7836 to b7836, incorporating 1 upstream commits with performance improvements.
+
+### Notable Changes
+
+#### 🚀 Performance Improvements
+- **b7836**: CUDA: faster FA for GQA > 1 but not power of 2 ([#19092](https://github.com/ggml-org/llama.cpp/pull/19092))
+  - This PR generalizes the CUDA MMA FlashAttention kernel to enable the GQA optimizations for models where the ratio between the number of Q heads and the number of K/V heads is not a power of 2. This is done by simply padding the Q columns per CUDA block to the next higher power of 2. This wastes a bit of compute but particularly for small batch sizes the kernel is I/O-bound anyways.
+  - On Ampere or newer this improves performance of GLM 4.7 Flash as well as some random models like Granite 3.0 with a GQA ratio of 3. On Volta the new code path is slower than master so it's disabled. On RDNA4 it seems to be faster but as of right now the performance of the MMA kernel is bad on RDNA for head sizes > 128 so there is no benefit for GLM 4.7 Flash.
+  - <details>
+
+
+### Full Commit Range
+- b7836 to b7836 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7836...b7836
+
+---
+
+## 2026-01-26: Update to llama.cpp b7836
+
+### Summary
+Updated llama.cpp from b7836 to b7836, incorporating 1 upstream commits with performance improvements.
+
+### Notable Changes
+
+#### 🚀 Performance Improvements
+- **b7836**: CUDA: faster FA for GQA > 1 but not power of 2 ([#19092](https://github.com/ggml-org/llama.cpp/pull/19092))
+  - This PR generalizes the CUDA MMA FlashAttention kernel to enable the GQA optimizations for models where the ratio between the number of Q heads and the number of K/V heads is not a power of 2. This is done by simply padding the Q columns per CUDA block to the next higher power of 2. This wastes a bit of compute but particularly for small batch sizes the kernel is I/O-bound anyways.
+  - On Ampere or newer this improves performance of GLM 4.7 Flash as well as some random models like Granite 3.0 with a GQA ratio of 3. On Volta the new code path is slower than master so it's disabled. On RDNA4 it seems to be faster but as of right now the performance of the MMA kernel is bad on RDNA for head sizes > 128 so there is no benefit for GLM 4.7 Flash.
+  - <details>
+
+
+### Full Commit Range
+- b7836 to b7836 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7836...b7836
+
+---
+
 ## 2026-01-21: Update to llama.cpp b7788
 
 ### Summary
