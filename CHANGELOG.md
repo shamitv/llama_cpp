@@ -1,5 +1,108 @@
 # Changelog
 
+## 2026-01-29: Update to llama.cpp b7871
+
+### Summary
+Updated llama.cpp from b7847 to b7871, incorporating 22 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b7850**: ggml-zendnn : update ZenDNN git tag to main branch ([#19133](https://github.com/ggml-org/llama.cpp/pull/19133))
+  - This PR is related to ZenDNN removed their zendnnl branch and moved all the code to main
+  - Right now our code is still looking for the old zendnnl branch which no longer exists, so builds break.
+  - This fixes it by pointing to the new main branch instead
+- **b7852**: sampling : remove sampling branching in output_reserve ([#18811](https://github.com/ggml-org/llama.cpp/pull/18811))
+  - This commit updates output_reserve in llama-context.cpp to always allocate sampling buffers regardless of whether sampling is needed for the current batch.
+  - The motivation for this is to avoid reallocations and branching based on the sampling requirements of the batch.
+- **b7862**: ggml-sycl: remove unused syclcompat header ([#19140](https://github.com/ggml-org/llama.cpp/pull/19140))
+  - The `syclcompat/math.hpp` is not used anymore. The change that introduced it was successfully reverted (https://github.com/ggml-org/llama.cpp/pull/17826). This include path will become obsolete and dropped in oneAPI 2026.0 effectively breaking `ggml-sycl` builds.
+  - *Make sure to read the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) before submitting a PR*
+- **b7868**: CUDA: refactor topk-moe to enable more models (GLM 4.7, Nemotron etc.) ([#19126](https://github.com/ggml-org/llama.cpp/pull/19126))
+  - Refactor the topk-moe to enabling various combination of topk-moe. Hopefully this will cover most models. I removed some templates from the code and only kept the bias because it has a extra warp shuffle, the rest of the template code does not provide any significant speedup.
+  - 3090
+  - | Model                 | Test   |   t/s master |   t/s topk-cuda-refactor |   Speedup |
+
+#### 🆕 New Features
+- **b7849**: jinja : implement mixed type object keys ([#18955](https://github.com/ggml-org/llama.cpp/pull/18955))
+  - Allow all hashable types as object keys, taking care to replicate special python/jinja behavior between `int`/`float`/`bool`.
+  - Fixed array/object output with `string` filter.
+  - Fixed object `tojson` output (did not properly escape key string).
+- **b7860**: CUDA: use mul_mat_q kernels by default ([#2683](https://github.com/ggml-org/llama.cpp/pull/2683))
+  - There seem to have been no further reports of problems with the mul_mat_q kernels so I think it's fine to use them by default. This PR does just that and replaces the `-mmq`/`--mul-mat-q` CLI argument with `-nommq`/`--no-mul-mat-q`. Unless I'm mistaken the long-term plan is to also add equivalent CPU kernels for matrix matrix multiplications. Ideally I think the same CLI argument should then be used for switching the algorithm. So if you think that "mul_mat_q" is a bad name for matrix multiplications using quantized data now would be a good time to tell me.
+- **b7870**: arg : add -kvu to llama-batched-bench ([#19172](https://github.com/ggml-org/llama.cpp/pull/19172))
+- **b7871**: HIP: add mmf for CDNA ([#18896](https://github.com/ggml-org/llama.cpp/pull/18896))
+  - Add mmf for CDNA, CDNA3 is passed, it will be very helpful if anyone can test it on CDNA2 and CDNA1, thank you.
+  - [x] Refactor mmf to make rows_per_block as input parameter.
+  - [x] Pass MUL_MAT and MUL_MAT_ID.
+
+#### 🚀 Performance Improvements
+- **b7847**: CUDA: tune GLM 4.7 Flash FA kernel selection logic ([#19097](https://github.com/ggml-org/llama.cpp/pull/19097))
+  - Follow-up to https://github.com/ggml-org/llama.cpp/pull/19092 .
+  - Adjusts the kernel selection logic as a function of context depth to squeeze out a few more % on Ampere/Blackwell.
+  - | GPU      | Model               |   Microbatch size | Test          |   t/s master |   t/s 8a8b9a8bd |   Speedup |
+- **b7858**: ggml: new backend for Virglrenderer API Remoting acceleration (v2) ([#18718](https://github.com/ggml-org/llama.cpp/pull/18718))
+  - This is a follow up of https://github.com/ggml-org/llama.cpp/pull/17072
+  - The API Remoting backend/frontend allow escaping the VM isolation, with the help of the `virt-gpu` paravirtualization (and the `virglrenderer` library on the host side).
+  - `ggml-remotingfrontend` is a GGML API implementation, which intercepts the GGML API calls and forwards them to the `virt-gpu` virtual device
+- **b7865**: Vulkan Flash Attention Coopmat1 Refactor ([#19075](https://github.com/ggml-org/llama.cpp/pull/19075))
+  - I finally had the time to go through Jeff's Flash Attention shaders in detail and used the chance to refactor the Coopmat1 for AMD. It started out as an attempt to use Coopmats for the Softmax * V matrix multiplication as well and then escalated into a refactor of the whole shader structure.
+  - It now uses coopmats for the Softmax result * V matrix multiplication, and I vectorized some variables, changed how shared memory is used, load K and V directly from global memory if possible, otherwise streamed through a shared memory cache.
+  - Tests are passing. Performance is up significantly on AMD RX 8060S (Strix Halo). Draft because there is a regression on Nvidia. Let me know if you see anything obvious @jeffbolznv. More tuning is likely required.
+
+#### 🐛 Bug Fixes
+- **b7851**: Split shared state (webgpu_context) into global state and per-thread state ([#18976](https://github.com/ggml-org/llama.cpp/pull/18976))
+  - Right now, the WebGPU backend has a global `webgpu_context` struct with all the information required to instantiate and run a WebGPU graph.
+  - We want to split up the `webgpu_context` struct as follows:
+  - Move `get_tensor_sharing_buf` to global state, along with the `mutex`
+- **b7853**: llama : disable Direct IO by default ([#19109](https://github.com/ggml-org/llama.cpp/pull/19109))
+  - ref https://github.com/ggml-org/llama.cpp/issues/19035#issuecomment-3798971944
+  - cont #18012
+  - Update `llama_model_params::use_direct_io == false` by default
+- **b7856**: cuda : fix "V is K view" check for non-unified KV cache ([#19145](https://github.com/ggml-org/llama.cpp/pull/19145))
+  - We weren't handling the case where both V and K are views of the same data with the same offset different from 0. This happens with split KV cache (e.g. `--parallel 4 --no-kv-unified`) and causes the flash attention to fall back to the CPU in such cases.
+- **b7860**: vulkan: handle device dedup on MacOS + Vega II Duo cards ([#19058](https://github.com/ggml-org/llama.cpp/pull/19058))
+  - Deduplication here relied on the fact that vulkan would return unique UUID for different physical GPUs. It is at the moment not always the case. On Mac Pro 2019 running Mac OS, with 2 Vega II Duo cards (so, 4 GPU total), MotlenVK would assign same UUID to pairs of GPUs, unless they are connected with Infinity Fabric.
+  - See more details here: KhronosGroup/MoltenVK#2683.
+  - The right way is to fix that in MoltenVK, but until it is fixed, llama.cpp would only recognize 2 of 4 GPUs in such configuration.
+- **b7861**: jinja : undefined should be treated as sequence/iterable (return string/array) by filters/tests ([#19147](https://github.com/ggml-org/llama.cpp/pull/19147))
+  - Fixes #19130
+- **b7869**: ggml-zendnn : resolve ZenDNN backend cross-module symbol dependency ([#19159](https://github.com/ggml-org/llama.cpp/pull/19159))
+  - This PR fixes the ZenDNN backend failing to load when `GGML_BACKEND_DL=ON`
+  - The issue occurs because MODULE libs cannot access symbols from other MODULE libs, ZenDNN backend was attempting to call `ggml_get_type_traits_cpu()` from ggml-cpu, resulting in an undfined symbol error for `GGML_BACKEND_DL=ON`
+  - This fix uses `ggml_get_type_traits()` from ggml-base instead, eliminating the dependency on ggml-cpu
+
+
+### Additional Changes
+5 minor improvements: 3 documentation, 2 maintenance.
+
+- **b7864**: Add self‑speculative decoding (no draft model required) ([#18471](https://github.com/ggml-org/llama.cpp/pull/18471))
+  - This PR introduces self-speculative decoding: instead of using a dedicated draft model (which is good, if available, see #18039), the current token history is used to predict future tokens. This can provide a speedup in cases where the output contains repeated parts of the prompt. A typical example is making many small changes in a large source file.
+  - **Example 1** (`gpt-oss-120b` in VRAM): Translation of a few comments in a Python script (chosen as a favorable case).
+  - ```
+- **b7864**: Add self‑speculative decoding (no draft model required) ([#18471](https://github.com/ggml-org/llama.cpp/pull/18471))
+  - This PR introduces self-speculative decoding: instead of using a dedicated draft model (which is good, if available, see #18039), the current token history is used to predict future tokens. This can provide a speedup in cases where the output contains repeated parts of the prompt. A typical example is making many small changes in a large source file.
+  - **Example 1** (`gpt-oss-120b` in VRAM): Translation of a few comments in a Python script (chosen as a favorable case).
+  - ```
+- **b7867**: [SYCL] fix norm kernels: l2_norm, group_norm, rms_norm by remove assert ([#19154](https://github.com/ggml-org/llama.cpp/pull/19154))
+  - fix norm kernels: l2_norm, group_norm, rms_norm by remove assert.
+  - all ut cases of norm are 100% passed.
+  - no crash of UT cases.
+- **b7855**: CUDA: tune GLM 4.7 Flash FA kernel selection logic (DGX Spark) ([#19142](https://github.com/ggml-org/llama.cpp/pull/19142))
+  - cont #19097
+  - This is similar to #19097, but for DGX Spark. I used only the `Q8_0` model for the measurements.
+  - ```bash
+- **b7857**: ggml-cpu: arm64: Q4_K repack (i8mm) scale unroll and vectorization ([#19108](https://github.com/ggml-org/llama.cpp/pull/19108))
+  - While working on https://github.com/ggml-org/llama.cpp/pull/18860 I found out a small perf optimization when loading the subblock scales.
+  - Behavior unchanged, it's a manual unroll + vectorization.
+  - Llama-bench:
+
+### Full Commit Range
+- b7847 to b7871 (22 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7847...b7871
+
+---
+
 ## 2026-01-27: Update to llama.cpp b7845
 
 ### Summary
