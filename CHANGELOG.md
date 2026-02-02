@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-01-30: Update to llama.cpp b7885
+
+### Summary
+Updated llama.cpp from b7871 to b7885, incorporating 9 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b7872**: jinja : do not pass empty tools and add some none filters ([#19176](https://github.com/ggml-org/llama.cpp/pull/19176))
+  - Passing empty or null `tools` breaks many templates so avoid that.
+  - Added several filters to `none` that are accepted by `jinja2`, fixes some templates that will try to use them (like `Functionary`).
+  - Fixes #19155
+- **b7883**: memory : remove unused tmp_buf ([#19199](https://github.com/ggml-org/llama.cpp/pull/19199))
+  - This commit removes the unused tmp_buf variable from llama-kv-cache.cpp and llama-memory-recurrent.cpp.
+  - The tmp_buf variable was declared but never used but since it has a non-trivial constructor/desctuctor we don't get an unused variable warning about it.
+
+#### 🆕 New Features
+- **b7871**: HIP: add mmf for CDNA ([#18896](https://github.com/ggml-org/llama.cpp/pull/18896))
+  - Add mmf for CDNA, CDNA3 is passed, it will be very helpful if anyone can test it on CDNA2 and CDNA1, thank you.
+  - [x] Refactor mmf to make rows_per_block as input parameter.
+  - [x] Pass MUL_MAT and MUL_MAT_ID.
+- **b7881**: add tensor type checking as part of cuda graph properties ([#19186](https://github.com/ggml-org/llama.cpp/pull/19186))
+  - Motivated by https://github.com/ggml-org/llama.cpp/pull/15805#issuecomment-3818986820
+- **b7885**: tests : add GQA=20 FA test ([#19095](https://github.com/ggml-org/llama.cpp/pull/19095))
+  - Might be a good idea to have a test that exercises GQA=20 in order to catch any potential regressions.
+
+#### 🐛 Bug Fixes
+- **b7875**: cuda : fix nkvo, offload and cuda graph node properties matching ([#19165](https://github.com/ggml-org/llama.cpp/pull/19165))
+  - fix #19158
+  - fix #19169
+  - cont #19105
+
+
+### Additional Changes
+3 minor improvements: 3 documentation.
+
+- **b7876**: hexagon: enable offloading to Hexagon on Windows on Snapdragon ([#19150](https://github.com/ggml-org/llama.cpp/pull/19150))
+  - GGML Hexagon backend updates to support Windows on Snapdragon.
+  - Features:
+  - Support for building and offloading to NPU on WoS.
+- **b7879**: sycl: implement GGML_OP_TRI ([#19089](https://github.com/ggml-org/llama.cpp/pull/19089))
+  - Implements GGML_OP_TRI for the SYCL backend (F32).
+  - The implementation matches CPU semantics for all ggml_tri_type values
+  - (lower/upper, with and without diagonal).
+- **b7880**: sycl: implement GGML_UNARY_OP_SOFTPLUS ([#19114](https://github.com/ggml-org/llama.cpp/pull/19114))
+  - Implements GGML_UNARY_OP_SOFTPLUS for the SYCL backend.
+  - Adds an element-wise softplus kernel integrated through the generic SYCL unary dispatch path.
+  - Numerical behavior matches the CPU backend implementation.
+
+### Full Commit Range
+- b7871 to b7885 (9 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7871...b7885
+
+---
+
 ## 2026-01-29: Update to llama.cpp b7871
 
 ### Summary
