@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-02-02: Update to llama.cpp b7907
+
+### Summary
+Updated llama.cpp from b7885 to b7907, incorporating 14 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b7903**: Remove pipeline cache mutexes ([#19195](https://github.com/ggml-org/llama.cpp/pull/19195))
+  - Now that `webgpu_context` is per-thread, we can remove mutexes from pipeline caches. We cannot remove mutexes from `webgpu_buf_pool` since they are allocated and freed in callback threads, and we cannot remove the mutex from the memset buffer pool since it is shared by all ggml buffers.
+
+#### 🆕 New Features
+- **b7885**: tests : add GQA=20 FA test ([#19095](https://github.com/ggml-org/llama.cpp/pull/19095))
+  - Might be a good idea to have a test that exercises GQA=20 in order to catch any potential regressions.
+- **b7895**: lookahead : add example for lookahead decoding ([#4207](https://github.com/ggml-org/llama.cpp/pull/4207))
+  - ref #4157
+  - Think this should implement the approach from: https://lmsys.org/blog/2023-11-21-lookahead-decoding/
+  - The approach requires large batches to be decoded, which in turn requires a lot of FLOPS even for single stream
+- **b7895**: Prompt lookup decoding ([#4484](https://github.com/ggml-org/llama.cpp/pull/4484))
+  - ref #4226
+  - This example implements the "Prompt Lookup Decoding" technique:
+  - https://github.com/apoorvumang/prompt-lookup-decoding
+- **b7898**: ggml-hexagon: flash-attention and reduce-sum optimizations ([#19141](https://github.com/ggml-org/llama.cpp/pull/19141))
+  - Further to the discussion in [PR #19025](vscode-file://vscode-app/f:/Download/OneDrive/sync/tools/editor/VSCode/resources/app/out/vs/code/electron-browser/workbench/workbench.html), this implements the dual row dot product for flash attention.
+  - Added `hvx_vec_reduce_sum_qf32x2`, a helper function for efficiently reducing and accumulating two HVX vectors of qf32 values, and refactored several places in the codebase to use this function for dual-accumulation scenarios. [[1]](diffhunk://#diff-a61b8b4ec9b687ceb6adecb4f2de734f398493514475aa35a2ed1697d58e8a78R47-R57) [[2]](diffhunk://#diff-9469cc7ef405748e1379a215fd377726746ae6087c02d975042955268ea40870L468-R469) [[3]](diffhunk://#diff-9469cc7ef405748e1379a215fd377726746ae6087c02d975042955268ea40870L641-R639) [[4]](diffhunk://#diff-9469cc7ef405748e1379a215fd377726746ae6087c02d975042955268ea40870L883-R878) [[5]](diffhunk://#diff-9469cc7ef405748e1379a215fd377726746ae6087c02d975042955268ea40870L960-R952)
+  - Introduced new "rx2" (dual accumulation) versions of dot product functions for both f32-f16 and f16-f16 cases (`hvx_dot_f32_f16_aa_rx2`, `hvx_dot_f16_f16_aa_rx2`), improving performance by processing two accumulations in parallel. [[1]](diffhunk://#diff-703a5dfdf5d9711789e72c854d70db2559000749823e0cb8fa9defc4b276e7b8R76-R139) [[2]](diffhunk://#diff-703a5dfdf5d9711789e72c854d70db2559000749823e0cb8fa9defc4b276e7b8R180-R233)
+- **b7907**: ggml-backend: fix async set/get fallback sync ([#19179](https://github.com/ggml-org/llama.cpp/pull/19179))
+  - While working on an implementation for backend-agnostic tensor parallelism I found what I believe to be a bug in the ggml backend code. For a minimal implementation I did at first not implement `set_tensor_async` and `get_tensor_async` assuming that I could just rely on the synchronous fallback and implement those later. However, `set_tensor_async` and `get_tensor_async` do not call `ggml_backend_synchronize` for their fallback so I got incorrect results. This PR adds the corresponding calls.
+
+#### 🐛 Bug Fixes
+- **b7895**: llama : adjust default context size + print warnings ([#10136](https://github.com/ggml-org/llama.cpp/pull/10136))
+  - fix #8817, https://github.com/ggerganov/llama.cpp/issues/9563#issuecomment-2452727620
+  - By default, the examples will use a context size of 4096, instead of the training context of the model. In a lot of cases, the default training context can be very big - 32k to 128k tokens, which causes enormous KV cache allocation and failures for regular hardware.
+  - Also, add warning logs when the specified context size per sequence does not match the training context.
+
+
+### Additional Changes
+7 minor improvements: 3 documentation, 4 examples.
+
+### Full Commit Range
+- b7885 to b7907 (14 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7885...b7907
+
+---
+
 ## 2026-01-30: Update to llama.cpp b7885
 
 ### Summary
