@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-02-03: Update to llama.cpp b7921
+
+### Summary
+Updated llama.cpp from b7907 to b7921, incorporating 11 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b7907**: ggml-backend: fix async set/get fallback sync ([#19179](https://github.com/ggml-org/llama.cpp/pull/19179))
+  - While working on an implementation for backend-agnostic tensor parallelism I found what I believe to be a bug in the ggml backend code. For a minimal implementation I did at first not implement `set_tensor_async` and `get_tensor_async` assuming that I could just rely on the synchronous fallback and implement those later. However, `set_tensor_async` and `get_tensor_async` do not call `ggml_backend_synchronize` for their fallback so I got incorrect results. This PR adds the corresponding calls.
+- **b7909**: metal : support virtual devices ([#18919](https://github.com/ggml-org/llama.cpp/pull/18919))
+  - Support virtual Metal devices. Allows simulating multi-GPU environments on Mac using the new `GGML_METAL_DEVICES` environment variable.
+  - ```bash
+  - GGML_METAL_DEVICES=4 ./bin/llama-completion -m [model.gguf]
+- **b7919**: support infill for Falcon-H1-Tiny-Coder ([#19249](https://github.com/ggml-org/llama.cpp/pull/19249))
+  - Added FIM tokens used in Falcon-H1-Tiny-Coder (see https://tiiuae-tiny-h1-blogpost.hf.space/#fim-format, https://huggingface.co/tiiuae/Falcon-H1-Tiny-Coder-90M/blob/main/tokenizer_config.json#L1843) to make the llama-server `POST /infill` handle work.
+- **b7921**: ggml: added cleanups in ggml_quantize_free ([#19278](https://github.com/ggml-org/llama.cpp/pull/19278))
+  - Add missing cleanup calls for IQ2_S, IQ1_M quantization types and IQ3XS with 512 blocks during quantization cleanup.
+
+#### 🐛 Bug Fixes
+- **b7917**: opencl: refactor some ops, concat, repeat, tanh and scale ([#19226](https://github.com/ggml-org/llama.cpp/pull/19226))
+  - Gemma-3n-E2B and Gemma-3n-E4B have been producing weird (not really gibberish but apparently not correct) output. Ended up refactoring these ops and the issue is now fixed. In addition, this refactor also improves perf a bit.
+  - On X Elite,
+  - `gemma-3n-E2B-it-Q8_0`,
+
+
+### Additional Changes
+6 minor improvements: 4 documentation, 1 examples, 1 maintenance.
+
+### Full Commit Range
+- b7907 to b7921 (11 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7907...b7921
+
+---
+
 ## 2026-02-02: Update to llama.cpp b7907
 
 ### Summary
