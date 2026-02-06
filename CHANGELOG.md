@@ -1,5 +1,110 @@
 # Changelog
 
+## 2026-02-06: Update to llama.cpp b7955
+
+### Summary
+Updated llama.cpp from b7926 to b7955, incorporating 24 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b7931**: ggml-virtgpu: make the code thread safe ([#19204](https://github.com/ggml-org/llama.cpp/pull/19204))
+  - This PR improves the code of the ggml-virtgpu backend to make it thread safe, by using mutex for accessing the host<>guest shared memory buffers, and by pre-caching, during the initialization, the constant values queried from the backend.
+  - The unused `buffer_type_is_host` method is also deprecated.
+- **b7933**: spec : fix the check-rate logic of ngram-simple ([#19261](https://github.com/ggml-org/llama.cpp/pull/19261))
+  - fix #19231
+  - For the `spec-simple` method, we don't need to keep track of the last length to rate-limit the generations. We can simply use an incremental counter. This makes the speculator work with "Regenerate" of last message or branching the conversation from previous messages.
+  - Also, removed `struct common_ngram_simple_state` - seemed a bit redundant.
+
+#### 🆕 New Features
+- **b7928**: ci : add sanitizer runs for server ([#19291](https://github.com/ggml-org/llama.cpp/pull/19291))
+  - Reenable the server sanitizer builds + runs. The thread sanitizer is quite slow, so remains disabled for now.
+  - https://github.com/ggerganov/tmp2/actions/runs/21629674042
+- **b7929**: metal : add solve_tri ([#19302](https://github.com/ggml-org/llama.cpp/pull/19302))
+  - Add `GGML_OP_SOLVE_TRI` implementation for Metal.
+  - | Model                  | Test   |   t/s master |   t/s gg/metal-solve-tri |   Speedup |
+  - |:-----------------------|:-------|-------------:|-------------------------:|----------:|
+- **b7935**: tests : add non-cont, inplace rope tests ([#19296](https://github.com/ggml-org/llama.cpp/pull/19296))
+  - ref https://github.com/ggml-org/llama.cpp/pull/18986#issuecomment-3841942982
+  - ref https://github.com/ggml-org/llama.cpp/issues/19128#issuecomment-3807441909
+  - ref https://github.com/ggml-org/llama.cpp/issues/19292
+- **b7941**: vendor : add missing llama_add_compile_flags ([#19322](https://github.com/ggml-org/llama.cpp/pull/19322))
+  - ~Hopefully fixes CI~Ensure `httplib` and `boringssl`/`libressl` are built with sanitizer options, see https://github.com/ggml-org/llama.cpp/pull/19291#discussion_r2761613566
+- **b7946**: metal : add diag ([#19330](https://github.com/ggml-org/llama.cpp/pull/19330))
+  - Add implementation for GGML_OP_DIAG for the Metal backend
+
+#### 🚀 Performance Improvements
+- **b7930**: ggml-cpu: use LUT for converting e8->f32 scales on x86 ([#19288](https://github.com/ggml-org/llama.cpp/pull/19288))
+  - `perf` showed the e8m0->f32 function as a bottleneck. Use a LUT instead. Tested only on x86
+  - | Model                 | Test   |   t/s topk-cuda-refactor |   t/s mxfp4-cpu-scale |   Speedup |
+  - |:----------------------|:-------|-------------------------:|----------------------:|----------:|
+- **b7951**: metal : adaptive CPU/GPU interleave based on number of nodes ([#19369](https://github.com/ggml-org/llama.cpp/pull/19369))
+  - Put a bit more work on the main thread when encoding the graph. This helps to interleave better the CPU/GPU work, especially for larger graphs.
+  - | Model                    | Test   |   t/s master |   t/s gg/metal-adaptive-cpu-interleave |   Speedup |
+  - |:-------------------------|:-------|-------------:|---------------------------------------:|----------:|
+- **b7954**: metal : skip loading all-zero mask ([#19337](https://github.com/ggml-org/llama.cpp/pull/19337))
+  - Similar optimization as in #19281 to skip loading the all-zero mask blocks.
+  - | Model                 | Test    |   t/s master |   t/s gg/metal-fa-mask-zero-opt |   Speedup |
+  - |:----------------------|:--------|-------------:|--------------------------------:|----------:|
+
+#### 🐛 Bug Fixes
+- **b7926**: vulkan: disable coopmat1 flash attention on Nvidia Turing ([#19290](https://github.com/ggml-org/llama.cpp/pull/19290))
+  - See https://github.com/ggml-org/llama.cpp/pull/19075#issuecomment-3820716090
+- **b7927**: sampling : delegate input allocation to the scheduler ([#19266](https://github.com/ggml-org/llama.cpp/pull/19266))
+  - fix #18622
+  - alt #18636
+  - Merge the sampler inputs into the main graph. This way the backend scheduler is responsible for allocating the memory which makes backend sampling compatible with pipeline parallelism
+- **b7936**: model: (qwen3next) correct vectorized key_gdiff calculation ([#19324](https://github.com/ggml-org/llama.cpp/pull/19324))
+  - Testing with the provided prompt from https://github.com/ggml-org/llama.cpp/issues/19305
+  - <img width="837" height="437" alt="image" src="https://github.com/user-attachments/assets/54f19beb-a9d0-4f10-bc33-747057f36fe7" />
+- **b7938**: debug: make common_debug_print_tensor readable ([#19331](https://github.com/ggml-org/llama.cpp/pull/19331))
+  - Now using 4-space indentation
+  - The log is output to stdout, so that I can do `llama-eval-callback ... > debug.log`
+  - ```
+- **b7940**: vendor: update cpp-httplib version ([#19313](https://github.com/ggml-org/llama.cpp/pull/19313))
+  - ref: #19017
+  - Sync the `cpp-httplib` library to fix #19017.
+- **b7942**: Fix missing includes in metal build ([#19348](https://github.com/ggml-org/llama.cpp/pull/19348))
+  - Since commit https://github.com/ggml-org/llama.cpp/commit/6fdddb498780dbda2a14f8b49b92d25601e14764, I get errors when building on Mac.
+  - This PR adds the missing includes for `mutex` and `string` to fix the build.
+  - ```
+- **b7943**: vulkan: fix non-contig rope ([#19299](https://github.com/ggml-org/llama.cpp/pull/19299))
+  - For #19296.
+- **b7945**: vulkan: fix GPU deduplication logic. ([#19222](https://github.com/ggml-org/llama.cpp/pull/19222))
+  - As reported in https://github.com/ggml-org/llama.cpp/issues/19221, the (same uuid, same driver) logic is problematic for windows+intel igpu.
+  - Let's just avoid filtering for MoltenVK which is apple-specific, and keep the logic the  same as before 88d23ad5 - just dedup based on UUID.
+  - Verified that MacOS + 4xVega still reports 4 GPUs with this version.
+- **b7952**: cuda : cuda graphs now compare all node params ([#19383](https://github.com/ggml-org/llama.cpp/pull/19383))
+  - ref https://github.com/ggml-org/llama.cpp/pull/19338#issuecomment-3852298933
+  - This should fix the CUDA graph usage logic when the ops have variable op params. This issue is most pronounced during `test-backend-ops`.
+
+
+### Additional Changes
+5 minor improvements: 1 examples, 4 maintenance.
+
+- **b7932**: completion : simplify batch (embd) processing ([#19286](https://github.com/ggml-org/llama.cpp/pull/19286))
+  - This commit simplifies the processing of embd by removing the for loop that currently exists which uses params.n_batch as its increment. This commit also removes the clamping of n_eval as the size of embd is always at most the size of params.n_batch.
+  - The motivation is to clarify the code as it is currently a little confusing when looking at this for loop in isolation and thinking that it can process multiple batches.
+- **b7944**: vulkan: Set k_load_shmem to false when K is too large ([#19301](https://github.com/ggml-org/llama.cpp/pull/19301))
+  - See https://github.com/ggml-org/llama.cpp/pull/19075/changes#r2726146004.
+  - ```
+  - Z:\github\jeffbolznv\llama.cpp\build\bin\RelWithDebInfo>llama-bench.exe -fa 1 -m c:\models\GLM-4.7-Flash-Q4_K_M.gguf -p 512 -n 128 -d 0,4096,16384
+- **b7947**: vendor : update BoringSSL to 0.20260204.0 ([#19333](https://github.com/ggml-org/llama.cpp/pull/19333))
+- **b7950**: vulkan: Preprocess FA mask to detect all-neg-inf and all-zero. ([#19281](https://github.com/ggml-org/llama.cpp/pull/19281))
+  - Write out a 2-bit code per block and avoid loading the mask when it matches these two common cases.
+  - Apply this optimization when the mask is relatively large (i.e. prompt processing).
+  - ```
+- **b7955**: vulkan: make FA mask/softcap enables spec constants ([#19309](https://github.com/ggml-org/llama.cpp/pull/19309))
+  - ~This is stacked on #19281.~ (merged)
+  - This allows the compiler to do a bit better at overlapping loads and math (e.g. loading V can start while computing Q*K^t is still happening). Worth a couple percent for coopmat2, less for coopmat1/scalar.
+  - ```
+
+### Full Commit Range
+- b7926 to b7955 (24 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7926...b7955
+
+---
+
 ## 2026-02-03: Update to llama.cpp b7921
 
 ### Summary
