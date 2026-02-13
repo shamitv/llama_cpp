@@ -1,5 +1,128 @@
 # Changelog
 
+## 2026-02-13: Update to llama.cpp b8018
+
+### Summary
+Updated llama.cpp from b7958 to b8018, incorporating 44 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8004**: common : remove unused token util functions ([#19506](https://github.com/ggml-org/llama.cpp/pull/19506))
+  - This commit removes two unused functions `common_lcp` and `common_lcs`. The last usage of these functions was removed in Commit 33eff4024084d1f0c8441b79f7208a52fad79858 ("server : vision support via libmtmd") and are no longer used anywhere in the codebase.
+- **b8007**: common : replace deprecated codecvt using parse_utf8_codepoint ([#19517](https://github.com/ggml-org/llama.cpp/pull/19517))
+
+#### 🆕 New Features
+- **b7964**: Support Step3.5-Flash ([#19283](https://github.com/ggml-org/llama.cpp/pull/19283))
+  - This PR adds support for the Step3.5-Flash model architecture.
+  - github:
+  - https://github.com/stepfun-ai/Step-3.5-Flash/tree/main
+- **b7966**: metal : consolidate bin kernels ([#19390](https://github.com/ggml-org/llama.cpp/pull/19390))
+  - Refactor and consolidate the implementation of the binary Metal kernels.
+  - | Model                    | Test   |   t/s master |   t/s gg/metal-bin-opt |   Speedup |
+  - |:-------------------------|:-------|-------------:|-----------------------:|----------:|
+- **b7972**: CUDA: Fix non-contig rope ([#19338](https://github.com/ggml-org/llama.cpp/pull/19338))
+  - This is a port of https://github.com/ggml-org/llama.cpp/pull/19299 to the CUDA backend, which should fix the broken logic revealed by tests added in https://github.com/ggml-org/llama.cpp/pull/19296
+  - Thanks @jeffbolznv for the work in #19299
+- **b7973**: [Model] Qwen3.5 dense and MoE support (no vision) ([#19435](https://github.com/ggml-org/llama.cpp/pull/19435))
+  - I've gotten a bit tired of Llama.cpp missing all the zero-day releases, so this time I decided to make (or, more precisely, instructed Opus 4.6 to make, based on reference implementations and my guidelines for model adaptation) a conversion based on the Transformers PR ( https://github.com/huggingface/transformers/pull/43830/changes ). It's mostly based on Qwen3Next, but it's rebased on the common-delta-net PR ( #19125 ).
+  - Here are the mock models I generated to test it: https://huggingface.co/ilintar/qwen35_testing/tree/main
+  - Here are the conversion results from `causal-verify-logits`:
+- **b7974**: cmake: add variable to skip installing tests ([#19370](https://github.com/ggml-org/llama.cpp/pull/19370))
+  - When packaging downstream, there's usually little point in installing test. The default behaviour remains the same.
+- **b7976**: [Model] Qwen3.5 dense and MoE support (no vision) ([#19435](https://github.com/ggml-org/llama.cpp/pull/19435))
+  - I've gotten a bit tired of Llama.cpp missing all the zero-day releases, so this time I decided to make (or, more precisely, instructed Opus 4.6 to make, based on reference implementations and my guidelines for model adaptation) a conversion based on the Transformers PR ( https://github.com/huggingface/transformers/pull/43830/changes ). It's mostly based on Qwen3Next, but it's rebased on the common-delta-net PR ( #19125 ).
+  - Here are the mock models I generated to test it: https://huggingface.co/ilintar/qwen35_testing/tree/main
+  - Here are the conversion results from `causal-verify-logits`:
+- **b7976**: revert : "[Model] Qwen3.5 dense and MoE support (no vision) (#19435)" ([#19453](https://github.com/ggml-org/llama.cpp/pull/19453))
+  - cont #19435
+  - Taking a step back to implement support for Qwen3.5 properly.
+- **b7981**: chat: fix case where template accepts type content only ([#19419](https://github.com/ggml-org/llama.cpp/pull/19419))
+  - Fix chat template of PaddleOCR-VL, which requires content to be an array (see https://github.com/ggml-org/llama.cpp/pull/18825)
+  - This should be able to handle these case:
+  - Template supports ONLY string content
+- **b7982**: cuda : extend GGML_OP_PAD to work with non-cont src0 ([#19429](https://github.com/ggml-org/llama.cpp/pull/19429))
+  - Extend CUDA support
+  - Remove redundant assert in CPU implementation
+  - Add permuted PAD tests
+- **b7983**: CANN: Support MUL_MAT_ID in ACL graph ([#19228](https://github.com/ggml-org/llama.cpp/pull/19228))
+  - Implement ggml_cann_mul_mat_id_quant function to support quantized matrix
+  - multiplication for Mixture of Experts (MoE) architectures on CANN backend.
+  - Key features:
+- **b7988**: ggml-cpu: arm64: q6_K repack gemm and gemv (and generic) implementations (dotprod) ([#19360](https://github.com/ggml-org/llama.cpp/pull/19360))
+  - https://github.com/ggml-org/llama.cpp/pull/19356 but Q6_K.
+  - PR contents:
+  - New generics for q6_K_8x4
+- **b7991**: [WebGPU] Plug memory leaks and free resources on shutdown ([#19315](https://github.com/ggml-org/llama.cpp/pull/19315))
+  - This diff destroys `wgpu::Buffer`s and buffer pools on shutdown. It also fixes memory leaks on the heap, where we allocate `backend`, `backend_ctx`, `buffer_ctx`, and `decisions` on the heap but never delete them. These are either explicitly deleted or changed to be smart pointers.
+  - We implement destructors for our buffer pool structs, `webgpu_context` struct and `webgpu_global_context` struct. Since `webgpu_global_context` is a refcounted smart pointer, it will destruct automatically when all thread contexts have been destroyed.
+  - <img width="1191" height="220" alt="Screenshot 2026-02-03 at 3 56 11 PM" src="https://github.com/user-attachments/assets/3810b613-4920-4388-bdff-94ef306e8a06" />
+- **b7992**: CUDA: Update CCCL-tag for 3.2 to final release from RC ([#19486](https://github.com/ggml-org/llama.cpp/pull/19486))
+  - [CCCL 3.2 has been released](https://github.com/NVIDIA/cccl/releases/tag/v3.2.0
+  - ) since it was added to llama.cpp as part of the backend-sampling PR (#17004), and it makes sense to update from RC to final released version.
+- **b7994**: metal : consolidate unary ops ([#19490](https://github.com/ggml-org/llama.cpp/pull/19490))
+  - cont #19390
+  - Common implementation of the unary kernels
+  - Extend support for non-cont src0
+- **b7995**: ggml : extend bin bcast for permuted src1 ([#19484](https://github.com/ggml-org/llama.cpp/pull/19484))
+  - Remove CPU asserts preventing `src1` from being permuted
+  - Update CUDA kernels to support permuted `src1`
+  - Add tests to exercise `src1` permutation
+- **b7998**: hexagon: Add ARGSORT, DIV, SQR, SQRT, SUM_ROWS, GEGLU ([#19406](https://github.com/ggml-org/llama.cpp/pull/19406))
+  - Catching up on the Op coverage for the Hexagon backend.
+  - This PR improves Op coverage for Gemma-3N, LFM2 and other models.
+  - All new Ops pass `test-backend-ops` (mostly in f32).
+- **b8001**: metal : extend l2_norm support for non-cont src0 ([#19502](https://github.com/ggml-org/llama.cpp/pull/19502))
+  - Support non-cont `src0`
+  - Support `ne00` non-multiple of 4
+- **b8005**: ggml : unary ops support non-cont src0 + metal F16 unary ops ([#19511](https://github.com/ggml-org/llama.cpp/pull/19511))
+  - cont #19490
+- **b8006**: opencl: add general Q6_K mm and Q4_K mv ([#19347](https://github.com/ggml-org/llama.cpp/pull/19347))
+  - Although still slow, this should make Q4_K_M a bit more usable. Q4_K mv is not flattened yet. More specialized Q6_K and Q4_K mm and mv using transposed layouts will be added in follow up PRs.
+- **b8008**: hexagon: further optimization and tuning of matmul and dot kernels ([#19407](https://github.com/ggml-org/llama.cpp/pull/19407))
+  - This PR adds support for computing 2x2 (2 rows x 2 cols) dot products in parallel.
+  - Mostly helps with the Prompt processing that shows 10+ T/S gains for most models.
+  - Here are some numbers with Qwen3.
+- **b8012**: metal : update sum_rows kernel to support float4 ([#19524](https://github.com/ggml-org/llama.cpp/pull/19524))
+
+#### 🐛 Bug Fixes
+- **b7958**: MSVC regex fix ([#19340](https://github.com/ggml-org/llama.cpp/pull/19340))
+  - Fix MSVC regex error:
+  - ```
+  - Regex error: regex_error(error_stack): There was insufficient memory to determine whether the regular expression could match the specified character sequence.
+- **b7965**: metal : fix event synchronization in cpy_tensor_async ([#19402](https://github.com/ggml-org/llama.cpp/pull/19402))
+  - cont #18966
+  - Was incorrectly recording the event in a separate command buffer. Fixes the synchronization issue reported in https://github.com/ggml-org/llama.cpp/pull/19378#issuecomment-3862086179
+- **b7987**: ggml: use noexcept overload for is_regular_file in backend registration ([#19452](https://github.com/ggml-org/llama.cpp/pull/19452))
+  - using noexcept std::filesystem::directory_entry::is_regular_file overload prevents abnormal termination upon throwing an error (as caused by symlinks to non-existant folders on linux)
+  - fixes issue #18560
+  - Searched for existing PRs for this issue
+- **b7989**: test: fix IMROPE perf test case ([#19465](https://github.com/ggml-org/llama.cpp/pull/19465))
+  - Ref: https://github.com/ggml-org/llama.cpp/issues/19464
+- **b7997**: fix: correct typos 'occured' and 'occurences' ([#19414](https://github.com/ggml-org/llama.cpp/pull/19414))
+  - Fixes minor spelling typos in comments:
+  - occurred (1 instance in llama.h)
+  - occurrences (3 instances in ngram-map.h and ngram-map.cpp)
+- **b7999**: common : improve download error reporting ([#19491](https://github.com/ggml-org/llama.cpp/pull/19491))
+  - While debugging the new `cpp-httplib`, the current errors were unusable...
+  - Here is a small patch to make life easier for the next person dealing with HTTP issues :)
+- **b8011**: Add a workaround for compilation with ROCWMMA_FATTN and gfx9 ([#19461](https://github.com/ggml-org/llama.cpp/pull/19461))
+  - There is an upstream problem [1] with AMD's LLVM 22 fork and rocWMMA 2.2.0 causing compilation issues on devices without native fp16 support (CDNA devices).
+  - The specialized types aren't resolved properly:
+  - ```c
+- **b8018**: vendor : update cpp-httplib ([#19537](https://github.com/ggml-org/llama.cpp/pull/19537))
+  - The 0.32 version had important bug fixes, but it wasn’t working for us. We need the latest patches.
+
+
+### Additional Changes
+13 minor improvements: 3 documentation, 7 examples, 3 maintenance.
+
+### Full Commit Range
+- b7958 to b8018 (44 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b7958...b8018
+
+---
+
 ## 2026-02-06: Update to llama.cpp b7955
 
 ### Summary
