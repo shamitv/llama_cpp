@@ -1,5 +1,65 @@
 # Changelog
 
+## 2026-02-14: Update to llama.cpp b8040
+
+### Summary
+Updated llama.cpp from b8027 to b8040, incorporating 11 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8027**: llama : remove deprecated codecvt ([#19565](https://github.com/ggml-org/llama.cpp/pull/19565))
+  - Using the same conversion function ensures a consistent matching between the regex pattern and the text
+- **b8037**: common : update download code ([#19573](https://github.com/ggml-org/llama.cpp/pull/19573))
+  - This PR removes the legacy migration code for etag and forces a download if no etag file is found.
+
+#### 🆕 New Features
+- **b8028**: Kimi Linear fix conv state update ([#19531](https://github.com/ggml-org/llama.cpp/pull/19531))
+  - *Make sure to read the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) before submitting a PR*
+  - The current implementation has incorrect conv state update such that it has state corruption when running parallel in llama-server. This is fixed in this PR.
+  - ```
+- **b8030**: CUDA: Do not mutate cgraph for fused ADDs ([#19566](https://github.com/ggml-org/llama.cpp/pull/19566))
+  - 1. We should try to minimize in-place changes to the incoming ggml_cgraph where possible (those should happen in a backends' `graph_optimize` function)
+  - 2. Modifying in-place leads to an additional, unnecessary graph capture step as we store the properties before modifying the graph in-place in the cuda-backend: We hit `ggml_cuda_graph_node_set_properties` via `ggml_cuda_graph_update_required` before entering `ggml_cuda_graph_evaluate_and_capture`.
+  - Isolated from #19521
+- **b8036**: model: support GLM MoE DSA arch (NOTE: indexer is not yet supported) ([#19460](https://github.com/ggml-org/llama.cpp/pull/19460))
+  - Ref upstream vllm PR: https://github.com/vllm-project/vllm/pull/34124
+  - > [!IMPORTANT]
+  - > This PR allows converting safetensors to GGUF while keeping the indexer tensors (for deepseek sparse attention), but they are left unused by the cpp code. **The quality will be suboptimal**
+
+#### 🚀 Performance Improvements
+- **b8038**: vulkan: restore -inf check in FA shaders ([#19582](https://github.com/ggml-org/llama.cpp/pull/19582))
+  - For #19523.
+  - I verified the performance is restored with llama-batched-bench.
+- **b8040**: hexagon: further optimizations and refactoring for flash attention ([#19583](https://github.com/ggml-org/llama.cpp/pull/19583))
+  - The PR includes some more refactoring and optimizations for flash attention op/kernel:
+  - Local fa_context that stores all precomputed values
+  - More HVX usage (hvx_vec_expf, ...)
+
+#### 🐛 Bug Fixes
+- **b8034**: fix vulkan ggml_acc only works in 3d but not 4d ([#19426](https://github.com/ggml-org/llama.cpp/pull/19426))
+  - *Make sure to read the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) before submitting a PR*
+  - Discovered ggml_acc for vulkan only works in 3d not 4d while working on
+  - https://github.com/ggml-org/llama.cpp/pull/18792
+- **b8035**: ggml-cpu: arm64: Fix wrong memcpy length for q4_K block_interleave == 4 ([#19575](https://github.com/ggml-org/llama.cpp/pull/19575))
+  - https://github.com/ggml-org/llama.cpp/issues/19561 reports issues with the stack for Q4_K.
+  - I can't reproduce the issue locally, but the `make_block_q4_Kx8` function would write past the buffer size 4 extra bytes,  which could be the issue.
+  - @taronaeo, since you found the problem, are you able to check if this patch fixes it?
+
+
+### Additional Changes
+2 minor improvements: 1 examples, 1 maintenance.
+
+- **b8033**: cli : support --verbose-prompt ([#19576](https://github.com/ggml-org/llama.cpp/pull/19576))
+  - Useful when debugging templates.
+- **b8032**: CUDA: loop over ne2*ne3 in case it overflows ([#19538](https://github.com/ggml-org/llama.cpp/pull/19538))
+
+### Full Commit Range
+- b8027 to b8040 (11 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8027...b8040
+
+---
+
 ## 2026-02-13: Update to llama.cpp b8018
 
 ### Summary
