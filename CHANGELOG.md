@@ -1,5 +1,203 @@
 # Changelog
 
+## 2026-03-01: Update to llama.cpp b8182
+
+### Summary
+Updated llama.cpp from b8087 to b8182, incorporating 76 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8098**: models : dedup qwen35 graphs ([#19660](https://github.com/ggml-org/llama.cpp/pull/19660))
+  - cont #19597
+  - Use the new `struct llm_build_delta_net_base` to deduplicate the delta net graphs from Qwen35 models.
+  - TODO:
+- **b8101**: llama : use output_resolve_row() in get_logits_ith/get_embeddings_ith ([#19663](https://github.com/ggml-org/llama.cpp/pull/19663))
+  - This commit updates get_logits_ith(), and get_embeddings_ith() to use output_resolve_row() to resolve the batch index to output row index.
+  - The motivation for this is to remove some code duplication between these functions.
+- **b8140**: hexagon refactor all Ops to use local context struct ([#19819](https://github.com/ggml-org/llama.cpp/pull/19819))
+  - This PR completes the refactoring of all Hexagon Ops to use a local context structure. This allows each Op to precompute and cache more state. The refactoring also removes redundant function wrappers and unnecessary boilerplate.
+  - Most Ops now use DMA for fetching inputs and writing back outputs.
+  - The main loops of RoPE and Unary Ops have been completely rewritten for better DMA pipelining.
+- **b8146**: ggml/gguf : prevent integer overflows ([#19856](https://github.com/ggml-org/llama.cpp/pull/19856))
+  - Strengthen integer overflow validation in ggml/gguf
+  - Impose max limits for string length and array elements of GGUF metadata
+  - Remove deprecated `ggml_type_sizef()`
+
+#### 🆕 New Features
+- **b8091**: ggml webgpu: shader library organization ([#19530](https://github.com/ggml-org/llama.cpp/pull/19530))
+  - We've been converting many of the existing WGSL shaders into a format that allows for efficient just-in-time compilation of variants used in specific model graphs, as well as sets them up for better performance tuning down the road. This PR makes a pretty large organizational change, moving the shader preprocessing, compilation, and caching into a new `ggml_webgpu_shader_lib` structure. As part of this, the existing matrix multiplication shaders were also converted in to the JIT compilation format (using the wgsl preprocessor), along with get_rows and scale.
+  - This new shader library class also opens up the opportunity for tons of interesting specialization in the WebGPU backend. For example, if you have a shader specialized for a particular GPU vendor/architecture in WGSL, it should be pretty easy to hook it into the logic for choosing the right shader/pipeline.
+  - It's always nice to have a PR that removes more lines of code than it adds too :)
+- **b8091**: Add oneliner for batch quantization ([#17](https://github.com/ggml-org/llama.cpp/pull/17))
+- **b8100**: full modern bert support ([#18330](https://github.com/ggml-org/llama.cpp/pull/18330))
+  - Made support for conversion from hf->gguf and execution on llama.cpp after my recent (granite-embd-support)[https://github.com/ggml-org/llama.cpp/pull/15641] which is a modern bert based model, this pr continues off of that and has some tweaks. I have ran cosine similarity tests with this script
+  - ```
+  - from sentence_transformers import SentenceTransformer
+- **b8102**: model : Add tokenizer from LFM2.5-Audio-1.5B ([#19687](https://github.com/ggml-org/llama.cpp/pull/19687))
+  - [LFM2.5-Audio-1.5B](https://huggingface.co/LiquidAI/LFM2.5-Audio-1.5B) introduced a lightweight audio tokenizer.
+  - It is based on the LFM2 architecture and serves as an embedding model with different input `n_embd` and output `n_embd_out`.
+  - To be used in https://github.com/ggml-org/llama.cpp/pull/18641.
+- **b8106**: model: add JAIS-2 architecture support ([#19488](https://github.com/ggml-org/llama.cpp/pull/19488))
+  - Add support for the JAIS-2 family of Arabic-English bilingual models from Inception AI (https://huggingface.co/inceptionai/Jais-2-8B-Chat).
+  - Architecture characteristics:
+  - LayerNorm (not RMSNorm) with biases
+- **b8106**: CUDA: fix padding of GQA to power of 2 in FA ([#19115](https://github.com/ggml-org/llama.cpp/pull/19115))
+  - Fixes https://github.com/ggml-org/llama.cpp/issues/19112 , the issue was introduced with https://github.com/ggml-org/llama.cpp/pull/19092 .
+  - The MMA CUDA FlashAttention kernel uses a stream-k decomposition to treat the four-dimensional input tensors as one continuous dimension to split across streaming multiprocessors. However, in conjunction with the GQA-specific optimizations in the MMA kernel this is only correct if the number of Q columns per CUDA block exactly divide `n_gqa`. Otherwise the wrong Q and K/V heads will be associated and the result will be wrong (if there is only a single K/V head this doesn't matter so it was not detected in testing).
+  - This PR extends the 4D space on master to a 5D space by splitting the "z" dimension with the number of Q heads into one dimension for the number of K/V heads and another dimension for the number of Q heads per K/V head. This then makes it possible to simply pad the Q columns per CUDA block to a power of 2.
+- **b8116**: ggml-quants : weighted rounding algorithms with cumulative search ([#12557](https://github.com/ggml-org/llama.cpp/pull/12557))
+  - This adds proper `imatrix` support to `TQ1_0` and `TQ2_0`, in addition to improving the rounding algorithm used for `Q3_K`, `IQ4_NL`, `IQ4_XS` (both with and without `imatrix`), as well as when using `imatrix` with `Q4_0` and `Q5_0`.
+  - **This is backward *and* forward compatible with other versions of `llama.cpp`**.
+  - Since this doesn't change the format of the types, only how the values are rounded when quantized, even previous (or current) versions of `llama.cpp` can use quants made with this PR.
+- **b8117**: ggml-cpu: add RVV vec dot kernels for quantization types ([#18784](https://github.com/ggml-org/llama.cpp/pull/18784))
+  - This PR adds RVV vector dot kernels for a number of quantization types.
+  - Added the following RVV kernels:
+  - | Kernel | VLEN |
+- **b8118**: common : merge qwen3-coder and nemotron nano 3 parsers ([#19765](https://github.com/ggml-org/llama.cpp/pull/19765))
+  - Users are experiencing several issues with Qwen3-Coder-Next. Until #18675 is merged in, this PR serves as a stop-gap by replacing the existing Qwen3-Coder parsing with the Nemotron Nano 3 PEG parsing variant already present.
+  - This PR also adds parallel tool calling and fixes JSON schema support.
+  - fixes #19382
+- **b8123**: Add a build target to generate ROCm artifacts using ROCm 7.2 ([#19433](https://github.com/ggml-org/llama.cpp/pull/19433))
+  - This builds the following targets:
+  - gfx1151
+  - gfx1150
+- **b8128**: model: Add Kanana-2 model support ([#19803](https://github.com/ggml-org/llama.cpp/pull/19803))
+  - *Make sure to read the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) before submitting a PR*
+  - This PR adds support for following Kanana-2 model family:
+  - [kakaocorp/kanana-2-30b-a3b-instruct-2601](https://huggingface.co/kakaocorp/kanana-2-30b-a3b-instruct-2601)
+- **b8131**: jinja: correct stats for tojson and string filters ([#19785](https://github.com/ggml-org/llama.cpp/pull/19785))
+  - Target fix https://github.com/ggml-org/llama.cpp/pull/18675
+  - @pwilkin please give this a try (see the added test case for more info)
+- **b8142**: vulkan: fix coopmat1 without bf16 support ([#19793](https://github.com/ggml-org/llama.cpp/pull/19793))
+  - This should fix the CI failure on lavapipe. lavapipe added coopmat1 support recently, but does not have bf16 support, so it falls back to the scalar path. This fallback didn't have quite the same tile size logic for subgroupsize=8 as when going through the scalar path directly.
+- **b8143**: Vulkan Scalar Flash Attention Refactor ([#19625](https://github.com/ggml-org/llama.cpp/pull/19625))
+  - This started out as an attempt to go through the scalar FA version and add proper float16 support to improve AMD and Intel performance and went quite a bit further. @jeffbolznv Sorry about the amount of changes, let me know if there's something I can do to make the review easier. Please also let me know if you have architectural concerns. Flash Attention has so many dimensions and making it work well on so much hardware and models is pretty hard. I had to spend quite a lot of time figuring out and fixing regressions on specific configurations.
+  - <details>
+  - <summary>AI-generated summary of changes</summary>
+- **b8149**: gguf : fix ftell/fseek for Windows ([#19870](https://github.com/ggml-org/llama.cpp/pull/19870))
+  - Regression introduced in #19856.
+  - This changes the `ftell/fseek` calls to use `_ftelli64/_fseeki64` on Windows, and `ftello/fseeko` for POSIX systems.
+  - `long` on Windows is always 32-bit. Since that would cause an overflow on large files, `ftell/fseek` fails and `nbytes_remain()` returns `0`.
+- **b8155**: common : add more aliases for sampler CLI params ([#19797](https://github.com/ggml-org/llama.cpp/pull/19797))
+  - Adds two CLI argument aliases for sampler parameters:
+  - `--top-n-sigma` (for existing `--top-nsigma`)
+  - `--temperature` (for existing `--temp`)
+- **b8161**: jinja : correct default size for string slices ([#19913](https://github.com/ggml-org/llama.cpp/pull/19913))
+  - *Make sure to read the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) before submitting a PR*
+  - As of b8157, when trying to use string slices in a chat template, and the slice does not specify end index (e.g. `content[1 : ]`), no output will be emitted since the default end index is calculated only for arrays, and remains 0 for strings. This PR adds handling for strings, and should be complete for currently supported data types.
+  - <details>
+- **b8164**: llama: Add option to merge gate and exp weights ([#19139](https://github.com/ggml-org/llama.cpp/pull/19139))
+  - Continuing on #18740 and #18866, add option `--fuse_gate_up_exps` to `convert_hf_to_gguf.py`.
+  - I've just added the gate_up tracking for deepseek2 (GLM 4.7 flash) and gpt-oss - although for gpt-oss we need even more changes (it goes through the `generate_extra_tensors` for generating expert weights). This PR is not complete as we would need to add this check in all MoE models and their tensors, but putting it out there in any case.
+  - on 5090:
+- **b8165**: kv-cache : fix can_shift() check to take into account M-RoPE ([#19928](https://github.com/ggml-org/llama.cpp/pull/19928))
+  - fix #19915
+  - KV cache shift is not supported with M-RoPE (yet).
+- **b8169**: ggml : fix AMX and add batched support ([#19925](https://github.com/ggml-org/llama.cpp/pull/19925))
+  - llama-perplexity -hf ggml-org/Qwen3-0.6B-GGUF:Q4_0 -f wikitext-2-raw/wiki.test.raw -c 2048 -b 2048 --chunks 2
+  - before this commit:
+  - ```
+- **b8175**: ggml-cpu: add repack for mxfp4 ([#19738](https://github.com/ggml-org/llama.cpp/pull/19738))
+  - This is just a faithful copy of the `iq4_nl` quant to mxfp4 with just the scale loading changed. Tested on AVX2 only, would appreciate tests on ARM and AVX512. Perplexity is already high for gpt-oss-20b but I see it is the same between master and this branch
+  - | Model                 | Test   |   t/s master |   t/s mxfp4-repack-cpu |   Speedup |
+  - |:----------------------|:-------|-------------:|-----------------------:|----------:|
+- **b8179**: CUDA: add CDNA3 MFMA support for flash attention MMA kernel ([#19806](https://github.com/ggml-org/llama.cpp/pull/19806))
+  - Adds MI300X (gfx942) MFMA tensor core flash attention to `fattn-mma-f16.cuh`. MI300X now routes to `BEST_FATTN_KERNEL_MMA_F16` instead of the tile-based fallback.
+  - Uses `v_mfma_f32_16x16x16_f16` (FP16 inputs, FP32 accumulate) with wavefront64
+  - Supports head sizes 64, 80, 96, 112, 128 via MMA; others fall back to VEC
+- **b8180**: Add model metadata loading from huggingface for use with tests requiring real model data ([#19796](https://github.com/ggml-org/llama.cpp/pull/19796))
+  - This is based on the work from huggingface here:
+  - https://github.com/huggingface/huggingface.js/tree/main/packages/gguf
+  - Idea is to partially load GGUF models from huggingface, just enough to get the metadata
+
+#### 🚀 Performance Improvements
+- **b8087**: opencl: refactor expm1 and softplus ([#19404](https://github.com/ggml-org/llama.cpp/pull/19404))
+  - This PR refactors the EXPM1 and Softplus OpenCL operators to improve code clarity and reduce duplication.
+- **b8099**: powerpc: add FP16 MMA path for Q4/Q8 matmul ([#19709](https://github.com/ggml-org/llama.cpp/pull/19709))
+  - Avoid xvi8ger4pp signed→unsigned bias correction by dequantizing Q4/Q8 inputs to FP16 and using FP16×FP16→FP32 MMA. This removes post-processing overhead and improves performance.
+  - Performance Impact:
+  - 1.5 ~ 2x improvement in PP_Speed for Q4 and Q8 Models, measured with llama-bench and llama-batched-bench. Q8 Model: granite-4.0-h-micro-Q8_0.gguf (from huggingface) Q4 Model: Meta-Llama3-8b Q4 model (generated with llama-quantize from f32 model)
+- **b8121**: Improve CUDA graph capture ([#19754](https://github.com/ggml-org/llama.cpp/pull/19754))
+  - Currently, CUDA graphs are eagerly enabled on the first call to ggml_backend_cuda_graph_compute. If the graph properties keep changing (4+ consecutive updates), the graph is permanently disabled. This is suboptimal because:
+  - The first call always incurs CUDA graph capture overhead even if the graph is unstable
+  - Once permanently disabled, CUDA graphs never re-enable even after the graph stabilizes (e.g., switching from prompt processing to decode)
+
+#### 🐛 Bug Fixes
+- **b8088**: common : make small string helpers as inline functions ([#19693](https://github.com/ggml-org/llama.cpp/pull/19693))
+  - Also use string_view when it make sense and fix some corner cases.
+- **b8089**: vulkan: split mul_mat into multiple dispatches to avoid overflow ([#19509](https://github.com/ggml-org/llama.cpp/pull/19509))
+  - The batch dimensions can be greater than the max workgroup count limit, in which case we need to split into multiple dispatches and pass the base index through a push constant.
+  - Fall back for the less common p021 and nc variants.
+  - Fixes #19471.
+- **b8095**: ggml webgpu: Fix bug in dispatching large matrix-vector multiplication ([#19535](https://github.com/ggml-org/llama.cpp/pull/19535))
+  - Bug fix for calculating overflowing workgroup sizes for large matrix-vector multiplication batches. Should fix failures from new tests in https://github.com/ggml-org/llama.cpp/pull/19519.
+  - This approach isn't ideal because it may over-provision workgroups by quite a bit, a better strategy is the one proposed for Vulkan in https://github.com/ggml-org/llama.cpp/pull/19509, but this will work for now.
+- **b8105**: CUDA: fix kernel selection logic for tile FA ([#19686](https://github.com/ggml-org/llama.cpp/pull/19686))
+  - Fixes https://github.com/ggml-org/llama.cpp/issues/19652 .
+  - The problem is that the kernel selection logic is slightly wrong so the host code runs into an abort.
+- **b8109**: vulkan: fix MMQ shader push constants and multi-dispatch ([#19732](https://github.com/ggml-org/llama.cpp/pull/19732))
+  - We forgot to update the mul_mmq shader in #19509. This should fix #19710.
+- **b8112**: common : fix gpt-oss Jinja error with content and thinking on tool-call messages ([#19704](https://github.com/ggml-org/llama.cpp/pull/19704))
+  - Erase the `content` from the adjusted message after copying `reasoning_content` to `thinking`.
+  - Regression from #16937
+  - Fixes #19703.
+- **b8113**: common : fix Step-3.5-Flash format detection and thinking support ([#19635](https://github.com/ggml-org/llama.cpp/pull/19635))
+  - Step-3.5-Flash (196B MoE) uses the same XML tool call output format as Qwen3-Coder and Nemotron 3 Nano (\`<tool_call><function=...><parameter=...>\`), but its template lacks the bare \`<function>\` and plural \`<parameters>\` markers in the tool enumeration section. The previous detection logic required all five XML markers, so Step-3.5-Flash fell through to Hermes 2 Pro, which doesn't call \`func_args_not_string()\`. Tool arguments stayed as JSON strings and templates using \`arguments|items\` crashed.
+  - Reported by multiple users in #19283:
+  - [Leaked tool tokens with Codex](https://github.com/ggml-org/llama.cpp/pull/19283#issuecomment-3839920985) (@tarruda)
+- **b8115**: test: mul_mat tests with huge batch size ([#19519](https://github.com/ggml-org/llama.cpp/pull/19519))
+  - tests for #19471.
+  - vulkan fix is in #19509.
+- **b8119**: hexagon : fix build release (#19444) ([#19587](https://github.com/ggml-org/llama.cpp/pull/19587))
+  - fixes: #19444
+  - cc: @max-krasnyansky
+- **b8130**: common : fix improper trimming in XML parser on complete message ([#19805](https://github.com/ggml-org/llama.cpp/pull/19805))
+  - Fix courtesy of @julio75012. Although his use case has already been fixed, I'm submitting this PR to address other models that exhibit similar behavior.
+  - The issue is that the XML parser trims partially matched tags. The reason `>` was trimmed from Seed-OSS is because `tool_sep = >`, and the reason a trailing `"` is trimmed from MiniMax/Kimi-K2 is because `tool_sep = ">`. This trimming should only happen when the message is still partial. Once the full message has been received, no trimming should occur.
+  - Fixes #19795
+- **b8141**: vulkan: fix data race in mul_mat_id shader ([#19790](https://github.com/ggml-org/llama.cpp/pull/19790))
+  - I've been working on automated data race detection (see https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/11717), and it found a data race in the mul_mat_id shaders. All invocations in a subgroup were storing the same value to shared memory, but this is still technically a data race. Just store on the first invocation.
+- **b8148**: models : fix graph splits ([#19866](https://github.com/ggml-org/llama.cpp/pull/19866))
+  - fix #19860
+  - fix #19864
+  - Ensure the node order of Qwen 3.5 graphs is suitable for multi-GPU systems.
+- **b8156**: vulkan: check for memory overlap before doing fusion ([#19768](https://github.com/ggml-org/llama.cpp/pull/19768))
+  - This fixes a class of potential fusion bugs where the destination could overwrite a source tensor while other elements of the same op still need those source values. Add some logic to compare the memory ranges and disable fusion if the bad case is detected. Some operations contribute to the destination in an elementwise fashion and can do a more relaxed check where exact overlap is allowed.
+  - In practice, I see this disabling TOPK_MOE fusion in some models (gpt-oss, qwen3) when there's more than one row, and this does appear to be a latent bug.
+- **b8157**: [SYCL] Fix binbcast.cpp:200: GGML_ASSERT(s10 == 1) failed of Qwen3-Coder-Next-Q3_K_M.gguf ([#19889](https://github.com/ggml-org/llama.cpp/pull/19889))
+  - Fix issue: https://github.com/ggml-org/llama.cpp/issues/19779
+  - The PR (1725e316c models : optimize qwen3next graph) lead to the OP shape is changed and lead to assert.
+  - In binbcast ops:
+- **b8159**: gguf : avoid too many file size calls ([#19919](https://github.com/ggml-org/llama.cpp/pull/19919))
+  - cont #19856
+  - fix #19912
+  - No need to do file calls on each read. Instead, determine the remaining bytes once at the start and after that update the value on each read.
+- **b8168**: vulkan: fix fp16 Flash Attention on Windows AMD RDNA2 and below ([#19921](https://github.com/ggml-org/llama.cpp/pull/19921))
+  - For some reason a f16vec4 subgroupShuffleXor is broken on RDNA2 and lower. I found a workaround by shuffling vec4 instead. This also fixes fp16 Flash Attention on AMD GCN, so I removed the fp32 fallback.
+  - Fixes #19881 and also the issue reported here: https://github.com/ggml-org/llama.cpp/pull/19625#issuecomment-3940674420
+  - @masamaru-san @DeryabinIvan Please try this fix and let me know if it works for you.
+- **b8171**: [SYCL] Replace the magic nunber 768 by max work group size to support iGPU ([#19920](https://github.com/ggml-org/llama.cpp/pull/19920))
+  - Fix issue: https://github.com/ggml-org/llama.cpp/issues/19886
+- **b8172**: [CMake] Enable test-chat out of tree build ([#19558](https://github.com/ggml-org/llama.cpp/pull/19558))
+  - The test-chat binary relies on model files that it tries to find. However, when configuring the build directory to be parallel to the source tree those heuristics fail.
+  - This sets the working directory for the test executable to be the source-tree which resolves this issue.
+  - I validated locally with a build parallel to the source tree and nested inside the source tree.
+- **b8182**: vendors: update miniaudio library to 0.11.24 ([#19914](https://github.com/ggml-org/llama.cpp/pull/19914))
+  - https://github.com/mackron/miniaudio/releases/tag/0.11.24.
+  -   Fixed a possible glitch when processing the audio of a `ma_sound` when doing resampling.
+  -   Fixed a possible crash in the node graph relating to scheduled starts and stops.
+
+
+### Additional Changes
+27 minor improvements: 3 documentation, 19 examples, 5 maintenance.
+
+### Full Commit Range
+- b8087 to b8182 (76 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8087...b8182
+
+---
+
 ## 2026-02-18: Update to llama.cpp b8087
 
 ### Summary
