@@ -1,5 +1,101 @@
 # Changelog
 
+## 2026-02-18: Update to llama.cpp b8087
+
+### Summary
+Updated llama.cpp from b8053 to b8087, incorporating 28 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8057**: ggml-cpu: FA add GEMM microkernel ([#19422](https://github.com/ggml-org/llama.cpp/pull/19422))
+  - This PR contains the following improvements for the tiled FA kernel
+  - Add a simd gemm for float32 in the tiled FA kernel.
+  - Tune tile sizes for larger context
+- **b8075**: Remove annoying warnings (unused functions) ([#18639](https://github.com/ggml-org/llama.cpp/pull/18639))
+  - When using common.h as a library, these function produce annoying warnings about not being used.
+  - Using "static" linking for these also doesn't make much sense because it potentially increases executable size with no gains.
+
+#### 🆕 New Features
+- **b8059**: ggml : avoid UB in gemm ukernel + tests ([#19642](https://github.com/ggml-org/llama.cpp/pull/19642))
+  - cont #19422
+  - Reword the GEMM ukernel to not trip the compiler's aggressive loop optimization warnings. It's better to avoid the global pragma as it might be useful for other static analysis
+  - Add `test-backend-ops` with BS=75 to exercise the new tiled SIMD implementation
+- **b8061**: cmake : check if KleidiAI API has been fetched ([#19640](https://github.com/ggml-org/llama.cpp/pull/19640))
+  - This commit addresses a build issue with the KleidiAI backend when building multiple cpu backends. Commmit
+  - 3a00c98584e42a20675b6569d81beadb282b0952 ("cmake : fix KleidiAI install target failure with EXCLUDE_FROM_ALL") introduced a change where FetchContent_Populate is called instead of FetchContent_MakeAvailable, where the latter does handle this case (it is idempotent but FetchContent_Populate is not).
+  - I missed this during my review and I should not have commited without verifying the CI failure, sorry about that.
+- **b8068**: ggml: aarch64: Implement SVE in Gemm q4_k 8x8 q8_k Kernel  ([#19132](https://github.com/ggml-org/llama.cpp/pull/19132))
+  - This PR introduces support for SVE (Scalable Vector Extensions) kernels for the q4_K_q8_K gemm using i8mm and vector instructions. ARM Neon support for this kernel added in PR [#16739](https://github.com/ggml-org/llama.cpp/pull/16739)
+  - **Verifying Feature**
+  - `----------------------------------------------------------------------------`
+- **b8070**: models : deduplicate delta-net graphs for Qwen family ([#19597](https://github.com/ggml-org/llama.cpp/pull/19597))
+  - cont #19375
+  - Add `llm_build_delta_net_base` for common delta net builds. Currently used only by `qwen3next`
+  - Rename `llm_graph_context_mamba` -> `llm_build_mamba_base`
+- **b8071**: Adjust workaround for ROCWMMA_FATTN/GFX9 to only newer ROCm veresions ([#19591](https://github.com/ggml-org/llama.cpp/pull/19591))
+  - Avoids issues with ROCm 6.4.4.
+  - Closes: https://github.com/ggml-org/llama.cpp/issues/19580
+  - Fixes: 6845f7f87 ("Add a workaround for compilation with ROCWMMA_FATTN and gfx9 (#19461)")
+- **b8073**: Add support for Tiny Aya Models ([#19611](https://github.com/ggml-org/llama.cpp/pull/19611))
+  - This PR adds native support for the CohereLabs/tiny-aya family of models in llama.cpp. These models use a distinct BPE pre-tokenizer (tiny_aya) with a custom digit-grouping regex.
+  - Tagging @ngxson for visibility.
+- **b8076**: feat: add proper batching to perplexity ([#19661](https://github.com/ggml-org/llama.cpp/pull/19661))
+  - This PR updates `llama-perplexity` to allow for batching similarly to how `llama-imatrix` works. The idea being that you can increase `--batch-size` / `--ubatch-size` to process multiple contexts chunks in a batch. This has limited application in VRAM-rich environments (eg, if you're running the entire model in VRAM) but it makes a huge difference when using models in a mixed CPU/GPU setup as it saves `n_seq` trips from the CPU RAM to GPU VRAM per batch.
+  - I've double-checked the before and after to make sure the resulting PPL and KLD look correct still.
+  - <details>
+- **b8077**: convert_hf_to_gguf: add JoyAI-LLM-Flash tokenizer hash mapping to deepseek-v3 ([#19651](https://github.com/ggml-org/llama.cpp/pull/19651))
+  - adding hash for `jdopensource/JoyAI-LLM-Flash` mapping to existing `deepseek-v3`
+  - `DeepseekV3ForCausalLM` architecture already supported
+  - moved `GLM-4.7-Flash` entry together with the other `glm` entries
+
+#### 🚀 Performance Improvements
+- **b8053**: models : optimizing qwen3next graph ([#19375](https://github.com/ggml-org/llama.cpp/pull/19375))
+  - Rewording the ggml compute graph to avoid too many unnecessary copies.
+  - M2 Ultra:
+  - | Model                    | Test   |   t/s b7946 |   t/s gg/qwen3-next-opt |   Speedup |
+- **b8058**: ggml-cpu: optimize ggml_vec_dot_bf16 for s390x ([#19399](https://github.com/ggml-org/llama.cpp/pull/19399))
+  - Similar to #18837, this pull request integrates the SIMD instruction set for BF16 on the s390x platform. We notice a 154.86% performance improvement for Prompt Processing. No performance difference was noticed for Token Generation.
+  - | model                          |       size |     params | backend    | threads | mmap |            test |                  t/s |
+  - | ------------------------------ | ---------: | ---------: | ---------- | ------: | ---: | --------------: | -------------------: |
+- **b8064**: cuda: optimize iq2xxs/iq2xs/iq3xxs dequantization ([#19624](https://github.com/ggml-org/llama.cpp/pull/19624))
+  - While looking over quantizations I believe I found a few optimizations for iq2xxs/iq2xs/iq3xxs. With these changes, I get a 5-10% increase in flops in `test-backend-ops` for small `n`, and a few extra flops otherwise:
+  - load all 8 int8 for a grid position in one load
+  - calculate signs via popcnt instead of fetching from ksigns table
+- **b8086**: opencl: optimize mean and sum_row kernels ([#19614](https://github.com/ggml-org/llama.cpp/pull/19614))
+  - This PR optimizes the mean op and sum_rows op for the OpenCL backend.
+- **b8087**: opencl: refactor expm1 and softplus ([#19404](https://github.com/ggml-org/llama.cpp/pull/19404))
+  - This PR refactors the EXPM1 and Softplus OpenCL operators to improve code clarity and reduce duplication.
+
+#### 🐛 Bug Fixes
+- **b8056**: cmake: fix KleidiAI install target failure with EXCLUDE_FROM_ALL ([#19581](https://github.com/ggml-org/llama.cpp/pull/19581))
+  - Fix for the bug #19501 by adding `EXCLUDE_FROM_ALL` to the `FetchContent_Declare` call for KleidiAI. This properly excludes the KleidiAI library from both the `all` and `install` targets, preventing CMake install failures when building with `GGML_CPU_KLEIDIAI=ON`. The KleidiAI source files are still compiled directly into `libggml-cpu.so`, so functionality is preserved.
+- **b8060**: context : fix output reorder with backend sampling ([#19638](https://github.com/ggml-org/llama.cpp/pull/19638))
+  - fix #19629
+  - Some of the sampling arrays could remain in invalid state after a sequence of enabling/disabling samplers.
+- **b8069**: graph : fix KQ mask, lora, cvec reuse checks ([#19644](https://github.com/ggml-org/llama.cpp/pull/19644))
+  - cont #14482
+  - Graph reuse was never triggered for parallel decoding with non-unified KV cache due to incorrect check of the KQ mask shape.
+  - Also fix the checks for reusing lora and control vectors.
+- **b8071**: Add a workaround for compilation with ROCWMMA_FATTN and gfx9 ([#19461](https://github.com/ggml-org/llama.cpp/pull/19461))
+  - There is an upstream problem [1] with AMD's LLVM 22 fork and rocWMMA 2.2.0 causing compilation issues on devices without native fp16 support (CDNA devices).
+  - The specialized types aren't resolved properly:
+  - ```c
+- **b8083**: ggml: ggml-cpu: force-no-lto-for-cpu-feats ([#19609](https://github.com/ggml-org/llama.cpp/pull/19609))
+  - When LTO enabled in build environments it forces all builds to have LTO in place. But feature detection logic is fragile, and causing Illegal instruction errors with lto. This disables LTO for the feature detection code to prevent cross-module optimization from inlining architecture-specific instructions into the score function. Without this, LTO can cause SIGILL when loading backends on older CPUs (e.g., loading power10 backend on power9 crashes before feature check runs).
+  - Please also see https://salsa.debian.org/deeplearning-team/ggml/-/merge_requests/6 for more information about the issue we saw on ppc64el builds with LTO enabled in ubuntu.
+  - *Make sure to read the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) before submitting a PR*
+
+
+### Additional Changes
+8 minor improvements: 1 documentation, 3 examples, 4 maintenance.
+
+### Full Commit Range
+- b8053 to b8087 (28 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8053...b8087
+
+---
+
 ## 2026-02-14: Update to llama.cpp b8040
 
 ### Summary
