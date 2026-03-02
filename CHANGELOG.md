@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-03-02: Update to llama.cpp b8185
+
+### Summary
+Updated llama.cpp from b8182 to b8185, incorporating 4 upstream commits with performance improvements.
+
+### Notable Changes
+
+#### 🚀 Performance Improvements
+- **b8184**: vulkan: improve partial offloading performance on AMD ([#19976](https://github.com/ggml-org/llama.cpp/pull/19976))
+  - I saw a big difference between Vulkan and ROCm performance in partial offloads. I narrowed it down to transfer speeds for weight transfer from CPU to GPU with offloaded ops. One possible explanation is that using the dedicated transfer queue on AMD may be faster than using a compute queue, so I implemented using a transfer queue for async transfers as well and synchronizing transfers using a timeline semaphore. This does improve performance.
+  - Then I checked and found that the dedicated transfer queue on AMD is not exposed by the Linux driver by default, so it's not actually being used. The difference comes from using a second queue (the graphics queue) for transfers, so I assume the issue was the compute queue being congested with other work.
+  - This helps on AMD RDNA4, but not on GCN and not on Nvidia. I couldn't test Intel because the Linux driver only exposes a single queue.
+- **b8185**: ggml-cpu: optimise s390x multiply extend instructions ([#20032](https://github.com/ggml-org/llama.cpp/pull/20032))
+  - This PR optimizes the multiply extend vector instructions for Q4_0, Q4_K, Q5_K, and Q6_K quantizations by using the fused multiply-add instruction instead of separating them into multiple instruction calls. We notice a performance improvement of about 28.77% and 16.35% for Prompt Processing and Token Generation respectively.
+  - Old Instruction Set
+  - ```assembly
+
+#### 🐛 Bug Fixes
+- **b8182**: vendors: update miniaudio library to 0.11.24 ([#19914](https://github.com/ggml-org/llama.cpp/pull/19914))
+  - https://github.com/mackron/miniaudio/releases/tag/0.11.24.
+  -   Fixed a possible glitch when processing the audio of a `ma_sound` when doing resampling.
+  -   Fixed a possible crash in the node graph relating to scheduled starts and stops.
+- **b8183**: cuda: fix grid.y overflow in non-contiguous dequantize/convert kernels ([#19999](https://github.com/ggml-org/llama.cpp/pull/19999))
+  - The `dequantize_block` and `convert_unary` kernels pass `ne01` directly as the CUDA grid y-dimension, but grid.y is limited to 65535. When `ne01` exceeds this, the kernel launch fails with `cudaErrorInvalidConfiguration`.
+  - This happens when using `llama-server` with flash attention, quantized KV cache, multiple parallel slots, and long context. With multiple slots the KV caches are non-contiguous, so the NC dequantization path is taken, and `ne01` (the KV cache length) ends up as grid.y.
+  - The grid.z dimension was already capped at 65535 with a grid-stride loop. This applies the same pattern to grid.y.
+
+
+### Full Commit Range
+- b8182 to b8185 (4 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8182...b8185
+
+---
+
 ## 2026-03-01: Update to llama.cpp b8182
 
 ### Summary
