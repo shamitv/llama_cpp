@@ -1,5 +1,82 @@
 # Changelog
 
+## 2026-03-05: Update to llama.cpp b8204
+
+### Summary
+Updated llama.cpp from b8185 to b8204, incorporating 16 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8189**: Clean up per-thread parameter buffer pool and job submission logic ([#19772](https://github.com/ggml-org/llama.cpp/pull/19772))
+  - After splitting per-thread state and execution, this is the final cleanup diff.
+  - We allow the buffer pool to grow in case of multiple kernels in a command requiring more buffers, remove the inflight_threads logic, and replace it with num_kernels to decide when to submit a batch of commands.
+- **b8201**: [WebGPU] Fix wait logic for inflight jobs ([#20096](https://github.com/ggml-org/llama.cpp/pull/20096))
+  - Fix WebGPU wait logic incorrectly removing futures. WaitAny returns when any future completes, but the previous implementation erased the entire submission entry (aka a vector of futures). Flatten the nested futures structure to a single vector and remove only the futures that are completed.
+
+#### 🆕 New Features
+- **b8188**: ggml-webgpu: Support non-contiguous `src0` and overlapping `src0/src1` in binary ops ([#19850](https://github.com/ggml-org/llama.cpp/pull/19850))
+  - Hello. This PR improves the handling of binary operations in the WebGPU backend, adding support for patterns required by #16857 (MoE expert reduce).
+  - The changes are as follows:
+  - The index is now calculated based on stride to support cases where `src0` is a non-contiguous tensor.
+- **b8190**: ggml webgpu: fix workgroup dispatch limit for large batch sizes ([#19965](https://github.com/ggml-org/llama.cpp/pull/19965))
+  - WebGPU limits workgroup counts to 65535 per dimension. MUL_MAT operations with batch sizes exceeding this limit would fail or corrupt memory.
+  - This PR implements 2D workgroup dispatch to handle arbitrary batch sizes:
+  - Adds `compute_2d_workgroups()` helper to split workgroups across X/Y dimensions when exceeding the 65535 limit
+- **b8191**: opencl: add optimized q4_1 mm kernel for adreno ([#19840](https://github.com/ggml-org/llama.cpp/pull/19840))
+  - This PR adds optimized OpenCL kernels for Q4_1 GEMM and GEMV operations on Adreno GPUs.
+- **b8192**: kleidiai : add sme fp16 compute path for q4_0 gemm on aarch64 ([#20043](https://github.com/ggml-org/llama.cpp/pull/20043))
+  - This patch introduce an SME2-based FP16 compute path for Q4_0 GEMM to improve performance on AARCH64.
+  - Benchmark result for Llama-3.2-1B-Instruct-Q4_0 — pp512 (t/s) (Mac M4 Pro, GGML_KLEIDIAI_SME=1)
+  - | Threads | w/o fp16q4 | w/ fp16q4  | Improvement |
+- **b8203**: opencl: add `set`, i32 for `cpy` ([#20101](https://github.com/ggml-org/llama.cpp/pull/20101))
+  - Add `set` and support i32 for `cpy`. Also some minor refactoring for `cpy` host code.
+
+#### 🚀 Performance Improvements
+- **b8185**: ggml-cpu: optimise s390x multiply extend instructions ([#20032](https://github.com/ggml-org/llama.cpp/pull/20032))
+  - This PR optimizes the multiply extend vector instructions for Q4_0, Q4_K, Q5_K, and Q6_K quantizations by using the fused multiply-add instruction instead of separating them into multiple instruction calls. We notice a performance improvement of about 28.77% and 16.35% for Prompt Processing and Token Generation respectively.
+  - Old Instruction Set
+  - ```assembly
+- **b8187**: vulkan: tune MMVQ for Intel Windows ([#19988](https://github.com/ggml-org/llama.cpp/pull/19988))
+  - Tune MMVQ use for Intel Windows according to https://github.com/ggml-org/llama.cpp/issues/17628#issuecomment-3897132360
+  - @savvadesogle Please try it and see if performance is good.
+- **b8197**: ggml : use a simple std::thread in AMX without OpenMP ([#20074](https://github.com/ggml-org/llama.cpp/pull/20074))
+  - Disabling OpenMP generally provides better inference performance (at least in my testing) but the loading becomes slightly slower.
+  - Benchmark results for `convert_B_packed_format()`:
+  - Before this commit:
+- **b8204**: hexagon: Flash Attention optimizations (dma, mpyacc, multi-row) and MatMul updates ([#20118](https://github.com/ggml-org/llama.cpp/pull/20118))
+  - Further updates on top of #19780 by @chraac
+  - Improved DMA pipelining in FA
+  - Reduced FA block size from 128 to 64 to improve DMA prefetch (128 is too big for most models)
+
+#### 🐛 Bug Fixes
+- **b8196**: impl : use 6 digits for tensor dims ([#20094](https://github.com/ggml-org/llama.cpp/pull/20094))
+  - Many models have vocabulary sizes, and thus tensor shapes, with more than 5 digits (ex: Gemma 3's vocab size is 262,208).
+  - I already fixed this for `llama_format_tensor_shape` (tensor) but missed it for `llama_format_tensor_shape` (vector) until now. Oops.
+  - *Make sure to read the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) before submitting a PR*
+- **b8198**: ggml: fix ggml_is_contiguous_n for ne == 1 ([#20092](https://github.com/ggml-org/llama.cpp/pull/20092))
+  - While debugging a test failure for https://github.com/ggml-org/llama.cpp/pull/19802 I found what I believe to be a bug in `ggml_is_contiguous_n`. A test case using the new fused experts from https://github.com/ggml-org/llama.cpp/pull/19139 fails on an assert like `GGML_ASSERT(ggml_is_contiguous_1(a))`. This assertion failure happens specifically because the test case uses only a single expert vs. the real models using >1 experts. So the test case gets a tensor like this: `ne = {192, 1, 128, 1}, nb = {4, 1536, 1536, 196608}`. This should be contiguous in dimensions 1, 2, and 3 but it is not according to `ggml_is_contiguous_1`. The reason is that the code on master entirely skips dimensions that have a size of 1. But this then also skips the fix for `next_nb` if a dimension does not need to be contiguous. This PR adjusts the logic to skip only the check for whether or not the tensor is contiguous if a dimension is equal to 1.
+
+
+### Additional Changes
+3 minor improvements: 1 documentation, 2 examples.
+
+- **b8200**: ggml-webgpu: Add the support of `GGML_OP_CONCAT` ([#20068](https://github.com/ggml-org/llama.cpp/pull/20068))
+  - Hello. This PR adds `GGML_OP_CONCAT` support to the WebGPU backend. This op is used by models such as DeepSeek-V2.
+  - This change supports two types `F32`, `I32` to match the types covered by `test_concat` in `test-backend-ops`.
+- **b8194**: completion : Fix a typo in warning message ([#20082](https://github.com/ggml-org/llama.cpp/pull/20082))
+  - resuse -> reuse
+- **b8195**: Fix locale-dependent float printing in GGUF metadata ([#17331](https://github.com/ggml-org/llama.cpp/pull/17331))
+  - I was running some llama.cpp examples on a system with a German locale (de_DE) and noticed something odd - when llama-cli printed out the model metadata, all the float values had commas as decimal separators (like "0,000000") instead of periods. But when I ran llama-perplexity on the same model, it used periods normally.
+  - After some digging, I found the issue was in the gguf_data_to_str() function in llama-impl.cpp. It was using std::to_string() to format floats, which respects the system's LC_NUMERIC locale setting. So depending on which tool you used and what locale it was running with, you'd get different formatting.
+  - I've changed it to use std::ostringstream with std::locale::classic() instead, which always formats floats with a period as the decimal separator, regardless of the system locale. This should make the output consistent across all tools and locales.
+
+### Full Commit Range
+- b8185 to b8204 (16 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8185...b8204
+
+---
+
 ## 2026-03-02: Update to llama.cpp b8185
 
 ### Summary
