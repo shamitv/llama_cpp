@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-03-07: Update to llama.cpp b8229
+
+### Summary
+Updated llama.cpp from b8229 to b8229, incorporating 1 upstream commits.
+
+### Notable Changes
+
+#### 🐛 Bug Fixes
+- **b8229**: [ggml-quants] Add memsets and other fixes for IQ quants ([#19861](https://github.com/ggml-org/llama.cpp/pull/19861))
+  - While trying to stop my Qwen3.5 quants from getting a ton of "Oops: found point X not on grid ...", I (and claude) came across a potential big issue
+  - Using gdb, it seems that `L` is often initialized to non-zero memory, and so when it's read, it has garbage data in it that's causing the quantizations to go awry when there's no candidates found during the search
+  - With this change, with Qwen3.5, I no longer saw ANY "Oops: found point.." errors, and the PPL seems totally as expected
+
+
+### Full Commit Range
+- b8229 to b8229 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8229...b8229
+
+---
+
 ## 2026-03-05: Update to llama.cpp b8204
 
 ### Summary
