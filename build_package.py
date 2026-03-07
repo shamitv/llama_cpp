@@ -353,6 +353,64 @@ def fetch_release_by_tag(tag: str):
         return None
 
 
+def fetch_latest_release():
+    """Fetch latest published (non-draft, non-prerelease) release.
+    Returns a release dict or None.
+    """
+    api = f"{GITHUB_API_BASE}/repos/{LLAMA_CPP_REPO_OWNER}/{LLAMA_CPP_REPO_NAME}/releases/latest"
+    try:
+        return _http_get_json(api)
+    except urllib.error.HTTPError as e:
+        # Some repos may not expose /latest cleanly, fall back to list endpoint.
+        logging.warning(f"Could not fetch latest release via /latest (HTTP {e.code}). Falling back to paginated releases.")
+    except Exception as e:
+        logging.warning(f"Could not fetch latest release via /latest: {e}. Falling back to paginated releases.")
+
+    releases = fetch_releases_paginated(max_pages=1, per_page=20)
+    for rel in releases:
+        if rel.get("draft") or rel.get("prerelease"):
+            continue
+        return rel
+    return None
+
+
+def resolve_release_tag_for_build(preferred_tag: str) -> str:
+    """Resolve a release tag suitable for downloading release assets.
+
+    Priority:
+    1. Release matching the current submodule tag (or its normalized form)
+    2. Latest published release tag
+
+    Returns a tag name string, or None if nothing is available.
+    """
+    candidates = []
+    if preferred_tag:
+        candidates.append(preferred_tag)
+        preferred_norm = _normalize_llama_tag(preferred_tag)
+        if preferred_norm != preferred_tag:
+            candidates.append(preferred_norm)
+
+    for tag in candidates:
+        rel = fetch_release_by_tag(tag)
+        if rel:
+            resolved = rel.get("tag_name") or tag
+            logging.info(f"Using release tag '{resolved}' for binary/changelog operations.")
+            return resolved
+
+    latest = fetch_latest_release()
+    if latest:
+        latest_tag = latest.get("tag_name")
+        if latest_tag:
+            logging.warning(
+                f"No release found for submodule tag '{preferred_tag}'. "
+                f"Falling back to latest published release tag '{latest_tag}'."
+            )
+            return latest_tag
+
+    logging.error("Unable to resolve any published llama.cpp release tag.")
+    return None
+
+
 def fetch_releases_paginated(max_pages: int = 5, per_page: int = 100):
     """Fetch recent releases list, paginated. Returns list (most recent first)."""
     releases = []
@@ -560,21 +618,24 @@ def main():
             old_submodule_tag, new_submodule_tag, current_package_version, SETUP_PY_PATH
         )
 
-    # Determine submodule tag (this is now effectively new_submodule_tag)
-    submodule_tag = new_submodule_tag 
+    # Determine current submodule tag and valid published release tags.
+    submodule_tag = new_submodule_tag
+    release_tag_for_build = resolve_release_tag_for_build(submodule_tag)
+    old_release_tag_for_changelog = resolve_release_tag_for_build(old_submodule_tag) if old_submodule_tag else None
 
     # --- Step 1.5: Download Windows Binary ---
-    if submodule_tag:
-        download_and_place_windows_binary(submodule_tag)
+    if release_tag_for_build:
+        download_and_place_windows_binary(release_tag_for_build)
     else:
-        logging.error("Critical: Submodule tag/commit not determined. Skipping download of Windows binary.")
+        logging.error("Critical: No valid published release tag resolved. Skipping download of Windows binary.")
         # Ensure binaries directory exists for setup.py even if download fails, but it should be there from download_and_place_windows_binary
         os.makedirs(LLAMA_CPP_PACKAGE_BINARIES_PATH, exist_ok=True)
 
     # --- Step 2: Update CHANGELOG with upstream changes ---
     logging.info("\n--- Step 2: Updating CHANGELOG.md with llama.cpp release notes ---")
     try:
-        update_changelog(old_submodule_tag, new_submodule_tag)
+        # Use resolved release tag so changelog generation tracks published releases.
+        update_changelog(old_release_tag_for_changelog, release_tag_for_build)
     except Exception as e:
         logging.error(f"Changelog update failed (non-fatal): {e}")
 
