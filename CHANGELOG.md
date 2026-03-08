@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-03-08: Update to llama.cpp b8234
+
+### Summary
+Updated llama.cpp from b8233 to b8234, incorporating 2 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8233**: ggml: add GATED_DELTA_NET op ([#19504](https://github.com/ggml-org/llama.cpp/pull/19504))
+  - Add CPU/CUDA impl for GATED_DELTA_NET used in qwen3next and a lot of upcoming recent attention models. This is a basic vector impl and not the chunking impl, although this should work for n_tokens > 1 as a reference implementation. I tested this vs `build_delta_net_autoregressive` and the results were good. I plan to add the chunked implementation for CPU and CUDA.
+  - master:
+  - | model                          |       size |     params | backend    | threads | fa |            test |                  t/s |
+
+
+### Additional Changes
+1 minor improvements: 1 documentation.
+
+- **b8234**: [SYCL] supprt Flash Attention for fp32/fp16/Q4/Q5/Q8 ([#20190](https://github.com/ggml-org/llama.cpp/pull/20190))
+  - Supprt Flash Attention for fp32/fp16/Q4/Q5/Q8.
+  - All supported Flash Attention UT cases are passed.
+  - Support to enable/disable Flash attention by environment variable: GGML_SYCL_ENABLE_FLASH_ATTN
+
+### Full Commit Range
+- b8233 to b8234 (2 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8233...b8234
+
+---
+
 ## 2026-03-07: Update to llama.cpp b8229
 
 ### Summary
