@@ -1,5 +1,91 @@
 # Changelog
 
+## 2026-03-14: Update to llama.cpp b8329
+
+### Summary
+Updated llama.cpp from b8287 to b8329, incorporating 29 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8291**: metal : add env var to trigger graph capture ([#20398](https://github.com/ggml-org/llama.cpp/pull/20398))
+  - QoL for capturing execution of Metal graphs for profiling purposes.
+  - Usage:
+  - ```bash
+- **b8295**: llama : add support for Nemotron 3 Super ([#20411](https://github.com/ggml-org/llama.cpp/pull/20411))
+  - This commit adds support for the Nemotron 3 Super model (120B.A12B) enabling this model to be converted to GGUF format and run in llama.cpp.
+- **b8299**: llama : enable chunked fused GDN path ([#20340](https://github.com/ggml-org/llama.cpp/pull/20340))
+  - cont #19504
+  - Backends can now implement the chunked version of the fused GDN operator.
+  - Implementations:
+- **b8299**: metal : add GDN kernel ([#20361](https://github.com/ggml-org/llama.cpp/pull/20361))
+  - target #20340
+  - cont #20244
+  - Add fused GDN recurrent kernel. Use both for BS == 1 and BS > 1.
+- **b8299**: ggml: add GATED_DELTA_NET op ([#19504](https://github.com/ggml-org/llama.cpp/pull/19504))
+  - Add CPU/CUDA impl for GATED_DELTA_NET used in qwen3next and a lot of upcoming recent attention models. This is a basic vector impl and not the chunking impl, although this should work for n_tokens > 1 as a reference implementation. I tested this vs `build_delta_net_autoregressive` and the results were good. I plan to add the chunked implementation for CPU and CUDA.
+  - master:
+  - | model                          |       size |     params | backend    | threads | fa |            test |                  t/s |
+- **b8299**: CUDA: AR gated delta net improvements ([#20391](https://github.com/ggml-org/llama.cpp/pull/20391))
+  - I profiled the AR gated delta net, and improved perf by:
+  - 1. Adding fastdiv/fastrem for s64 int (do we even need this arithmetic to happen in 64-bit?)
+  - 2. Sharding a column across a full warp instead of using only a single thread. We don't fill SMs (at least on higher-tier GPUs) with existing launch-config (saw 16-32 CTAs with low thread-counts vs. 80+ SMs for e.g. 5080), so that was some free perf while reducing register-pressure in the case where S_v = 128 (saw some spill there)
+- **b8304**: tool parser: add GigaChatV3/3.1 models support in PEG format ([#19931](https://github.com/ggml-org/llama.cpp/pull/19931))
+  - I have recreated the PR of https://github.com/ggml-org/llama.cpp/pull/17924 for cleaner commits and no merge conflicts
+- **b8315**: vulkan: fix SSM_CONV PP scaling with large ubatch sizes ([#20379](https://github.com/ggml-org/llama.cpp/pull/20379))
+  - Fixes #18725
+  - The SSM_CONV shader dispatched one token per Y workgroup, each doing only `nc` (typically 4) multiply-adds. At ubatch=2048 this meant 2048 workgroups in Y with almost no work per launch — workgroup dispatch overhead dominated.
+  - **Changes:**
+- **b8317**: llama : enable chunked fused GDN path ([#20340](https://github.com/ggml-org/llama.cpp/pull/20340))
+  - cont #19504
+  - Backends can now implement the chunked version of the fused GDN operator.
+  - Implementations:
+- **b8329**: ggml-cpu: add RVV vec dot kernels for quantization types ([#18859](https://github.com/ggml-org/llama.cpp/pull/18859))
+  - This PR adds RVV vector dot kernels for a number of quantization types.
+  - Added the following RVV kernels:
+  - | Kernel | VLEN |
+
+#### 🐛 Bug Fixes
+- **b8292**: metal : fix q5_k mul_mv register spill ([#20399](https://github.com/ggml-org/llama.cpp/pull/20399))
+  - cont #20398
+  - Noticed too high register pressure in the q5_k vec kernel:
+  - ```bash
+- **b8301**: common : fix `--n-cpu-moe`, `--cpu-moe` for models with fused gate + up ([#20416](https://github.com/ggml-org/llama.cpp/pull/20416))
+  - Changed the regex that matches conditional experts from:
+  - ```cpp
+  - const char * const LLM_FFN_EXPS_REGEX = "\\.ffn_(up|down|gate)_(ch|)exps";
+- **b8308**: vulkan: Fix ErrorOutOfHostMemory on Intel GPU when loading large models with --no-mmap ([#20059](https://github.com/ggml-org/llama.cpp/pull/20059))
+  - Fixes #19420.
+  - We were hitting an internal maximum number (16383) of command buffers for Intel's Windows GPU driver causing ErrorOutOfHostMemory when loading large models (1MB per transfer * 16383 == approx 16GB or more weight). This PR attempts to fix this by reusing command buffers that are done transferring data.
+  - `llama-cli.exe -m Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf --no-mmap` show no crashing on both Intel iGPU and NVIDIA dGPU. Chat results are correct as well.
+- **b8309**: vulkan: fix OOB check in flash_attn_mask_opt ([#20296](https://github.com/ggml-org/llama.cpp/pull/20296))
+  - Fixes #19955.
+  - I saw a few percent slowdown with pp512 (which is too small to hit the aligned path on my system after this change) so I tweaked the use_mask_opt logic to hide it. I should look into spreading the work across more workgroups, but I don't have time for that today.
+  - @el95149 this is different enough from the test change that it's probably worth retesting.
+- **b8310**: vulkan: fix l2_norm epsilon handling ([#20350](https://github.com/ggml-org/llama.cpp/pull/20350))
+  - This is the only "real" bug I could find in test-llama-archs. I see some other failures but they may be driver/compiler bugs.
+- **b8318**: grammar : Fix grammar root symbol check ([#19761](https://github.com/ggml-org/llama.cpp/pull/19761))
+  - Constructing a GBNF grammar allows the programmer to select a `grammar_root`- the symbol to start the grammar from.
+  - The `llama_grammar_init_impl` function incldued a check to see whether the grammar contains a rule for a symbol named literally "root", instead of checking for a symbol with the named passed in as `grammar_root`. This causes valid grammars with non-"root" root symbols to fail, and invalid grammars with a rule named "root", but a different chosen `grammar_root` symbol to pass the check, and immediately fail hard (see failure case in Tests section).
+  - Check whether there is a rule for a symbol with the name passed in as `grammar_root`, not literally `"root"`.
+- **b8323**: llama : disable graph reuse with pipeline parallelism ([#20463](https://github.com/ggml-org/llama.cpp/pull/20463))
+  - The following repro demonstrates the issue:
+  - ```bash
+  - make -j && ./bin/llama-perplexity -hf ggml-org/Qwen3-0.6B-GGUF -f wiki.test.raw --chunks 16 -ngl 99 -ub 512 -b 2048
+- **b8325**: metal : fix l2 norm scale ([#20493](https://github.com/ggml-org/llama.cpp/pull/20493))
+  - Bug revealed from recently added tests.
+- **b8328**: ggml : fix typo gmml ([#20512](https://github.com/ggml-org/llama.cpp/pull/20512))
+
+
+### Additional Changes
+10 minor improvements: 3 documentation, 5 examples, 2 maintenance.
+
+### Full Commit Range
+- b8287 to b8329 (29 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8287...b8329
+
+---
+
 ## 2026-03-08: Update to llama.cpp b8234
 
 ### Summary
