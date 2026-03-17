@@ -1,5 +1,110 @@
 # Changelog
 
+## 2026-03-17: Update to llama.cpp b8392
+
+### Summary
+Updated llama.cpp from b8338 to b8392, incorporating 32 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8358**: ci : split build.yml + server.yml ([#20546](https://github.com/ggml-org/llama.cpp/pull/20546))
+  - cont #20540
+  - Split `build.yml` + `server.yml` into parts and move some of the workflows in the new parts
+  - Continue to run `build.yml` + `server.yml` on all PRs and `master` branch
+- **b8363**: ggml: avoid creating CUDA context during device init ([#20595](https://github.com/ggml-org/llama.cpp/pull/20595))
+  - *Make sure to read the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md) before submitting a PR*
+  - ggml_cuda_init() calls cudaSetDevice() on every GPU just to query free VRAM for logging. This triggers the creation of a CUDA primary context (120-550 MB depending on GPU), which is irreversible for the lifetime of the process. Every process that loads the backend pays this cost, even if it never uses the GPU (router mode).
+  - This PR removes cudaSetDevice + cudaMemGetInfo from device init. The log loses the free VRAM part but still shows total VRAM via cudaGetDeviceProperties (no context needed). Free VRAM is queried later by FIT through its own cudaSetDevice path, so the context creation is simply deferred to first real use.
+
+#### 🆕 New Features
+- **b8340**: ggml : add native AVX512-FP16 support for F16 operations ([#20529](https://github.com/ggml-org/llama.cpp/pull/20529))
+  - The overall benchmark speed remains almost the same because the CPU is now calculating faster than the RAM can deliver the data. (See perf stat results below showing 2.7 billion fewer instructions).
+  - Also note that this path will be only enabled for native build or with custom flags.
+  - now:
+- **b8350**: ci : move self-hosted workflows to separate files ([#20540](https://github.com/ggml-org/llama.cpp/pull/20540))
+  - ref https://github.com/ggml-org/llama.cpp/discussions/20446
+  - Extract self-hosted workflows in new .yml files
+  - Add `server-cuda` workflows (will run on the new DGX Spark runner via the `llama-server` tag)
+- **b8351**: metal : add FA specialization for HSK = 320, HSV = 256 ([#20549](https://github.com/ggml-org/llama.cpp/pull/20549))
+  - Add Metal kernels
+  - Add `test-backend-ops` tests
+- **b8355**: cuda : add RDNA4-specific MMVQ parameter table for bs=1 decode ([#19478](https://github.com/ggml-org/llama.cpp/pull/19478))
+  - Add a dedicated `MMVQ_PARAMETERS_RDNA4` entry separate from RDNA2/RDNA3. RDNA4 (gfx1201) is wave32-only and has a different memory subsystem, so it benefits from a different MMVQ configuration than RDNA2/RDNA3.
+  - For bs=1 decode on RDNA4, optimal config is `nwarps=8, rows_per_block=1`:
+  - 8 warps × 32 threads = 256 threads per block
+- **b8372**: model : wire up Nemotron-H tensors for NVFP4 support ([#20561](https://github.com/ggml-org/llama.cpp/pull/20561))
+  - prep #20539
+- **b8388**: model: mistral small 4 support ([#20649](https://github.com/ggml-org/llama.cpp/pull/20649))
+  - Ref upstream PR: https://github.com/huggingface/transformers/pull/44760
+  - The model is the same as Mistral Large 3 (deepseek2 arch with llama4 scaling), but I'm moving it to a new arch `mistral4` to be aligned with transformers code
+  - Disclosure: this PR is made possible with the help from Mistral team. Kudos to @juliendenize for the coordination!
+- **b8392**: kleidiai : fix MUL_MAT support for batched (3D) inputs ([#20620](https://github.com/ggml-org/llama.cpp/pull/20620))
+  - The supports_op() check incorrectly rejected MUL_MAT operations with 3D inputs (ne[2] > 1), but the actual compute_forward_qx() implementation handles batched inputs correctly via a loop over ne12.
+  - This caused models with Q4_0/Q8_0 weights to crash during graph scheduling when n_seq_max > 1, because weights were placed in KLEIDIAI buffers during loading (tested with 2D inputs) but the runtime used 3D inputs.
+  - ~Also relax the buffer check to allow supports_op() to be called during weight loading when src[0]->buffer is NULL.~
+
+#### 🚀 Performance Improvements
+- **b8348**: ci: try to optimize some jobs ([#20521](https://github.com/ggml-org/llama.cpp/pull/20521))
+  - I tried to switch some jobs to arm or ubuntu-slim as per my comment in #20446 for builds where it really doesn't matter. Most jobs didn't fit in the 15 minute ubuntu-slim time limit and some like the sanitizer or android straight up failed on arm. If a job doesn't have ccache set up I also made it work on both x86 and arm so it would pick the first available machine.
+  - I'm not sure how much this really helps, but it does reduce the number of x86 machines that we're using at any given time.
+  - run in my fork with those jobs forced to run on arm: https://github.com/netrunnereve/llama.cpp/actions/runs/23031702820
+- **b8364**: CUDA: limit number of FA stream-k CUDA blocks ([#20586](https://github.com/ggml-org/llama.cpp/pull/20586))
+  - On master the CUDA mma FA kernel can launch superfluous CUDA blocks that do not do any useful work but cause overhead. This can happen when running small models on GPUs with many streaming multiprocessors at low batch sizes. This PR fixes this by limiting the number of CUDA blocks to the number that can do useful work.
+  - <details>
+  - <summary>Performance changes</summary>
+
+#### 🐛 Bug Fixes
+- **b8347**: hexagon: Q4_0 and MXFP4 repack fixes ([#20527](https://github.com/ggml-org/llama.cpp/pull/20527))
+  - Turns out our repack logic has bug where tensors with row sizes not multiple of 256 are getting corrupted.
+  - Basically, I made the wrong assumption that we can use `0:128,1:129,... INT4` element packing for all blocks of 256
+  - This was causing the scales to partially override some of the tail quants (in Hexagon backend we repack the rows into all-quants followed by all-scales format).
+- **b8352**: llama: Wire up Qwen3.5/Qwen3.5MoE tensors for NVFP4 support ([#20506](https://github.com/ggml-org/llama.cpp/pull/20506))
+  - PR [https://github.com/ggml-org/llama.cpp/pull/20505](https://github.com/ggml-org/llama.cpp/pull/20505) fixes the conversion errors for making Qwen3.5 NVFP4 GGUF files and properly reorders the Qwen3.5 linear attention layers, but without this update, those models will not load.
+  - This update wires up the Qwen3.5 tensors so they are properly loaded from Qwen3.5 NVFP4 gguf files and follows the same design intent using `build_lora_mm`:
+  - This links up the:
+- **b8353**: Read the persisted llama_kv_cell_ext for n_pos_per_embd > 1 on state_read for all sequence ids ([#20273](https://github.com/ggml-org/llama.cpp/pull/20273))
+  - cont #20132
+  - Attempting to call llama_kv_cache::state_read fails when n_pos_per_embd is greater than 1, since llama_kv_cell_ext data is serialised in `state_save` but not read back in `state_read`, leading to deserialisation failure since the cell_ext data is being parsed as a seq_id.
+  - I assume the attached fix is correct -- kv cache persistence to host memory is now working as expected.
+- **b8354**: vulkan: use graphics queue on AMD ([#20551](https://github.com/ggml-org/llama.cpp/pull/20551))
+  - I'm not sure why, but the graphics queue is slightly faster in tg on AMD than the compute queue, and this also fixes the partial offload issue I fixed in #19976, so the second queue no longer has to be enabled by default. I got the idea from @zedbytes reporting that tg goes up when running with `RADV_DEBUG=nocompute`.
+  - <details>
+  - <summary>AMD RX 9070 XT</summary>
+- **b8356**: Guard against sumq2 being 0 in IQ4_NL resulting in nan values ([#20460](https://github.com/ggml-org/llama.cpp/pull/20460))
+  - With `IQ4_NL` on several recent models there have been issues where during quantization NaN blocks are being found which crashes the quant
+  - It seems to be stemming from a scenario where `sumq2` is 0 for a given block, likely from not having imatrix data for some obscure expert, or the weights themselves being 0 as we've seen with some recent Qwen models
+  - This change guards against dividing by 0, instead setting `d` to 0, which would then just set the block of weights to 0, which seems appropriate
+- **b8360**: fix: prevent nullptr dereference ([#20552](https://github.com/ggml-org/llama.cpp/pull/20552))
+  - When encountering an unsupported template (e.g. translategemma), the code currently dereferences a nullptr and causes the program to crash.
+  - With this fix, a proper exception will be thrown from `common_chat_templates_apply_jinja` instead.
+- **b8361**:  ggml/hip: fix APU compatibility - soft error handling for hipMemAdviseSetCoarseGrain ([#20536](https://github.com/ggml-org/llama.cpp/pull/20536))
+  - Description:
+  - On AMD APU/iGPU devices (unified memory architecture, e.g. AMD Strix Halo gfx1151), `hipMemAdviseSetCoarseGrain` returns
+  - `hipErrorInvalidValue` because this hint is not applicable to UMA systems. The current code wraps this call in `CUDA_CHECK()`, which treats
+- **b8366**: sycl : fix for untransposed GDA recurrent state ([#20583](https://github.com/ggml-org/llama.cpp/pull/20583))
+  - cont #20443
+- **b8370**: tests: Fix invalid iterator::end() dereference in common_regex ([#20445](https://github.com/ggml-org/llama.cpp/pull/20445))
+  - When compiling with VS2026 18.4 I noticed `test-regex-partial` crashes immediately with debug build.
+  - <img width="478" height="355" alt="image" src="https://github.com/user-attachments/assets/e5d3b7b3-95f4-491f-a28a-a105678eb72f" />
+  - I tracked this down to an iterator::end() dereference in the following test case which was [occurring here.](https://github.com/ggml-org/llama.cpp/blob/de190154c85d20e24dbeae8c8af1849402ae5098/common/regex-partial.cpp#L105)
+- **b8373**: vulkan: fix flash attention dot product precision ([#20589](https://github.com/ggml-org/llama.cpp/pull/20589))
+  - The Q*K^T dot product was done in float16, but it should have been using ACC_TYPE. This fixes the GLM4 incoherence.
+  - Fixes #20555
+- **b8391**: vulkan: allow graphics queue only through env var ([#20599](https://github.com/ggml-org/llama.cpp/pull/20599))
+  - Improve #20551 to fix the reported issues. Only use graphics queue on RADV on larger GPUs.
+  - Fixes #20597
+
+
+### Additional Changes
+10 minor improvements: 3 documentation, 2 examples, 5 maintenance.
+
+### Full Commit Range
+- b8338 to b8392 (32 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8338...b8392
+
+---
+
 ## 2026-03-14: Update to llama.cpp b8329
 
 ### Summary
