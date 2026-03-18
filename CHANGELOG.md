@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-03-18: Update to llama.cpp b8405
+
+### Summary
+Updated llama.cpp from b8394 to b8405, incorporating 6 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8399**: vulkan: disable mmvq on Intel Windows driver ([#20672](https://github.com/ggml-org/llama.cpp/pull/20672))
+  - Fixes #17628
+  - @savvadesogle This disables MMVQ entirely on Intel Windows, that should remove the need to use the env var. Please try it.
+- **b8405**: common : rework gpt-oss parser ([#20393](https://github.com/ggml-org/llama.cpp/pull/20393))
+  - Rework the gpt-oss parser.
+  - Tighten up the grammar, gpt-oss is very good at following its own Harmony spec.
+  - Allow any sequence of analysis/preamble.
+
+#### 🆕 New Features
+- **b8398**: ggml blas: set mkl threads from thread context ([#20602](https://github.com/ggml-org/llama.cpp/pull/20602))
+  - Commit 1: Set number of threads for MKL
+  - Commit 2: Add way to run blas builds through local CI.
+- **b8400**: hexagon: add neg, exp, sigmoid, softplus ops, cont, repeat ops ([#20701](https://github.com/ggml-org/llama.cpp/pull/20701))
+  - Add element-wise unary ops needed by Qwen 3.5's DeltaNet linear attention layers. These ops follow the existing unary-ops pattern with VTCM DMA double-buffering.
+  - neg: negate via scale by -1.0
+  - exp: uses existing hvx_exp_f32 HVX intrinsics
+
+#### 🐛 Bug Fixes
+- **b8394**: vulkan: async and event fixes ([#20518](https://github.com/ggml-org/llama.cpp/pull/20518))
+  - I noticed incoherence with my multi-GPU setup as well when investigating issues like #20462. I found that they can be fixed by disabling `cpy_tensor_async`, so the problem is with the async path. I narrowed it down to these problems:
+  - events were set, but the wait command was never submitted to the queue, so the `event_wait` function didn't do anything
+  - events were resetting command buffers that had long since been reused, because they didn't track that. This was causing validation errors and perhaps driver issues/crashes
+- **b8401**: Reset graph on control vector change ([#20381](https://github.com/ggml-org/llama.cpp/pull/20381))
+  - This PR makes an existing context pick up a change to its control vector configuration via  `llama_context::set_adapter_cvec`.
+  - The issue in short:
+  - Initial call to `set_adapter_cvec` works, steering vector applies to generation.
+
+
+### Full Commit Range
+- b8394 to b8405 (6 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8394...b8405
+
+---
+
 ## 2026-03-17: Update to llama.cpp b8392
 
 ### Summary
