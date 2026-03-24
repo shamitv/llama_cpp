@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-24: Update to llama.cpp b8505
+
+### Summary
+Updated llama.cpp from b8505 to b8505, incorporating 1 upstream commits.
+
+### Notable Changes
+
+#### 🐛 Bug Fixes
+- **b8505**: common : fix get_gguf_split_info ([#20946](https://github.com/ggml-org/llama.cpp/pull/20946))
+  - Fix https://github.com/ggml-org/llama.cpp/actions/runs/23476321133/job/68309759940
+  - `prefix` is referenced by `m`…, remembering that C++ is definitely not C 😅
+
+
+### Full Commit Range
+- b8505 to b8505 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8505...b8505
+
+---
+
 ## 2026-03-18: Update to llama.cpp b8405
 
 ### Summary
