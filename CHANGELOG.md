@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-04-02: Update to llama.cpp b8635
+
+### Summary
+Updated llama.cpp from b8635 to b8635, incorporating 1 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8635**: Relax prefill parser to allow space. ([#21240](https://github.com/ggml-org/llama.cpp/pull/21240))
+  - As in title.
+  - Prefill parser was strictly requiring the reasoning marker at the very start of the message, which interfered with models that liked to insert eg. a newline there.
+
+
+### Full Commit Range
+- b8635 to b8635 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8635...b8635
+
+---
+
+## 2026-04-02: Update to llama.cpp b8635
+
+### Summary
+Updated llama.cpp from b8635 to b8635, incorporating 1 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8635**: Relax prefill parser to allow space. ([#21240](https://github.com/ggml-org/llama.cpp/pull/21240))
+  - As in title.
+  - Prefill parser was strictly requiring the reasoning marker at the very start of the message, which interfered with models that liked to insert eg. a newline there.
+
+
+### Full Commit Range
+- b8635 to b8635 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8635...b8635
+
+---
+
 ## 2026-03-27: Update to llama.cpp b8555
 
 ### Summary
