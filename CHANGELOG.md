@@ -1,5 +1,178 @@
 # Changelog
 
+## 2026-04-03: Update to llama.cpp b8646
+
+### Summary
+Updated llama.cpp from b8635 to b8646, incorporating 10 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8635**: Relax prefill parser to allow space. ([#21240](https://github.com/ggml-org/llama.cpp/pull/21240))
+  - As in title.
+  - Prefill parser was strictly requiring the reasoning marker at the very start of the message, which interfered with models that liked to insert eg. a newline there.
+- **b8639**: ggml-webgpu: add vectorized flash attention ([#20709](https://github.com/ggml-org/llama.cpp/pull/20709))
+  - This PR adds a vectorized WebGPU path for `FLASH_ATTN_EXT`.
+  - The implementation follows a split pipeline:
+  - `blk`: optional mask tile classification
+- **b8642**: [HIP] Bump ROCm version to 7.2.1 ([#21066](https://github.com/ggml-org/llama.cpp/pull/21066))
+  - Bumps the ROCm version from **7.2** to **7.2.1** across all CI/CD workflows and the ROCm Dockerfile, and adds the missing `gfx1102` GPU target to the fat-build architecture list.
+- **b8646**: rpc : reuse compute graph buffers ([#21299](https://github.com/ggml-org/llama.cpp/pull/21299))
+  - Reuse the buffer for the ggml context which is used for creating the compute graph on the server side. This partially addresses a memory leak created by the CUDA backend due to using buffer addresses as cache keys.
+  - ref: #21265
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🚀 Performance Improvements
+- **b8638**: tests: allow exporting graph ops from HF file without downloading weights ([#21182](https://github.com/ggml-org/llama.cpp/pull/21182))
+  - This expands the `export-graph-ops` binary to also allow using `--hf-repo` instead of `--model`. It uses the HF metadata loader from #19796 to set up a dummy model graph without loading weights and parses the cgraph from that, which allows running test-backend-ops on tensors from models without downloading them. That should make checking if a backend works correctly for a specific model/quant much easier, and also allows performance benchmark comparisons without downloads.
+  - I tried to keep the changes to disable actually downloading the model minimal, but let me know if you can see a better way to do this.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🐛 Bug Fixes
+- **b8641**: Gemma 4 template parser fixes ([#21326](https://github.com/ggml-org/llama.cpp/pull/21326))
+  - As in topic
+  - Quick fixes for some observed discrepancies + refactoring of the parser architecture for the dict format
+
+
+### Additional Changes
+4 minor improvements: 2 documentation, 1 examples, 1 maintenance.
+
+- **b8640**: Add unit test coverage for llama_tensor_get_type ([#20112](https://github.com/ggml-org/llama.cpp/pull/20112))
+  - This is part of a larger goal of reworking or replacing the `llama_tensor_get_type` function
+  - Before major work starts in that area, I want to capture the current existing behaviour thoroughly, so that any accidental changes are easy to spot, and any purposeful changes are easy to document
+  - To that end, this PR introduces unit test coverage for the function itself
+- **b8645**: chat : avoid including json in chat.h ([#21306](https://github.com/ggml-org/llama.cpp/pull/21306))
+  - Avoid including `json.hpp` in `chat.h`.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8637**: model: support gemma 4 (vision + moe, no audio) ([#21309](https://github.com/ggml-org/llama.cpp/pull/21309))
+  - Fix a bug where model with both vision/audio cannot be converted properly
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8644**: (revert) kv-cache : do not quantize SWA KV cache ([#21332](https://github.com/ggml-org/llama.cpp/pull/21332))
+  - revert #21277
+  - In some cases the SWA cache actually takes significant portion of memory, so it's not always a good idea to keep it full-precision. It could be controlled via flag, but probably not worth the extra logic.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+### Full Commit Range
+- b8635 to b8646 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8635...b8646
+
+---
+
+## 2026-04-02: Update to llama.cpp b8635
+
+### Summary
+Updated llama.cpp from b8635 to b8635, incorporating 1 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8635**: Relax prefill parser to allow space. ([#21240](https://github.com/ggml-org/llama.cpp/pull/21240))
+  - As in title.
+  - Prefill parser was strictly requiring the reasoning marker at the very start of the message, which interfered with models that liked to insert eg. a newline there.
+
+
+### Full Commit Range
+- b8635 to b8635 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8635...b8635
+
+---
+
+## 2026-04-02: Update to llama.cpp b8635
+
+### Summary
+Updated llama.cpp from b8635 to b8635, incorporating 1 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8635**: Relax prefill parser to allow space. ([#21240](https://github.com/ggml-org/llama.cpp/pull/21240))
+  - As in title.
+  - Prefill parser was strictly requiring the reasoning marker at the very start of the message, which interfered with models that liked to insert eg. a newline there.
+
+
+### Full Commit Range
+- b8635 to b8635 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8635...b8635
+
+---
+
+## 2026-03-27: Update to llama.cpp b8555
+
+### Summary
+Updated llama.cpp from b8507 to b8555, incorporating 25 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8517**: llama: fix llama-model-saver ([#20503](https://github.com/ggml-org/llama.cpp/pull/20503))
+  - This PR fixes `llama-model-saver` and makes the `--output` argument of `test-llama-archs` functional (the models themselves are still broken though because they lack tokenizers).
+  - The first issue fixed in this PR is that `llama-model-saver` is simply unmaintained: a lot of new KV values were added since I implemented it and those were not being saved correctly. I simply went through the KV values again, added the missing ones and checked where the corresponding information can be extracted from.
+  - The second issue fixed in this PR is that on master several archs have broken tensor names: typically what happens is that in `llama_model::load_tensors` tensors are being created *without* a corresponding entry in `llm_get_tensor_names`. As a consequence `LLM_TN_IMPL::str` then doesn't use the provided arguments to format the tensor name with e.g. the layer index. So you end up with multiple, different tensors that have names like `blk.%d.attn_q`. Since a GGUF context is populated by tensor name this leads to conflicts and the model cannot be saved correctly. To me it is now clear why we have `llm_get_tensor_names` in the first place. I think it would make more sense to just check in `LLM_TN_IMPL::str()` whether `suffix`, `bid`, and/or `xid` are set and to use them in those cases. Also add a warning in cases where the tensor name template and the provided arguments don't match. I would implement this refactor in this PR.
+- **b8525**: model : allow causal_attn and pooling_type on all architectures ([#20973](https://github.com/ggml-org/llama.cpp/pull/20973))
+  - Change all architectures to read the `causal_attn` and `pooling_type` hyperparameters.
+  - Transformers has introduced a change that enables all decoder-only models to function as encoders too (see the previous PR #20746). Rather than adding support for each model individually, I thought it would be better to allow all models to be used as embedding models.
+- **b8532**: CUDA & CPU: support F32 kernel type for `CONV_TRANSPOSE_2D` ([#17094](https://github.com/ggml-org/llama.cpp/pull/17094))
+  - also updated test case in `test-backend-ops`.
+  - But since F32 kernel type is not supported on CPU, only `GGML_TYPE_F16` is kept and `GGML_TYPE_F32` can be uncommented back in the future.
+- **b8545**: hip: use fnuz fp8 for conversion on CDNA3 ([#21040](https://github.com/ggml-org/llama.cpp/pull/21040))
+  - HIP supports the fp8 types e4m3_fnuz and e4m3_ocp, the difference being that fnuz dosent support inf. GFX942 (uniquely) supports only e4m3_fnuz in hardware, due to what looks like an oversight in rocm, the combination of e4m3_ocp on devices with native fp8 support but no ocp support is not implemented.
+  - Use native fnuz here to avoid this.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8552**: rpc : proper handling of data pointers to CPU buffers ([#21030](https://github.com/ggml-org/llama.cpp/pull/21030))
+  - The compute graph may contain tensors pointing to CPU buffers. In these cases the buffer address is serialized as 0 and sent over the wire. However, the data pointer is serialized as-is and this prevents proper validation on the server side. This patches fixes this by serializing the data pointer as 0 for non-RPC buffers and doing proper validation on the server side.
+  - closes: #21006
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🚀 Performance Improvements
+- **b8507**: ggml-backend: re-enable graph reuse with pipeline parallelism ([#20927](https://github.com/ggml-org/llama.cpp/pull/20927))
+  - Fix #20835. This is a sufficient fix but might not be the most performant one. At least restores performance for multi-GPU setups.
+
+#### 🐛 Bug Fixes
+- **b8508**: models : move the token embedding norms to the first layer ([#20943](https://github.com/ggml-org/llama.cpp/pull/20943))
+  - We were keeping the token embedding norms on the input layer buffers. This results in the operations being performed on the CPU:
+  - ```bash
+  - make -j && GGML_SCHED_DEBUG=2 ./bin/llama-embedding -hf ggml-org/bge-m3-Q8_0-GGUF -p "Hello world" -lv 5
+- **b8513**: [SYCL] fix wrong variable check by assert ([#20903](https://github.com/ggml-org/llama.cpp/pull/20903))
+  - Fix the issue: https://github.com/ggml-org/llama.cpp/pull/19920#issuecomment-4107430630
+  - Correct the variable to be checked by assert.
+- **b8514**: fix-pointer-dangling ([#20974](https://github.com/ggml-org/llama.cpp/pull/20974))
+  - <!--In the JNI layer of the sample Android program, when calling processUserInput, the pointer of user_prompt is freed before being referenced, and if the memory is overwritten during this period, it will not be possible to correctly retrieve the input.
+  - -->
+- **b8519**: jinja: fix macro with kwargs ([#20960](https://github.com/ggml-org/llama.cpp/pull/20960))
+  - Fix this case: `{% macro my_func(a, b=False) %}{% if b %}{{ a }}{% else %}nope{% endif %}{% endmacro %}{{ my_func(1, b=True) }}`
+  - With the `master` branch version, it fails with this error:
+  - ```
+- **b8528**: common : fix gguf selection in common_list_cached_models ([#20996](https://github.com/ggml-org/llama.cpp/pull/20996))
+  - Fix regression that makes `common_list_cached_models()` showing all files
+  - Related to #20994
+- **b8529**: common : fix verbosity setup ([#20989](https://github.com/ggml-org/llama.cpp/pull/20989))
+  - The verbosity threshold was set at the end of `common_params_parse_ex()`, after doing many things (like downloading files) so `-v` and `LLAMA_LOG_VERBOSITY` were useless during this function.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8546**: fix: mtmd "v.patch_embd" quant and unsupported im2col ops on Metal for deepseek-ocr ([#21027](https://github.com/ggml-org/llama.cpp/pull/21027))
+  - This PR fixes two issues affecting vision models:
+  - 1. **Quantization of `v.patch_embd`**
+  - 2. **Unsupported `im2col` (bf16) ops on Metal for DeepSeek-OCR**
+- **b8548**: metal: Fix dimension constraint violation in matmul2d descriptor ([#21048](https://github.com/ggml-org/llama.cpp/pull/21048))
+  - Updates Metal tensor API test probes to fix the dimension constraint violation in the matmul2d descriptor (at least one value must be a multiple of 16).
+  - Some investigation detailed here https://github.com/ggml-org/llama.cpp/pull/16634#issuecomment-4138042074 indicated that the test probes for the metal tensor API fails to compile successfully on macOS 26.4, leading to the tensor support in the metal backend being disabled erroneously. This is due to a change in the Apple APIs between the time https://github.com/ggml-org/llama.cpp/pull/16634 was tested and merged by @ggerganov and today. They now require that at least one of the dimensions `M` and `N` be a multiple of 16.
+  - Notably, the actual kernels used already respect this constraint (obviously, as they are compiling successfully today), and it is *only* these test probes which violate it.
+- **b8551**: fix: session_tokens insert range in completion tool (no-op → correct) ([#20917](https://github.com/ggml-org/llama.cpp/pull/20917))
+  - The embd.begin(), embd.begin() range is empty and inserts nothing, so session_tokens never gets updated after
+  - decoding. Should be embd.begin(), embd.end(). Introduced in commit 2b6dfe8.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Additional Changes
+10 minor improvements: 2 documentation, 6 examples, 2 maintenance.
+
+### Full Commit Range
+- b8507 to b8555 (25 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8507...b8555
+
+---
+
 ## 2026-03-24: Update to llama.cpp b8505
 
 ### Summary
