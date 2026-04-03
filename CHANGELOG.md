@@ -1,5 +1,65 @@
 # Changelog
 
+## 2026-04-03: Update to llama.cpp b8646
+
+### Summary
+Updated llama.cpp from b8635 to b8646, incorporating 10 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8635**: Relax prefill parser to allow space. ([#21240](https://github.com/ggml-org/llama.cpp/pull/21240))
+  - As in title.
+  - Prefill parser was strictly requiring the reasoning marker at the very start of the message, which interfered with models that liked to insert eg. a newline there.
+- **b8639**: ggml-webgpu: add vectorized flash attention ([#20709](https://github.com/ggml-org/llama.cpp/pull/20709))
+  - This PR adds a vectorized WebGPU path for `FLASH_ATTN_EXT`.
+  - The implementation follows a split pipeline:
+  - `blk`: optional mask tile classification
+- **b8642**: [HIP] Bump ROCm version to 7.2.1 ([#21066](https://github.com/ggml-org/llama.cpp/pull/21066))
+  - Bumps the ROCm version from **7.2** to **7.2.1** across all CI/CD workflows and the ROCm Dockerfile, and adds the missing `gfx1102` GPU target to the fat-build architecture list.
+- **b8646**: rpc : reuse compute graph buffers ([#21299](https://github.com/ggml-org/llama.cpp/pull/21299))
+  - Reuse the buffer for the ggml context which is used for creating the compute graph on the server side. This partially addresses a memory leak created by the CUDA backend due to using buffer addresses as cache keys.
+  - ref: #21265
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🚀 Performance Improvements
+- **b8638**: tests: allow exporting graph ops from HF file without downloading weights ([#21182](https://github.com/ggml-org/llama.cpp/pull/21182))
+  - This expands the `export-graph-ops` binary to also allow using `--hf-repo` instead of `--model`. It uses the HF metadata loader from #19796 to set up a dummy model graph without loading weights and parses the cgraph from that, which allows running test-backend-ops on tensors from models without downloading them. That should make checking if a backend works correctly for a specific model/quant much easier, and also allows performance benchmark comparisons without downloads.
+  - I tried to keep the changes to disable actually downloading the model minimal, but let me know if you can see a better way to do this.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🐛 Bug Fixes
+- **b8641**: Gemma 4 template parser fixes ([#21326](https://github.com/ggml-org/llama.cpp/pull/21326))
+  - As in topic
+  - Quick fixes for some observed discrepancies + refactoring of the parser architecture for the dict format
+
+
+### Additional Changes
+4 minor improvements: 2 documentation, 1 examples, 1 maintenance.
+
+- **b8640**: Add unit test coverage for llama_tensor_get_type ([#20112](https://github.com/ggml-org/llama.cpp/pull/20112))
+  - This is part of a larger goal of reworking or replacing the `llama_tensor_get_type` function
+  - Before major work starts in that area, I want to capture the current existing behaviour thoroughly, so that any accidental changes are easy to spot, and any purposeful changes are easy to document
+  - To that end, this PR introduces unit test coverage for the function itself
+- **b8645**: chat : avoid including json in chat.h ([#21306](https://github.com/ggml-org/llama.cpp/pull/21306))
+  - Avoid including `json.hpp` in `chat.h`.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8637**: model: support gemma 4 (vision + moe, no audio) ([#21309](https://github.com/ggml-org/llama.cpp/pull/21309))
+  - Fix a bug where model with both vision/audio cannot be converted properly
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8644**: (revert) kv-cache : do not quantize SWA KV cache ([#21332](https://github.com/ggml-org/llama.cpp/pull/21332))
+  - revert #21277
+  - In some cases the SWA cache actually takes significant portion of memory, so it's not always a good idea to keep it full-precision. It could be controlled via flag, but probably not worth the extra logic.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+### Full Commit Range
+- b8635 to b8646 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8635...b8646
+
+---
+
 ## 2026-04-02: Update to llama.cpp b8635
 
 ### Summary
