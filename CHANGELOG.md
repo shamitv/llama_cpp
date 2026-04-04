@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-04-04: Update to llama.cpp b8660
+
+### Summary
+Updated llama.cpp from b8653 to b8660, incorporating 5 upstream commits with breaking changes and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8656**: common : fix tool call type detection for nullable and enum schemas ([#21327](https://github.com/ggml-org/llama.cpp/pull/21327))
+  - Fixes #21316
+  - The Gemma4 dict parser and the tagged parser both only check `type_v.is_string()` when figuring out if a tool argument is a string. This breaks for schemas that use nullable types like `"type": ["string", "null"]` or enum fields without an explicit `"type"` key, both of which are pretty common in OpenAPI/Home Assistant setups.
+  - When the type isn't recognized as `"string"`, the parser falls through to the raw-value path and captures `<|"|>` delimiter tokens as literal text, which is how you end up with output like `"domain": "[<|\"|>light<|\"|>]"` instead of `"domain": "light"`.
+
+#### 🚀 Performance Improvements
+- **b8660**: ggml-webgpu: move from parameter buffer pool to single buffer with offsets ([#21278](https://github.com/ggml-org/llama.cpp/pull/21278))
+  - Continuing some work to simplify and make the WebGPU backend scheduling more asynchronous, I realized that we don't actually need a pool of parameter buffers. Instead we can use a single buffer with multiple offset slots, and cycle through them on a batch of submissions. This PR replaces a pool with a `webgpu_param_arena`, and moves all operations to use it. Memset is special because it lives in the global context, but because it is now asynchronous it uses a single parameter buffer.
+  - In this PR I also updated GPU submissions to be batched into a single `CommandBuffer`, instead of having a `CommandBuffer`per operation. This increases efficiency/speed a bit on larger systems and should help with stability on mobile devices.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Additional Changes
+3 minor improvements: 2 examples, 1 maintenance.
+
+- **b8657**: Fix call ID detection (Mistral parser mostly) + atomicity for tag-json parsers ([#21230](https://github.com/ggml-org/llama.cpp/pull/21230))
+  - Fix autoparser handling of call ID section detection
+  - Should fix handling of old Mistral templates
+- **b8658**: server: save and clear idle slots on new task (`--clear-idle`) ([#20993](https://github.com/ggml-org/llama.cpp/pull/20993))
+  - In unified KV cache mode, idle slots' KV cells stay in the `[0, n_kv)` range
+  - and inflate attention cost for all active sequences (even though they're masked).
+  - `--clear-idle` saves idle slots to `--cache-ram` and clears them from VRAM, reducing `n_kv` to only active tokens.
+- **b8653**: jinja : coerce input for string-specific filters ([#21370](https://github.com/ggml-org/llama.cpp/pull/21370))
+  - Coerce input for string-specific filters into string.
+  - String-specific filters will automatically coerce input to string in `jinja2`, this replicates that behavior.
+
+### Full Commit Range
+- b8653 to b8660 (5 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8653...b8660
+
+---
+
 ## 2026-04-03: Update to llama.cpp b8646
 
 ### Summary
