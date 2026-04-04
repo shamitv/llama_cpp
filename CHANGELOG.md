@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-04-04: Update to llama.cpp b8662
+
+### Summary
+Updated llama.cpp from b8661 to b8662, incorporating 2 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8661**: llama: add custom newline split for Gemma 4 ([#21406](https://github.com/ggml-org/llama.cpp/pull/21406))
+  - Fixes #21401
+  - `std::regex` suffers a stack overflow while processing a very large prompt with newlines, this PR adds a custom splitting logic for newlines for gemma 4.
+
+#### 🐛 Bug Fixes
+- **b8662**: llama-model: read final_logit_softcapping for Gemma 4 ([#21390](https://github.com/ggml-org/llama.cpp/pull/21390))
+  - The `LLM_ARCH_GEMMA4` block in `llama-model.cpp` was never reading `final_logit_softcapping` from the GGUF, so the value was always stuck at the hardcoded default of `30.0f`. This meant editing the GGUF key or using `--override-kv gemma4.final_logit_softcapping=float:X` had no effect on inference.
+  - Adding the missing `ml.get_key` call (optional, so older GGUFs without the key fall back gracefully to `30.0f`) is all that's needed, the softcapping logic in `gemma4-iswa.cpp` is already correct.
+  - Fix for the issue #21388.
+
+
+### Full Commit Range
+- b8661 to b8662 (2 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8661...b8662
+
+---
+
 ## 2026-04-04: Update to llama.cpp b8660
 
 ### Summary
