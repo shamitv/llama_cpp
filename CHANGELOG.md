@@ -1,5 +1,56 @@
 # Changelog
 
+## 2026-04-06: Update to llama.cpp b8672
+
+### Summary
+Updated llama.cpp from b8662 to b8672, incorporating 8 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8665**: common : add gemma 4 specialized parser ([#21418](https://github.com/ggml-org/llama.cpp/pull/21418))
+  - Specialized Gemma 4 parser with various fixes.
+  - There's a lot here, so I'll do my best to summarize.
+  - Removed Gemma 4 parsing from the autoparser and composed a dedicated parser. The model is sufficiently different to warrant specialized parsing.
+
+#### 🐛 Bug Fixes
+- **b8662**: llama-model: read final_logit_softcapping for Gemma 4 ([#21390](https://github.com/ggml-org/llama.cpp/pull/21390))
+  - The `LLM_ARCH_GEMMA4` block in `llama-model.cpp` was never reading `final_logit_softcapping` from the GGUF, so the value was always stuck at the hardcoded default of `30.0f`. This meant editing the GGUF key or using `--override-kv gemma4.final_logit_softcapping=float:X` had no effect on inference.
+  - Adding the missing `ml.get_key` call (optional, so older GGUFs without the key fall back gracefully to `30.0f`) is all that's needed, the softcapping logic in `gemma4-iswa.cpp` is already correct.
+  - Fix for the issue #21388.
+- **b8663**: common : respect specified tag, only fallback when tag is empty ([#21413](https://github.com/ggml-org/llama.cpp/pull/21413))
+  - Respect specified tag, only fallback when tag is empty
+  - Should fix https://github.com/ggml-org/llama.cpp/issues/21364#issuecomment-4184994923
+  - With this commit:
+
+
+### Additional Changes
+5 minor improvements: 4 examples, 1 maintenance.
+
+- **b8664**: Fix undefined timing measurement errors in server context ([#21201](https://github.com/ggml-org/llama.cpp/pull/21201))
+  - Fix UB issue reported by Valgrind involving timing measurements for prompt processing and eval
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: I threw an AI at this, but the fix is simple enough that there's no real downside risk (independently verified this solves the issue)
+- **b8668**: server : fix logging of build + system info ([#21460](https://github.com/ggml-org/llama.cpp/pull/21460))
+  - This PR changes the logging that occurs at startup of llama-server. Currently, it is redundant (including CPU information twice) and it is missing the build + commit info (helpful for debugging).
+  - <img width="1512" height="137" alt="Screenshot 2026-04-04 at 11 49 48 PM" src="https://github.com/user-attachments/assets/6d0c98b3-6bd3-4822-b3be-09d6ab023964" />
+- **b8670**: model : add HunyuanOCR support ([#21395](https://github.com/ggml-org/llama.cpp/pull/21395))
+  - Add support for [tencent/HunyuanOCR](https://huggingface.co/tencent/HunyuanOCR) vision-language model.
+  - Converter: handle text + mmproj conversion, fix invalid pad_token_id: -1, read EOT from generation_config.json, support xdrope
+  - RoPE type
+- **b8671**: model-loader : fix GGUF bool array conversion ([#21428](https://github.com/ggml-org/llama.cpp/pull/21428))
+  - GGUF stores bool arrays as int8_t, but the model loader was reading raw array data as const bool *
+  - This changes the bool-array path in src/llama-model-loader.cpp to read const int8_t * and normalize entries with x != 0 before converting to the destination type.
+  - This matches the GGUF definition in 'ggml/include/gguf.h': All bool values are stored as int8_t
+- **b8672**: Hexagon: Slight optimization for argosrt output init ([#21463](https://github.com/ggml-org/llama.cpp/pull/21463))
+  - Hexagon: Slight optimization for argosrt output init
+
+### Full Commit Range
+- b8662 to b8672 (8 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8662...b8672
+
+---
+
 ## 2026-04-04: Update to llama.cpp b8662
 
 ### Summary
