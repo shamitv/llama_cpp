@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-04-10: Update to llama.cpp b8746
+
+### Summary
+Updated llama.cpp from b8734 to b8746, incorporating 9 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8737**: ggml : check return value of NVIDIA CUB calls used in argsort and top-k implementation ([#21676](https://github.com/ggml-org/llama.cpp/pull/21676))
+  - This PR adds missing CUDA error checks when calling NVIDIA CUB methods:
+  - `DeviceRadixSort::SortPairs`
+  - `DeviceRadixSort::SortPairsDescending`
+- **b8739**: HIP: add CDNA4 (gfx950) architecture support for MI350X/MI355X ([#21570](https://github.com/ggml-org/llama.cpp/pull/21570))
+  - Adds gfx950 (MI350X/MI355X, CDNA4) support. These are AMD's latest datacenter GPUs.
+  - gfx950 shares most MFMA instructions with gfx942 (CDNA3), except `mfma_f32_16x16x8_xf32` which isn't available on gfx950 — routed to the f32 fallback path instead.
+  - **Changes:**
+- **b8740**: CUDA: fuse muls ([#21665](https://github.com/ggml-org/llama.cpp/pull/21665))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add fusion for mul operator, same as adds. This is useful for gemma4 models which have a down expert scale which can be fused with mul, this saves a full roundtrip of `used_experts x expert_dims` in f32 from global memory, so it seems to help PP more than TG surprisingly. Additionally, we can fuse mul-mat + (epilogue), which would benefit all MoE models, however that is not a simple change since we have account for all the different mul-mat-id paths we take.
+  - on a 4090
+- **b8741**: common : add fluidity to the progress bar ([#21671](https://github.com/ggml-org/llama.cpp/pull/21671))
+  - Add some fluidity to the progress bar
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8742**: vulkan: Support Q1_0 ([#21539](https://github.com/ggml-org/llama.cpp/pull/21539))
+  - Add Q1_0 support to ggml-vulkan. Supports get_rows, set_rows, mul_mat(id). Does not support the q8_1 dp4 path (though this is probably worth adding in a followon), since we get the most benefit with smaller quants.
+  - None.
+- **b8744**: common : enable reasoning budget sampler for gemma4 ([#21697](https://github.com/ggml-org/llama.cpp/pull/21697))
+  - As #21487 also reports, gemma4 thinking budget doesn't work. I noticed that `common_chat_params_init_gemma4()` sets `supports_thinking = true` but never populates `thinking_start_tag` / `thinking_end_tag`. The budget sampler in `server-common.cpp` works conditional on `thinking_end_tag` being non-empty, so it skips gemma4 entirely.
+  - So I added the missing tags. The main fix is just two lines (chat.cpp:1087-1088). The rest of the diff is about making budget=0 work cleanly: while testing for my personal use (see the details of the local testing environment below), I found that budget=0 causes a PEG parse error because the sampler forces the end tag before the model emits a newline after "thought". Even though `--reasoning off` already handles the no-thinking case, I didn't want to introduce a parse error at that edge case. I made the newline optional in the parser, and added a test case for it.
+  - Fixes #21487
+
+#### 🐛 Bug Fixes
+- **b8734**: common : fix ambiguous grammar rule in gemma4 ([#21661](https://github.com/ggml-org/llama.cpp/pull/21661))
+  - An ambiguous grammar caused issues when `parallel_tool_calls = false` and the model wants to generate multiple tool calls.
+  - ref: https://github.com/ggml-org/llama.cpp/issues/21375#issuecomment-4209762714
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8746**: common: mark --split-mode tensor as experimental ([#21684](https://github.com/ggml-org/llama.cpp/pull/21684))
+  - Fixup to https://github.com/ggml-org/llama.cpp/pull/19378 . Since there are probably still a lot of cases where `--split-mode tensor` doesn't yet work correctly I marked the PR as experimental. But I forgot to also do this in the `--help`.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Additional Changes
+1 minor improvements: 1 examples.
+
+- **b8738**: ggml: backend-agnostic tensor parallelism (experimental) ([#19378](https://github.com/ggml-org/llama.cpp/pull/19378))
+  - This PR adds initial support for tensor parallelism, enabled via specifying `--split-mode tensor`. This should be considered as an experimental feature that is not yet production ready. In principle the implementation is backend-agnostic, in practice as of right now only the CUDA backend has received the necessary extensions and performance optimizations to make the performance better than `--split-mode layer` (in some cases).
+  - The preexisting `--split-mode row` could already parallelize some matrix multiplications in the CUDA backend but this required a synchronization after every single operation. As a consequence the overhead is so large that it is only really worthwhile for old and slow GPUs like P40s where adding a bit of latency between operations makes relatively little difference to the overall runtime. The new implementation works by adding a new "meta" backend that internally wraps multiple conventional ggml backends. When given a compute graph the meta backend then automatically infers how the data is split based on the ggml compute graph and only schedules a synchronization at the necessary points. And the external interface for a meta backend is the same as for any other ggml backend. So in practice the meta backend allows ggml to use multiple GPUs in the same way as a single GPU. Importantly all of this is done at the ggml backend level and there are no hard dependencies for any extensions beyond what already exists on master (but without extensions the performance may be so bad that there is no point).
+  - What currently works:
+
+### Full Commit Range
+- b8734 to b8746 (9 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8734...b8746
+
+---
+
 ## 2026-04-09: Update to llama.cpp b8722
 
 ### Summary
