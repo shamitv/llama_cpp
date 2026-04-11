@@ -1,5 +1,68 @@
 # Changelog
 
+## 2026-04-11: Update to llama.cpp b8762
+
+### Summary
+Updated llama.cpp from b8746 to b8762, incorporating 17 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8750**: ggml-webgpu: support non-square subgroup matrix configs for Intel GPUs ([#21669](https://github.com/ggml-org/llama.cpp/pull/21669))
+  - Enable WebGPU subgroup matrix support for Intel GPUs (Xe2/Battlemage).
+  - Intel GPUs report non-square subgroup matrix configurations (e.g. M=8, N=16, K=16) via Dawn's `ChromiumExperimentalSubgroupMatrix` feature. The existing filter only accepted square configs (M==N==K), rejecting Intel GPUs entirely despite full hardware and driver support.
+  - Changes:
+- **b8753**: common : better align to the updated official gemma4 template ([#21704](https://github.com/ggml-org/llama.cpp/pull/21704))
+  - Google has pushed an update to their chat template: https://huggingface.co/google/gemma-4-31B-it/commit/e51e7dcdb6febd74c182fe0cb41c236363ae2ac5
+  - This update includes everything within our internal workarounds, as well as the custom modifications in the `models/templates/google-gemma-31B-it-interleaved.jinja` template. Add support by detecting it and forgoing the workarounds. Additionally, emit a warning message so users are aware there is an update.
+  - The existing template within GGUFs, as well as the custom interleaved template, will continue to function. I even added some of the formatting changes to the bos and think tokens.
+- **b8759**: cpu : fix a few instances of missing GGML_TYPE_Q1_0 cases ([#21716](https://github.com/ggml-org/llama.cpp/pull/21716))
+  - Add `case GGML_TYPE_Q1_0:` where it was missing.
+  - Fixes:
+  - https://github.com/ggml-org/llama.cpp/actions/runs/24229986393/job/70739279184
+- **b8761**: opencl: add basic support for q5_k ([#21593](https://github.com/ggml-org/llama.cpp/pull/21593))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR adds basic support for Q5_K quantization on GPU. With this change, Q5_K operations remain on the GPU instead of falling back to the CPU, which improves performance for models using Q5_K quantization.
+  - This is a general implementation. A follow‑up PR will introduce a more optimized, Adreno‑specific implementation.
+
+#### 🚀 Performance Improvements
+- **b8749**: ggml-webgpu: address quantization precision and backend lifecycle managment ([#21521](https://github.com/ggml-org/llama.cpp/pull/21521))
+  - This PR improves the stability and performance of the WebGPU backend, specifically focusing on the quantization numeric precision and backend lifecycle management.
+  - ---
+  - Quantization Precision:
+
+#### 🐛 Bug Fixes
+- **b8746**: common: mark --split-mode tensor as experimental ([#21684](https://github.com/ggml-org/llama.cpp/pull/21684))
+  - Fixup to https://github.com/ggml-org/llama.cpp/pull/19378 . Since there are probably still a lot of cases where `--split-mode tensor` doesn't yet work correctly I marked the PR as experimental. But I forgot to also do this in the `--help`.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8747**: common : fix when loading a cached HF models with unavailable API ([#21670](https://github.com/ggml-org/llama.cpp/pull/21670))
+  - Fix when loading a cached HF models with unavailable API
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8749**: ggml webgpu: Move to no timeout for WaitAny in graph submission to avoid deadlocks ([#20618](https://github.com/ggml-org/llama.cpp/pull/20618))
+  - Another approach to see if this avoids deadlocks in the llvm-pipe Vulkan backend. After some debugging on the Github CI I've seen cases where it seems to get stuck within the `WaitAny` call itself, even after the timeout nanoseconds have passed, leading me to believe there is a bug within the interface between Dawn and llvm-pipe. Setting timeout to 0 from the WebGPU side creates a busy-wait loop on the ggml side, but hopefully avoids deadlocking in most scenarios, and in practice the busy-wait loop does not occur that often in my tests.
+- **b8756**: fix: Fix broken structured output when using $refs in json_schema ([#21699](https://github.com/ggml-org/llama.cpp/pull/21699))
+  - Fixes #20178
+  - $refs in json schema were resolved only for tool calls, now they're also resolved  when using response_format
+- **b8757**: CUDA: also store node->src ne/nb for graph equality ([#21736](https://github.com/ggml-org/llama.cpp/pull/21736))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Fixes #21726. Seems like [this](https://github.com/ggml-org/llama.cpp/pull/21472#discussion_r3052235188) comment is not correct when using `--nkvo`, the extra srcs ne/nb can also change while keeping the `data` pointer same, probably because of resizing the buffer every 256 tokens.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8760**: TP: fix Qwen 3 Next data split ([#21732](https://github.com/ggml-org/llama.cpp/pull/21732))
+  - Fixes https://github.com/ggml-org/llama.cpp/issues/21703 .
+  - The problem is that I had incorrectly assumed that Qwen 3 Next and Qwen 3.5 use the same broadcasting pattern for K across V. So for Qwen 3 Next 50% of the time the wrong K and V heads are being combined. This is not immediately obvious as the generated text can still look reasonable at first glance. However, it can be clearly detected by looking at PPL. The Q3_K_M quantization goes from a PPL of 7.48 to 4.32 on the first 512tokens of Wikitext-2.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Additional Changes
+6 minor improvements: 2 documentation, 3 examples, 1 maintenance.
+
+### Full Commit Range
+- b8746 to b8762 (17 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8746...b8762
+
+---
+
 ## 2026-04-10: Update to llama.cpp b8746
 
 ### Summary
