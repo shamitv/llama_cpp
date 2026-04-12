@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-04-12: Update to llama.cpp b8763
+
+### Summary
+Updated llama.cpp from b8762 to b8763, incorporating 2 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8763**: CUDA: skip compilation of superfluous FA kernels ([#21768](https://github.com/ggml-org/llama.cpp/pull/21768))
+  - Fixup to https://github.com/ggml-org/llama.cpp/pull/20998 .
+  - The compilation of FA kernels with head size 512 is supposed to be skipped for GQA ratios of 1 and 2 because those are never used. However, because the invocation of the corresponding template specializations is not guarded with an `if constexpr` they are being compiled regardless; this PR adds them. On my server with a 64 core EPYC CPU the total compilation time of the full project without CCache goes down from 330s to 300s.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Additional Changes
+1 minor improvements: 1 examples.
+
+- **b8762**: mtmd : add MERaLiON-2 multimodal audio support ([#21756](https://github.com/ggml-org/llama.cpp/pull/21756))
+  - This adds support for MERaLiON-2 to mtmd. MERaLiON-2 is a speech-text model developed by I2R, A*STAR Singapore, available in 3B and 10B variants. It uses a Whisper large-v2 encoder paired with a Gemma2 decoder.
+  - New projector type: `PROJECTOR_TYPE_MERALION`
+  - The audio adaptor stacks 15 encoder frames per output token, then runs a layer norm followed by a 4-layer MLP: compression Linear+SiLU, a GLU block (gate and pool projections), and a final out_proj to match the decoder embedding dim. The implementation reuses the existing `linear_{bid}` / `mm_norm_pre` tensor naming so the change to tensor_mapping.py is just a comment update.
+
+### Full Commit Range
+- b8762 to b8763 (2 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8762...b8763
+
+---
+
 ## 2026-04-11: Update to llama.cpp b8762
 
 ### Summary
