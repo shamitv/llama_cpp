@@ -1,5 +1,56 @@
 # Changelog
 
+## 2026-04-14: Update to llama.cpp b8784
+
+### Summary
+Updated llama.cpp from b8763 to b8784, incorporating 14 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8763**: CUDA: skip compilation of superfluous FA kernels ([#21768](https://github.com/ggml-org/llama.cpp/pull/21768))
+  - Fixup to https://github.com/ggml-org/llama.cpp/pull/20998 .
+  - The compilation of FA kernels with head size 512 is supposed to be skipped for GQA ratios of 1 and 2 because those are never used. However, because the invocation of the corresponding template specializations is not guarded with an `if constexpr` they are being compiled regardless; this PR adds them. On my server with a 64 core EPYC CPU the total compilation time of the full project without CCache goes down from 330s to 300s.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8771**: sycl: disable Q1_0 in backend and cleanup unused variables ([#21807](https://github.com/ggml-org/llama.cpp/pull/21807))
+  - test-backend-ops was crashing because backend doesn't support Q1_0 type yet. Disable it until we add support.
+  - Also, cleaned up unused variables.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8778**: common : add download cancellation and temp file cleanup ([#21813](https://github.com/ggml-org/llama.cpp/pull/21813))
+  - Add download cancellation and temp file cleanup
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8779**: vulkan: Flash Attention DP4A shader for quantized KV cache ([#20797](https://github.com/ggml-org/llama.cpp/pull/20797))
+  - This PR adds DP4A (integer dot product) support to the scalar FA shader, enabled if the GPU supports DP4A. It's only used for quantized KV cache (both q8_0 or both q4_0), and not for coopmat FA shaders.
+  - I also unified the GLSL vector type name preprocessor macros because we had swapped from FLOAT_TYPE_VECx to FLOAT_TYPEVx in Flash Attention, and the old naming was getting in the way of code reuse here.
+  - Performance graphs for q8_0 kv cache:
+- **b8781**: chat: dedicated DeepSeek v3.2 parser + "official" template ([#21785](https://github.com/ggml-org/llama.cpp/pull/21785))
+  - Adds an "official" (tested with the official Python reference) DeepSeek v3.2 template + parser with tests.
+  - The parser will only work with this template, so please use them together.
+
+#### 🐛 Bug Fixes
+- **b8770**: fix: crash when sending image under 2x2 pixels ([#21711](https://github.com/ggml-org/llama.cpp/pull/21711))
+  - GGML_ASSERT(src.nx >= 2 && src.ny >= 2); will crash llama.cpp when processing very small images. Fix was implemented to handle 1x1 inputs safely by updating the interpolation math and clamping pixel lookups, preventing out-of-bounds memory errors while keeping the pipeline stable.
+  - Code was succesfully tested in production, llama-server is running with no crashes.
+  - Fixes https://github.com/ggml-org/llama.cpp/issues/21420
+- **b8772**: ggml-webgpu: Fix compilation error in `ggml_backend_webgpu_debug` in debug mode ([#21798](https://github.com/ggml-org/llama.cpp/pull/21798))
+  - This PR fixes a compilation error that occurs when building in debug mode (related to https://github.com/ggml-org/llama.cpp/pull/21521).
+  - ```bash
+  - llama.cpp/ggml/src/ggml-webgpu/ggml-webgpu.cpp:537:9: error: invalid argument
+- **b8783**: common/gemma4 : handle parsing edge cases ([#21760](https://github.com/ggml-org/llama.cpp/pull/21760))
+  - Fix a few edge cases for Gemma 4 26B A4B. I don't see these artifacts from the 31B variant.
+  - If the model generates content + tool call, the template will incorrectly format the prompt without the generation prompt (`<|turn>model\n`):
+  - ```
+
+
+### Additional Changes
+6 minor improvements: 1 documentation, 4 examples, 1 maintenance.
+
+### Full Commit Range
+- b8763 to b8784 (14 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8763...b8784
+
+---
+
 ## 2026-04-12: Update to llama.cpp b8763
 
 ### Summary
