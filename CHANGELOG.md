@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-04-15: Update to llama.cpp b8799
+
+### Summary
+Updated llama.cpp from b8794 to b8799, incorporating 6 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8795**: metal : fix FA support logic ([#21898](https://github.com/ggml-org/llama.cpp/pull/21898))
+  - cont #20797
+  - Add proper logic for supported quantization types of the FA operator.
+  - Fix https://github.com/ggml-org/llama.cpp/actions/runs/24400236380/job/71268552842#step:3:27636
+- **b8797**: hexagon: optimization for HMX mat_mul ([#21554](https://github.com/ggml-org/llama.cpp/pull/21554))
+  - This PR introduces two additional optimizations for the Hexagon HMX backend:
+  - 1. **Enable asynchronous HMX execution**
+  - HMX computations are now executed asynchronously, allowing them to overlap with HVX dequantization and DMA stages within the pipeline. Previously, synchronous HMX calls blocked the main thread and limited parallelism.
+
+#### 🐛 Bug Fixes
+- **b8796**: ggml: remove ggml-ext.h ([#21869](https://github.com/ggml-org/llama.cpp/pull/21869))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/21867 Fix https://github.com/ggml-org/llama.cpp/issues/21860
+  - Not quite sure if the ggml-ext.h is intended to be a public header, but I believe it should be (so that the symbols can be exposed in the dynamic library)
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8799**: autoparser: support case of JSON_NATIVE with per-call markers ([#21892](https://github.com/ggml-org/llama.cpp/pull/21892))
+  - The JSON_NATIVE case for the autoparser wasn't handling cases where the separate calls were not aggregated in a JSON array, but instead each had their own set of opening and closing markers.
+  - Automatically resolves autoparser detection problems with Reka-Edge, also fixes old Hermes templates.
+
+
+### Additional Changes
+2 minor improvements: 2 examples.
+
+- **b8794**: mtmd: add mtmd_image_tokens_get_decoder_pos() API ([#21851](https://github.com/ggml-org/llama.cpp/pull/21851))
+  - Add a new mtmd API: `mtmd_image_tokens_get_decoder_pos()`
+  - Deprecate `mtmd_image_tokens_get_nx/ny()`
+  - Target support https://github.com/ggml-org/llama.cpp/pull/21045
+- **b8798**: llama-diffusion-cli: read n_ctx back after making llama_context so the cli doesn't reject all inp... ([#21939](https://github.com/ggml-org/llama.cpp/pull/21939))
+  - Read back via `llama_n_ctx` the context window size that `llama_init_from_model` determines, as mentioned in comments for `llama_n_ctx`. The prevents the cli from rejecting all inputs because it thinks the context window is 0 length.
+  - I ran into the issue described in https://github.com/ggml-org/llama.cpp/issues/20407 myself and the fix seemed straightforward, so I did it. @am17an - sorry for the random PR, it's very minor.
+  - Tested on a mac like so:
+
+### Full Commit Range
+- b8794 to b8799 (6 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8794...b8799
+
+---
+
 ## 2026-04-14: Update to llama.cpp b8784
 
 ### Summary
