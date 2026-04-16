@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-04-16: Update to llama.cpp b8809
+
+### Summary
+Updated llama.cpp from b8804 to b8809, incorporating 7 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8806**: cuda: Q1_0 initial backend ([#21629](https://github.com/ggml-org/llama.cpp/pull/21629))
+  - Follow up after merging of [Q1_0 CPU PR](https://github.com/ggml-org/llama.cpp/pull/21273). This PR adds the relevant CUDA backend.
+  - Seems also this works for AMD in some cases that was a nice surprise :)
+  - See a live demo of Bonsai 8B using these CUDA kernels and `llama-server` on hugging-face space [prism-ml/Bonsai-demo](https://huggingface.co/spaces/prism-ml/Bonsai-demo), using a L40S GPU and getting decent speeds. Each request running on one gpu with a naive load balancer (just for demo purposes).
+
+#### 🚀 Performance Improvements
+- **b8807**: vulkan: optimize im2col ([#21713](https://github.com/ggml-org/llama.cpp/pull/21713))
+  - The current layout is running very slow in some cases, to the point that drivers time out (#20249). I swapped the IM2COL work dimensions to enable coalesced writes. Cap the amount of workgroups spawned to avoid some bad cases.
+  - <img width="1400" height="700" alt="3090" src="https://github.com/user-attachments/assets/f7cd4d54-3680-4716-82a3-f031461f745a" />
+  - <img width="1400" height="700" alt="a770" src="https://github.com/user-attachments/assets/c9bf6580-8d59-4a2d-b8a8-941009c3ed84" />
+- **b8809**: [SYCL] Add Q8_0 reorder optimization for Intel GPUs (~3x token generation speedup) ([#21527](https://github.com/ggml-org/llama.cpp/pull/21527))
+  - Extends the existing SYCL reorder optimization (currently Q4_0/Q4_K/Q6_K) to support Q8_0
+  - Q8_0 token generation on Intel Arc Pro B70 (Xe2/Battlemage): 4.88 t/s → 15.24 t/s (3.1x faster)
+  - Memory bandwidth utilization improves from 21% to 66% of theoretical maximum
+
+
+### Additional Changes
+4 minor improvements: 3 documentation, 1 examples.
+
+- **b8804**: CUDA: require explicit opt-in for P2P access ([#21910](https://github.com/ggml-org/llama.cpp/pull/21910))
+  - In https://github.com/ggml-org/llama.cpp/pull/19378 I had naively enabled CUDA peer-to-peer access guarded only by `cudaDeviceCanAccessPeer`. However, for some motherboards and BIOS settings this seems to cause crashes or corrupted outputs. I don't think we can feasibly check for this so our only option is to make peer access an explicit opt-in.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8809**: [SYCL] Fix Q8_0 reorder: garbage on 2nd prompt + crash on full VRAM ([#21638](https://github.com/ggml-org/llama.cpp/pull/21638))
+  - Fixes two issues with the Q8_0 reorder optimization introduced in #21527.
+  - **Bug 1: Garbage output from second prompt onward (#21589)**
+  - The Q8_0 reorder optimization rearranges weight data during token generation (batch=1, via DMMV/MMVQ), but the general GEMM dequantization path used during prompt processing was missing a reorder-aware variant for Q8_0. After the first tg pass reordered the weights, subsequent prompt processing read them with the standard dequantizer, producing corrupt output.
+- **b8809**: [SYCL] Fix Q8_0 reorder: garbage on 2nd prompt + crash on full VRAM ([#21638](https://github.com/ggml-org/llama.cpp/pull/21638))
+  - Fixes two issues with the Q8_0 reorder optimization introduced in #21527.
+  - **Bug 1: Garbage output from second prompt onward (#21589)**
+  - The Q8_0 reorder optimization rearranges weight data during token generation (batch=1, via DMMV/MMVQ), but the general GEMM dequantization path used during prompt processing was missing a reorder-aware variant for Q8_0. After the first tg pass reordered the weights, subsequent prompt processing read them with the standard dequantizer, producing corrupt output.
+- **b8808**: server: use random media marker ([#21962](https://github.com/ggml-org/llama.cpp/pull/21962))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/21955
+  - Generate a random media marker each time we launch the server. The string is random enough that collision is impossible to happen in practice
+  - How random? 32 characters, 0-9a-zA-Z, making it 62^32 combinations. And according to [math stackexchange](https://math.stackexchange.com/questions/2129541/number-of-32-character-alphanumeric-strings-with-certain-conditions):
+
+### Full Commit Range
+- b8804 to b8809 (7 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8804...b8809
+
+---
+
 ## 2026-04-15: Update to llama.cpp b8799
 
 ### Summary
