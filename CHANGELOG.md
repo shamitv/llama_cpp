@@ -1,5 +1,167 @@
 # Changelog
 
+## 2026-04-17: Update to llama.cpp b8828
+
+### Summary
+Updated llama.cpp from b8816 to b8828, incorporating 11 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8816**: ggml: add graph_reused ([#21764](https://github.com/ggml-org/llama.cpp/pull/21764))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add `reused` member variable to `ggml_cgraph` so backends can take advantage of the graph reuse functionality. Currently when graph_reuse in invoked, the CUDA backend still does the props change check to figure out if the graph has changed or not, where in fact `graph_reuse` (to my understanding) guarantees this to be true. This helps bypass a mildly expensive O(n) check.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8827**: opencl: refactor q8_0 set_tensor and mul_mat host side dispatch for Adreno ([#21938](https://github.com/ggml-org/llama.cpp/pull/21938))
+  - The q8_0 set_tensor and mul_mat host side dispatch code for Adreno is a bit messy. This PR does some refactoring to make it cleaner and follow the same pattern as more recently added quantizations, e.g., q4_1, etc.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8828**: model : Gemma4 model type detection ([#22027](https://github.com/ggml-org/llama.cpp/pull/22027))
+  - Adds model type detection logic for Gemma4 31B and 26BA4B.
+  - This change should be purely cosmetic, fixes "?B" model names shown by `llama-bench`, etc.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+#### 🚀 Performance Improvements
+- **b8822**: opencl: add q5_K gemm and gemv kernels for Adreno ([#21595](https://github.com/ggml-org/llama.cpp/pull/21595))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add Q5_K GEMM and GEMV kernels to the Adreno backend to improve performance for Q5_K quantized models.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8824**: hexagon: optimize HMX matmul operations ([#21071](https://github.com/ggml-org/llama.cpp/pull/21071))
+  - **Type Safety and Code Robustness:**
+  - Replaced `int` with `size_t` for variables representing sizes, indices, and tile counts throughout the codebase to prevent potential integer overflows and improve correctness (e.g., `n_col_tiles`, `n_row_tiles`, loop indices). [[1]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L651-R653) [[2]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L681-R682) [[3]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L741-R758) [[4]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L1162-R1163) [[5]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L1524-R1532) [[6]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L1718-R1719) [[7]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6R1735-L1740)
+  - Refactored tile and row/column stride calculations to use `size_t` and clarified index calculations in matrix operations, which improves code clarity and reduces the risk of subtle bugs. [[1]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L741-R758) [[2]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L1524-R1532)
+
+#### 🐛 Bug Fixes
+- **b8823**: model: using single llm_build per arch ([#21970](https://github.com/ggml-org/llama.cpp/pull/21970))
+  - Prepare for https://github.com/ggml-org/llama.cpp/issues/21966
+  - Using one single `llm_build_*` class per arch will make the migration a bit easier.
+  - Example before:
+
+
+### Additional Changes
+5 minor improvements: 1 documentation, 4 examples.
+
+- **b8825**: cmake: use glob to collect src/models sources ([#22005](https://github.com/ggml-org/llama.cpp/pull/22005))
+  - The goal is to make https://github.com/ggml-org/llama.cpp/pull/22004 a bit easier
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8821**: server: use random media marker ([#21962](https://github.com/ggml-org/llama.cpp/pull/21962))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/21955
+  - Generate a random media marker each time we launch the server. The string is random enough that collision is impossible to happen in practice
+  - How random? 32 characters, 0-9a-zA-Z, making it 62^32 combinations. And according to [math stackexchange](https://math.stackexchange.com/questions/2129541/number-of-32-character-alphanumeric-strings-with-certain-conditions):
+- **b8821**: server: tests: fetch random media marker via /apply-template (#21962) ([#21980](https://github.com/ggml-org/llama.cpp/pull/21980))
+  - Fix CI
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8821**: server: use random media marker ([#21962](https://github.com/ggml-org/llama.cpp/pull/21962))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/21955
+  - Generate a random media marker each time we launch the server. The string is random enough that collision is impossible to happen in practice
+  - How random? 32 characters, 0-9a-zA-Z, making it 62^32 combinations. And according to [math stackexchange](https://math.stackexchange.com/questions/2129541/number-of-32-character-alphanumeric-strings-with-certain-conditions):
+- **b8826**: cli : use get_media_marker ([#22017](https://github.com/ggml-org/llama.cpp/pull/22017))
+  - cont #21962
+  - Fixes #22010
+  - `llama-cli` still used `mtmd_default_marker` which returns the old static marker.
+
+### Full Commit Range
+- b8816 to b8828 (11 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8816...b8828
+
+---
+
+## 2026-04-16: Update to llama.cpp b8809
+
+### Summary
+Updated llama.cpp from b8804 to b8809, incorporating 7 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8806**: cuda: Q1_0 initial backend ([#21629](https://github.com/ggml-org/llama.cpp/pull/21629))
+  - Follow up after merging of [Q1_0 CPU PR](https://github.com/ggml-org/llama.cpp/pull/21273). This PR adds the relevant CUDA backend.
+  - Seems also this works for AMD in some cases that was a nice surprise :)
+  - See a live demo of Bonsai 8B using these CUDA kernels and `llama-server` on hugging-face space [prism-ml/Bonsai-demo](https://huggingface.co/spaces/prism-ml/Bonsai-demo), using a L40S GPU and getting decent speeds. Each request running on one gpu with a naive load balancer (just for demo purposes).
+
+#### 🚀 Performance Improvements
+- **b8807**: vulkan: optimize im2col ([#21713](https://github.com/ggml-org/llama.cpp/pull/21713))
+  - The current layout is running very slow in some cases, to the point that drivers time out (#20249). I swapped the IM2COL work dimensions to enable coalesced writes. Cap the amount of workgroups spawned to avoid some bad cases.
+  - <img width="1400" height="700" alt="3090" src="https://github.com/user-attachments/assets/f7cd4d54-3680-4716-82a3-f031461f745a" />
+  - <img width="1400" height="700" alt="a770" src="https://github.com/user-attachments/assets/c9bf6580-8d59-4a2d-b8a8-941009c3ed84" />
+- **b8809**: [SYCL] Add Q8_0 reorder optimization for Intel GPUs (~3x token generation speedup) ([#21527](https://github.com/ggml-org/llama.cpp/pull/21527))
+  - Extends the existing SYCL reorder optimization (currently Q4_0/Q4_K/Q6_K) to support Q8_0
+  - Q8_0 token generation on Intel Arc Pro B70 (Xe2/Battlemage): 4.88 t/s → 15.24 t/s (3.1x faster)
+  - Memory bandwidth utilization improves from 21% to 66% of theoretical maximum
+
+
+### Additional Changes
+4 minor improvements: 3 documentation, 1 examples.
+
+- **b8804**: CUDA: require explicit opt-in for P2P access ([#21910](https://github.com/ggml-org/llama.cpp/pull/21910))
+  - In https://github.com/ggml-org/llama.cpp/pull/19378 I had naively enabled CUDA peer-to-peer access guarded only by `cudaDeviceCanAccessPeer`. However, for some motherboards and BIOS settings this seems to cause crashes or corrupted outputs. I don't think we can feasibly check for this so our only option is to make peer access an explicit opt-in.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8809**: [SYCL] Fix Q8_0 reorder: garbage on 2nd prompt + crash on full VRAM ([#21638](https://github.com/ggml-org/llama.cpp/pull/21638))
+  - Fixes two issues with the Q8_0 reorder optimization introduced in #21527.
+  - **Bug 1: Garbage output from second prompt onward (#21589)**
+  - The Q8_0 reorder optimization rearranges weight data during token generation (batch=1, via DMMV/MMVQ), but the general GEMM dequantization path used during prompt processing was missing a reorder-aware variant for Q8_0. After the first tg pass reordered the weights, subsequent prompt processing read them with the standard dequantizer, producing corrupt output.
+- **b8809**: [SYCL] Fix Q8_0 reorder: garbage on 2nd prompt + crash on full VRAM ([#21638](https://github.com/ggml-org/llama.cpp/pull/21638))
+  - Fixes two issues with the Q8_0 reorder optimization introduced in #21527.
+  - **Bug 1: Garbage output from second prompt onward (#21589)**
+  - The Q8_0 reorder optimization rearranges weight data during token generation (batch=1, via DMMV/MMVQ), but the general GEMM dequantization path used during prompt processing was missing a reorder-aware variant for Q8_0. After the first tg pass reordered the weights, subsequent prompt processing read them with the standard dequantizer, producing corrupt output.
+- **b8808**: server: use random media marker ([#21962](https://github.com/ggml-org/llama.cpp/pull/21962))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/21955
+  - Generate a random media marker each time we launch the server. The string is random enough that collision is impossible to happen in practice
+  - How random? 32 characters, 0-9a-zA-Z, making it 62^32 combinations. And according to [math stackexchange](https://math.stackexchange.com/questions/2129541/number-of-32-character-alphanumeric-strings-with-certain-conditions):
+
+### Full Commit Range
+- b8804 to b8809 (7 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8804...b8809
+
+---
+
+## 2026-04-15: Update to llama.cpp b8799
+
+### Summary
+Updated llama.cpp from b8794 to b8799, incorporating 6 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8795**: metal : fix FA support logic ([#21898](https://github.com/ggml-org/llama.cpp/pull/21898))
+  - cont #20797
+  - Add proper logic for supported quantization types of the FA operator.
+  - Fix https://github.com/ggml-org/llama.cpp/actions/runs/24400236380/job/71268552842#step:3:27636
+- **b8797**: hexagon: optimization for HMX mat_mul ([#21554](https://github.com/ggml-org/llama.cpp/pull/21554))
+  - This PR introduces two additional optimizations for the Hexagon HMX backend:
+  - 1. **Enable asynchronous HMX execution**
+  - HMX computations are now executed asynchronously, allowing them to overlap with HVX dequantization and DMA stages within the pipeline. Previously, synchronous HMX calls blocked the main thread and limited parallelism.
+
+#### 🐛 Bug Fixes
+- **b8796**: ggml: remove ggml-ext.h ([#21869](https://github.com/ggml-org/llama.cpp/pull/21869))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/21867 Fix https://github.com/ggml-org/llama.cpp/issues/21860
+  - Not quite sure if the ggml-ext.h is intended to be a public header, but I believe it should be (so that the symbols can be exposed in the dynamic library)
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8799**: autoparser: support case of JSON_NATIVE with per-call markers ([#21892](https://github.com/ggml-org/llama.cpp/pull/21892))
+  - The JSON_NATIVE case for the autoparser wasn't handling cases where the separate calls were not aggregated in a JSON array, but instead each had their own set of opening and closing markers.
+  - Automatically resolves autoparser detection problems with Reka-Edge, also fixes old Hermes templates.
+
+
+### Additional Changes
+2 minor improvements: 2 examples.
+
+- **b8794**: mtmd: add mtmd_image_tokens_get_decoder_pos() API ([#21851](https://github.com/ggml-org/llama.cpp/pull/21851))
+  - Add a new mtmd API: `mtmd_image_tokens_get_decoder_pos()`
+  - Deprecate `mtmd_image_tokens_get_nx/ny()`
+  - Target support https://github.com/ggml-org/llama.cpp/pull/21045
+- **b8798**: llama-diffusion-cli: read n_ctx back after making llama_context so the cli doesn't reject all inp... ([#21939](https://github.com/ggml-org/llama.cpp/pull/21939))
+  - Read back via `llama_n_ctx` the context window size that `llama_init_from_model` determines, as mentioned in comments for `llama_n_ctx`. The prevents the cli from rejecting all inputs because it thinks the context window is 0 length.
+  - I ran into the issue described in https://github.com/ggml-org/llama.cpp/issues/20407 myself and the fix seemed straightforward, so I did it. @am17an - sorry for the random PR, it's very minor.
+  - Tested on a mac like so:
+
+### Full Commit Range
+- b8794 to b8799 (6 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8794...b8799
+
+---
+
 ## 2026-04-14: Update to llama.cpp b8784
 
 ### Summary
