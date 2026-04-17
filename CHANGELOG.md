@@ -1,5 +1,72 @@
 # Changelog
 
+## 2026-04-17: Update to llama.cpp b8828
+
+### Summary
+Updated llama.cpp from b8816 to b8828, incorporating 11 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8816**: ggml: add graph_reused ([#21764](https://github.com/ggml-org/llama.cpp/pull/21764))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add `reused` member variable to `ggml_cgraph` so backends can take advantage of the graph reuse functionality. Currently when graph_reuse in invoked, the CUDA backend still does the props change check to figure out if the graph has changed or not, where in fact `graph_reuse` (to my understanding) guarantees this to be true. This helps bypass a mildly expensive O(n) check.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8827**: opencl: refactor q8_0 set_tensor and mul_mat host side dispatch for Adreno ([#21938](https://github.com/ggml-org/llama.cpp/pull/21938))
+  - The q8_0 set_tensor and mul_mat host side dispatch code for Adreno is a bit messy. This PR does some refactoring to make it cleaner and follow the same pattern as more recently added quantizations, e.g., q4_1, etc.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8828**: model : Gemma4 model type detection ([#22027](https://github.com/ggml-org/llama.cpp/pull/22027))
+  - Adds model type detection logic for Gemma4 31B and 26BA4B.
+  - This change should be purely cosmetic, fixes "?B" model names shown by `llama-bench`, etc.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+#### 🚀 Performance Improvements
+- **b8822**: opencl: add q5_K gemm and gemv kernels for Adreno ([#21595](https://github.com/ggml-org/llama.cpp/pull/21595))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add Q5_K GEMM and GEMV kernels to the Adreno backend to improve performance for Q5_K quantized models.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8824**: hexagon: optimize HMX matmul operations ([#21071](https://github.com/ggml-org/llama.cpp/pull/21071))
+  - **Type Safety and Code Robustness:**
+  - Replaced `int` with `size_t` for variables representing sizes, indices, and tile counts throughout the codebase to prevent potential integer overflows and improve correctness (e.g., `n_col_tiles`, `n_row_tiles`, loop indices). [[1]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L651-R653) [[2]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L681-R682) [[3]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L741-R758) [[4]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L1162-R1163) [[5]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L1524-R1532) [[6]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L1718-R1719) [[7]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6R1735-L1740)
+  - Refactored tile and row/column stride calculations to use `size_t` and clarified index calculations in matrix operations, which improves code clarity and reduces the risk of subtle bugs. [[1]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L741-R758) [[2]](diffhunk://#diff-847ca0061484dfed117eacc0ab6c3100ba453260205727332ee155b04c2b61d6L1524-R1532)
+
+#### 🐛 Bug Fixes
+- **b8823**: model: using single llm_build per arch ([#21970](https://github.com/ggml-org/llama.cpp/pull/21970))
+  - Prepare for https://github.com/ggml-org/llama.cpp/issues/21966
+  - Using one single `llm_build_*` class per arch will make the migration a bit easier.
+  - Example before:
+
+
+### Additional Changes
+5 minor improvements: 1 documentation, 4 examples.
+
+- **b8825**: cmake: use glob to collect src/models sources ([#22005](https://github.com/ggml-org/llama.cpp/pull/22005))
+  - The goal is to make https://github.com/ggml-org/llama.cpp/pull/22004 a bit easier
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8821**: server: use random media marker ([#21962](https://github.com/ggml-org/llama.cpp/pull/21962))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/21955
+  - Generate a random media marker each time we launch the server. The string is random enough that collision is impossible to happen in practice
+  - How random? 32 characters, 0-9a-zA-Z, making it 62^32 combinations. And according to [math stackexchange](https://math.stackexchange.com/questions/2129541/number-of-32-character-alphanumeric-strings-with-certain-conditions):
+- **b8821**: server: tests: fetch random media marker via /apply-template (#21962) ([#21980](https://github.com/ggml-org/llama.cpp/pull/21980))
+  - Fix CI
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8821**: server: use random media marker ([#21962](https://github.com/ggml-org/llama.cpp/pull/21962))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/21955
+  - Generate a random media marker each time we launch the server. The string is random enough that collision is impossible to happen in practice
+  - How random? 32 characters, 0-9a-zA-Z, making it 62^32 combinations. And according to [math stackexchange](https://math.stackexchange.com/questions/2129541/number-of-32-character-alphanumeric-strings-with-certain-conditions):
+- **b8826**: cli : use get_media_marker ([#22017](https://github.com/ggml-org/llama.cpp/pull/22017))
+  - cont #21962
+  - Fixes #22010
+  - `llama-cli` still used `mtmd_default_marker` which returns the old static marker.
+
+### Full Commit Range
+- b8816 to b8828 (11 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8816...b8828
+
+---
+
 ## 2026-04-16: Update to llama.cpp b8809
 
 ### Summary
