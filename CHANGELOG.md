@@ -1,5 +1,113 @@
 # Changelog
 
+## 2026-04-21: Update to llama.cpp b8863
+
+### Summary
+Updated llama.cpp from b8831 to b8863, incorporating 32 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8839**: model : refactor bias tensor variable names ([#22079](https://github.com/ggml-org/llama.cpp/pull/22079))
+  - https://github.com/ggml-org/llama.cpp/pull/21971#pullrequestreview-4118994933
+  - Removes duplicate tensor variables.
+- **b8843**: cmake: remove CMP0194 policy to restore MSVC builds ([#21934](https://github.com/ggml-org/llama.cpp/pull/21934))
+  - Thanks to @oobabooga for catching this: https://github.com/ggml-org/llama.cpp/pull/21630#issuecomment-4248308373
+  - PR #21630 added CMP0194 NEW to silence a warning, but it broke Windows MSVC+Ninja.
+  - the first attempt at scoping ASM to kleidiai hit an unrelated CMake scoping issue on the ARM+KleidiAI self-hosted runner, so I pivoted to a minimal revert. This removes only the 6-line CMP0194 policy block from ggml/CMakeLists.txt. project("ggml" C CXX ASM) is left untouched, which is exactly the pre-#21630 state that was working on all platforms. The CMake 4.1+ warning returns but no platform breaks.
+- **b8848**: HIP: Remove unesscary NCCL_CHECK ([#21914](https://github.com/ggml-org/llama.cpp/pull/21914))
+  - In an intermediate state of #19378, RCCL use was behind its own define (GGML_USE_RCCL) so this was required. Before merging, #19378 was changed so that GGML_USE_NCCL enables both NCCL and RCCL, so NCCL_CHECK in common.cu became visible on HIP. At this point NCCL_CHECK in hip.h should have been removed, but this was forgotten.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🆕 New Features
+- **b8833**: ggml-webgpu: fix compiler warnings and refactor FlashAttention encoding ([#21052](https://github.com/ggml-org/llama.cpp/pull/21052))
+  - This PR doesn't add new functionality, but does the following:
+  - Removes compiler warnings due to usage of C++20 initializers and potentially unsafe casting, which cleans up the compilation and is a step towards enabling CI on the ggml NVIDIA machine
+  - Refactors flashattention encoding to avoid custom structs and be more in-line with encoding of the rest of the operations
+- **b8841**: rpc : refactor the RPC transport ([#21998](https://github.com/ggml-org/llama.cpp/pull/21998))
+  - Move all transport related code into a separate file and use the socket_t interface to hide all transport implementation details.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: NO
+- **b8843**: cmake: fix CMP0194 warning on Windows with MSVC ([#21630](https://github.com/ggml-org/llama.cpp/pull/21630))
+  - Fix CMP0194 CMake policy warning when building with MSVC on Windows and CMake 4.1+.
+  - The `ggml` subproject enables `ASM` globally via `project("ggml" C CXX ASM)` for Metal (macOS) and KleidiAI (ARM) backends. On Windows/MSVC, no assembler sources are used, but CMake 4.1+ warns because `cl.exe` is not a valid ASM compiler.
+  - This sets `CMP0194` to `NEW` before the `project()` call, guarded by `if (POLICY CMP0194)` for backward compatibility with older CMake versions. This follows the same pattern used in `ggml-vulkan/CMakeLists.txt` (CMP0114, CMP0147).
+- **b8843**: cmake: fix CMP0194 warning on Windows with MSVC ([#21630](https://github.com/ggml-org/llama.cpp/pull/21630))
+  - Fix CMP0194 CMake policy warning when building with MSVC on Windows and CMake 4.1+.
+  - The `ggml` subproject enables `ASM` globally via `project("ggml" C CXX ASM)` for Metal (macOS) and KleidiAI (ARM) backends. On Windows/MSVC, no assembler sources are used, but CMake 4.1+ warns because `cl.exe` is not a valid ASM compiler.
+  - This sets `CMP0194` to `NEW` before the `project()` call, guarded by `if (POLICY CMP0194)` for backward compatibility with older CMake versions. This follows the same pattern used in `ggml-vulkan/CMakeLists.txt` (CMP0114, CMP0147).
+- **b8850**: CUDA: refactor mma data loading for AMD ([#22051](https://github.com/ggml-org/llama.cpp/pull/22051))
+  - On master the AMD support in `mma.cuh` is currently in a half-finished state. This PR refactors the code a bit and makes the usage more consistent, reducing the need for special handling in `fattn-mma-f16.cuh` and `mmq.cuh`. Specifically:
+  - More generic implementations for `load_ldmatrix`. The current usage of `load_generic` was not quite correct since it assumed memory alignment which is only guaranteed for `load_ldmatrix`.
+  - Added a generic implementation for `load_ldmatrix_trans`. I experimented with transposing the data upon load in the FA kernel but I was unable to get good performance. However, the usage of `ggml_cuda_memcpy_1` is beneficial, including for Volta which also uses this path.
+- **b8853**: [SYCL] Fix reorder MMVQ assert on unaligned vocab sizes ([#22035](https://github.com/ggml-org/llama.cpp/pull/22035))
+  - Fixes #22020. The four SYCL reorder mul_mat_vec_q dispatchers (Q4_0, Q8_0, Q4_K, Q6_K) asserted that block_num_y was a multiple of 16 subgroups. Any model whose vocab size is not divisible by 16 aborted on load when the output projection hit the assert. The original report was HY-MT 1.5 1.8B (vocab 120818) on an Arc B570.
+  - I replaced the hard assert with launch-grid padding. block_num_y now rounds up to a whole number of subgroup-sized workgroups, and the kernel's existing `if (row >= nrows) return;` guard skips the padded rows. The row value is uniform across a subgroup (it does not depend on `get_local_linear_id`), so `sycl::reduce_over_group` stays safe.
+  - For aligned-vocab models, `ceil_div(nrows, 16) * 16 == nrows`, so block_num_y is unchanged and the kernel launch is identical to the pre-patch code.
+- **b8853**: [SYCL] Fix reorder MMVQ assert on unaligned vocab sizes ([#22035](https://github.com/ggml-org/llama.cpp/pull/22035))
+  - Fixes #22020. The four SYCL reorder mul_mat_vec_q dispatchers (Q4_0, Q8_0, Q4_K, Q6_K) asserted that block_num_y was a multiple of 16 subgroups. Any model whose vocab size is not divisible by 16 aborted on load when the output projection hit the assert. The original report was HY-MT 1.5 1.8B (vocab 120818) on an Arc B570.
+  - I replaced the hard assert with launch-grid padding. block_num_y now rounds up to a whole number of subgroup-sized workgroups, and the kernel's existing `if (row >= nrows) return;` guard skips the padded rows. The row value is uniform across a subgroup (it does not depend on `get_local_linear_id`), so `sycl::reduce_over_group` stays safe.
+  - For aligned-vocab models, `ceil_div(nrows, 16) * 16 == nrows`, so block_num_y is unchanged and the kernel launch is identical to the pre-patch code.
+- **b8858**: ggml-cpu: Optimized x86 and generic cpu q1_0 dot (follow up) ([#21636](https://github.com/ggml-org/llama.cpp/pull/21636))
+  - Hello, I have prepared optimized implementation of cpu q1_0 dot product (mainly for Bonsai LLM models), this is a continuation of https://github.com/PrismML-Eng/llama.cpp/pull/10 PR, list of experiments conducted and some other benchmark results can be found there
+  - More efficient (less bit math and multiplications) generic implementation of dot product for (q1_0; q8_0)
+  - x86 SIMD specific implementations of dot product for (q1_0; q8_0) for most of the realistic x86_64 targets (from SSSE3 to AVX2)
+- **b8860**: Tensor-parallel: Fix delayed AllReduce on Gemma-4 MoE ([#22129](https://github.com/ggml-org/llama.cpp/pull/22129))
+  - Skip forward past nodes that don't consume the current node, and allow a chain of MULs.
+  - When `down_exps_s` is set, build_moe_ffn pulls the scale tensor in via reshape/repeat/get_rows. Topological sort places those between `mul_mat_id` and the MUL that consumes it, so the existing nodes[id+1] check never sees an ADD_ID or MUL and fails.
+  - The scale MUL is followed by a second MUL; the old code only accepted one.
+- **b8863**: ggml-cuda: flush legacy pool on OOM and retry ([#22155](https://github.com/ggml-org/llama.cpp/pull/22155))
+  - This adds a conservative fallback for the legacy CUDA/HIP pool allocator.
+  - On non-VMM setups, the legacy pool can end up holding cached free buffers that are individually too small for a new request, but still occupy enough VRAM to make the next allocation fail. In that case, this patch flushes the cached legacy-pool buffers and retries the allocation once before aborting.
+  - The normal hit path is unchanged. This is intended as a narrow mitigation for legacy-pool OOMs, not a broader allocator redesign. I validated the retry path locally with a synthetic OOM injection on a legacy-pool build.
+
+#### 🚀 Performance Improvements
+- **b8846**: Reduce CPU overhead in meta backend: cache subgraph splits when cgraph is unchanged ([#22041](https://github.com/ggml-org/llama.cpp/pull/22041))
+  - Skip per-call subgraph construction in `ggml_backend_meta_graph_compute` when the same `ggml_cgraph` is used consecutively.
+  - Assign `uid` to every sub-graph so that CUDA's fast uid check path hits too.
+  - Performance on 2x RTX 5090:
+- **b8853**: [SYCL] Add Q8_0 reorder optimization for Intel GPUs (~3x token generation speedup) ([#21527](https://github.com/ggml-org/llama.cpp/pull/21527))
+  - Extends the existing SYCL reorder optimization (currently Q4_0/Q4_K/Q6_K) to support Q8_0
+  - Q8_0 token generation on Intel Arc Pro B70 (Xe2/Battlemage): 4.88 t/s → 15.24 t/s (3.1x faster)
+  - Memory bandwidth utilization improves from 21% to 66% of theoretical maximum
+- **b8857**: ggml-webgpu: updated matrix-vector multiplication ([#21738](https://github.com/ggml-org/llama.cpp/pull/21738))
+  - Improved performance of the matrix-vector multiplication kernel.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🐛 Bug Fixes
+- **b8832**: CUDA: use LRU based eviction for cuda graphs ([#21611](https://github.com/ggml-org/llama.cpp/pull/21611))
+  - Since introducing graphs per node to enable multiple splits to have cuda graphs in #18934, there are cases when the node pointers in ggml_cgraph keep changing and it leads to the map being unbounded leading to memory leaks (e.g #20315)
+  - This PR fixes the memory leaks
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8836**: ci : free disk space for rocm release ([#22012](https://github.com/ggml-org/llama.cpp/pull/22012))
+  - Fix `Release` by freeing up disk space on rocm runner image.
+  - Recent failures:
+  - https://github.com/ggml-org/llama.cpp/actions/runs/24517121219/job/71664214247
+- **b8837**: Fix meta backend tensor reads for split tensors during state serialization ([#22063](https://github.com/ggml-org/llama.cpp/pull/22063))
+  - This PR fixes a crash when saving recurrent state with tensor-split models using the meta backend. The previous code assumed that a tensor read would always map to a single segment, which is not always true when -sm tensor is enabled. The fix handles multi-segment tensor reads correctly instead of hitting the split_state.n_segments == 1 assertion. This should allow checkpoint/state serialization to work reliably with tensor-parallel CUDA setups. Fixes #22058
+- **b8849**: common/autoparser : allow space after tool call ([#22073](https://github.com/ggml-org/llama.cpp/pull/22073))
+  - Allow whitespace after tool call for tagged outputs. Nemotron Nano 3 wants to emit `<tool_call>\n`, but is then constrained to produce another tool call since the last tool call is not allowed to end in `\n`.
+  - fixes #22043
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8855**: fix: GLM-DSA crash in llama-tokenize when using vocab_only ([#22102](https://github.com/ggml-org/llama.cpp/pull/22102))
+  - When running llama-tokenize with GLM-DSA models, the process crashes with a fatal error in llama-hparams.cpp. This happens because vocab_only mode skips the full hparams loading, leaving n_layer and the MLA params uninitialized, but print_info still calls n_embd_head_k_mla() which internally falls back to n_embd_head_k(0) and hits the abort when n_layer is 0. Fixed by guarding the DeepSeek2/GLM-DSA/Mistral4 print block with consistent with how other non-vocab hparams are already handled in print_info. Fixes #22026
+- **b8859**: TP: fix 0-sized tensor slices, AllReduce fallback ([#21808](https://github.com/ggml-org/llama.cpp/pull/21808))
+  - Partially fixes https://github.com/ggml-org/llama.cpp/issues/21765 .
+  - With Qwen 3.5 ~~26b a4b~~ 27b there are only 2 KV heads so with 3+ GPUs some of them will get zero-sized slices of the data. This edge case is not being handled correctly on master. This PR makes it so that the corresponding nodes are disabled and the buffer for the AllReduce memset to 0 so that after the AllReduce all GPUs have the correct data. As of right now the buffer is zeroed out via `GGML_SCALE` with a factor of `0.0f` for the AllReduce fallback implementation - this is not safe w.r.t. NaNs but it seems we currently lack the tooling to properly memset a tensor as part of a `ggml_cgraph`. The same issue is present in `llm_graph_context::build_rs`.
+  - Additionally, on master the synchronization of 3+ GPUs is not being handled correctly for the AllReduce fallback. The problem is that in those cases 2+ reduction steps are needed but the same buffer is used for each step so there are race conditions. This PR extends the number of buffers accordingly.
+
+
+### Additional Changes
+10 minor improvements: 9 examples, 1 maintenance.
+
+### Full Commit Range
+- b8831 to b8863 (32 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8831...b8863
+
+---
+
 ## 2026-04-17: Update to llama.cpp b8828
 
 ### Summary
