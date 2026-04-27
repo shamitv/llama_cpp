@@ -1,5 +1,155 @@
 # Changelog
 
+## 2026-04-27: Update to llama.cpp b8946
+
+### Summary
+Updated llama.cpp from b8863 to b8946, incorporating 63 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8917**: jinja : remove unused header ([#22310](https://github.com/ggml-org/llama.cpp/pull/22310))
+  - Remove unused header
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8922**: ggml-webgpu: enable FLASH_ATTN_EXT on browser without subgroup matrix  ([#22199](https://github.com/ggml-org/llama.cpp/pull/22199))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR addresses few things:
+  - 1. Cleanup the vec path to remove requirement for subgroup matrix.
+- **b8946**: fix(graph): remove duplicate wo_s scale after build_attn (Qwen3, LLaMA) ([#22421](https://github.com/ggml-org/llama.cpp/pull/22421))
+  - Observed that build_attn present in llama-graph already applies  NVFP4 per tensor scale (wo_s) via
+  - llama-graph.cpp (build_lora_mm(wo, cur, wo_s) or explicit wo_s mul).
+  - Also observed these model builders(qwen3, qwen3moe, llama) are also multiplied the
+
+#### 🆕 New Features
+- **b8863**: ggml-cuda: flush legacy pool on OOM and retry ([#22155](https://github.com/ggml-org/llama.cpp/pull/22155))
+  - This adds a conservative fallback for the legacy CUDA/HIP pool allocator.
+  - On non-VMM setups, the legacy pool can end up holding cached free buffers that are individually too small for a new request, but still occupy enough VRAM to make the next allocation fail. In that case, this patch flushes the cached legacy-pool buffers and retries the allocation once before aborting.
+  - The normal hit path is unchanged. This is intended as a narrow mitigation for legacy-pool OOMs, not a broader allocator redesign. I validated the retry path locally with a synthetic OOM injection on a legacy-pool build.
+- **b8868**: llama-ext : fix exports ([#22202](https://github.com/ggml-org/llama.cpp/pull/22202))
+  - cont #22171
+  - Export new symbols.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8870**: vulkan: Support F16 OP_FILL ([#22177](https://github.com/ggml-org/llama.cpp/pull/22177))
+  - Support f16 for OP_FILL. This came up in https://github.com/ggml-org/llama.cpp/pull/21149.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, I used AI to write this, but I reviewed it.
+- **b8874**: arg : add --spec-default ([#22223](https://github.com/ggml-org/llama.cpp/pull/22223))
+  - Add `--spec-default` flag for enabling default configuration for speculative decoding.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8878**: Hexagon: DAIG op ([#22195](https://github.com/ggml-org/llama.cpp/pull/22195))
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: Yes, to understand some basics of how to add a hexagon op
+- **b8881**: hexagon: add support for FILL op ([#22198](https://github.com/ggml-org/llama.cpp/pull/22198))
+  - Add support for FP32 and FP16 FILL op in hexagon backend.
+  - ` test-backend-ops -b HTP0 -o FILL`
+  - ```Device description: Hexagon
+- **b8882**: ggml-webgpu(shader): support conv2d kernels.  ([#21964](https://github.com/ggml-org/llama.cpp/pull/21964))
+  - In this PR, we implemented the conv2d shader kernel to support VL models that require conv2d operations.
+  - Backend ops tests all passed. I haven't tested this with real models yet.
+- **b8891**: ggml-webgpu: Add fused RMS_NORM + MUL ([#21983](https://github.com/ggml-org/llama.cpp/pull/21983))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR adds the initial kernel fusion to WebGPU backend with RMS_NORM + MUL (it is similar to https://github.com/ggml-org/llama.cpp/pull/14800).
+  - The performance on the major models on my device (M2, Metal 4) is as follows, but unfortunately, the performance is almost the same on this implementation.
+- **b8892**: [WebGPU] Implement async tensor api and event api  ([#22099](https://github.com/ggml-org/llama.cpp/pull/22099))
+  - This PR implements the async tensor and event api necessary for the WebGPU backend to use the async loading mode to load models. This is needed because we have strict memory requirements when running wllama with the WebGPU backend (especially on Safari and on mobile devices). The async tensor API uses only four 1MB buffers to load a model, while the default loading mode uses a single resizable buffer. Using the async tensor API reduces our memory footprint by ~20-25%.
+  - Some figures on memory usage in wllama with these and other changes:
+  - <img width="2100" height="900" alt="steady_state_bar_cold" src="https://github.com/user-attachments/assets/189bd1ee-4de1-4d9d-8da2-2e6f3a6c9e5e" />
+- **b8893**: Add hipGraph and VMM support to ROCM ([#11362](https://github.com/ggml-org/llama.cpp/pull/11362))
+  - This adds, disabled by default, hipGraph support. Essentially this just involves adding the relevant hip defines to ggml-cuda/vendors/hip.h
+  - Currently is seams that hipGraph dosent improve performance at all. Looking at rocprof it seams that launching the kernels this way gains no decrease in overhead, while building the graph adds overhead. Presumably since this api was recently added to rocm and is still marked as beta (https://rocmdocs.amd.com/projects/HIP/en/latest/reference/hip_runtime_api/modules/graph_management.html) It has not been tuned for performance.
+  - I still think its useful to have this since in the future this will likely change, and maybe on some hw configs it already helps right now.
+- **b8913**: ggml-wegpu: handle the buffer aliasing for rms fuse ([#22266](https://github.com/ggml-org/llama.cpp/pull/22266))
+  - This PR addressed an edge case of #21983. I load and run a model in the browser, and I met this error:
+  - ```
+  - ggml_webgpu: Device error! Reason: 2, Message: Writable storage buffer binding aliasing found between [BindGroup "RMS_NORM_MUL"] set at bind group index 0, binding index 0, and [BindGroup "RMS_NORM_MUL"] set at bind group index 0, binding index 2, with overlapping ranges (offset: 5242880, size: 4096) and (offset: 5242880, size: 4096) in [Buffer "tensor_buf3"].
+- **b8914**: hexagon: add SOLVE_TRI op ([#21974](https://github.com/ggml-org/llama.cpp/pull/21974))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR add `solve tri` op support for hexagon. Use `hvx` to accelarate the caculation.
+  - Tests all passes with `test-backend-ops`.
+- **b8935**: opencl: add iq4_nl support ([#22272](https://github.com/ggml-org/llama.cpp/pull/22272))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR adds support for iq4_nl. It is slightly bigger, containing both general implementation and Adreno specific implementation.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8944**: ggml : use 64 bytes aligned tile buffers ([#21058](https://github.com/ggml-org/llama.cpp/pull/21058))
+  - While trying to fix #20824, i couldn't reproduce it so far but forcing alignment could help and doesn't hurt.
+  - | Model                            | Test   |   t/s OLD |   t/s NEW |   Speedup |
+  - |:---------------------------------|:-------|----------:|----------:|----------:|
+
+#### 🚀 Performance Improvements
+- **b8893**: HIP: flip GGML_HIP_GRAPHS to on ([#22254](https://github.com/ggml-org/llama.cpp/pull/22254))
+  - In #11362 hip graph was disabled by default as, at the time, its performance impact was negative. Due to improvements in rocm and our usage and construction of graphs this is no longer true, so lets change the default
+  - **gfx1100 @ 340w**
+  - | Model               | Test       |   t/s master |   t/s hipgraph |   Speedup |
+- **b8931**: CUDA: reduce MMQ stream-k overhead ([#22298](https://github.com/ggml-org/llama.cpp/pull/22298))
+  - This PR reduces the stream-k overhead in the MMQ kernel by using `fastdiv` which precomputes some values on the CPU to speed up integer divisions. Also, as originally suggested by @nisparks in https://github.com/ggml-org/llama.cpp/pull/22170 and https://github.com/ggml-org/llama.cpp/pull/22252 optionally use tiling rather than a stream-k decomposition. The implementation in this PR is different vs the ones linked: in those an extra variant of the kernel is being compiled that has the tiling hard-coded (as is done for relatively old GPUs), in this PR the number of CUDA blocks is scaled dynamically to the number of tiles so that each CUDA block works on exactly one tile; if it turns out that there is a meaningful performance difference it may make sense to still compile the extra kernels. The choice for whether or not to use stream-k does not explicitly depend on MoE in this PR, instead it is determined from the efficiency loss that would be incurred by tiling: if it is <= 10% tiling is used in order to skip the stream-k fixup.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8936**: ggml-cpu: optimize avx2 q6_k ([#22345](https://github.com/ggml-org/llama.cpp/pull/22345))
+  - Basically I took the optimizations I did for AVX a while back and brought them over to AVX2.
+  - PR:
+  - | model                          |       size |     params | backend    | threads |            test |                  t/s |
+- **b8941**: ggml-webgpu: performance-portable matmul tuning knobs ([#22241](https://github.com/ggml-org/llama.cpp/pull/22241))
+  - This PR updates the tuning knobs for the WebGPU register tiling and subgroup matmul kernels to improve performance across GPUs. These suggested knobs are based on exhaustive data collection from four GPUs: NVIDIA RTX 5080 FE, AMD Radeon RX 7900 XT, Intel Arc B580, and Apple M2. After running a performance portability analysis on the exhaustive data, we found configurations that provide better average performance while minimizing worst-case slowdowns.
+  - Here is the table:
+  - | Path | Metric | Default | Proposed |
+
+#### 🐛 Bug Fixes
+- **b8871**: metal : workaround macOS GPU interactivity watchdog ([#22216](https://github.com/ggml-org/llama.cpp/pull/22216))
+  - fix #20141
+  - fix #22214
+  - See https://github.com/ggml-org/llama.cpp/issues/20141#issuecomment-4273461320 for more information.
+- **b8873**: Fix build for Android ([#125](https://github.com/ggml-org/llama.cpp/pull/125))
+  - The project can be built for Android with NDK and CMake like this:
+  - cmake -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI='arm64-v8a' -DANDROID_PLATFORM=android-23 ..
+  - However, vdotq_* intrinsics are not available on Android. Fix this by checking for __ANDROID__ and use the code replaced by commit 84d9015c in this case.
+- **b8873**: Fix potential licensing issue ([#126](https://github.com/ggml-org/llama.cpp/pull/126))
+  - I'm not an expert on Licenses BUT,
+  - If you attribute Facebook in the README and description, you essentially admit/imply that this repo is a modification of their repo. Facebook's repo has "GPL-3.0 license". Which means this repo should also be like that in that case, which is something that we dont want.
+  - This PR fixing that potential language issue.
+- **b8880**: ggml-webgpu: reset CPU/GPU profiling time when freeing context ([#22050](https://github.com/ggml-org/llama.cpp/pull/22050))
+  - This PR fixes https://github.com/ggml-org/llama.cpp/issues/22049.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - When I ran the command as in the above issue, the result is as follows, and we can see that the profiling times are reset for each test.
+- **b8882**: ggml webgpu: Move to no timeout for WaitAny in graph submission to avoid deadlocks ([#20618](https://github.com/ggml-org/llama.cpp/pull/20618))
+  - Another approach to see if this avoids deadlocks in the llvm-pipe Vulkan backend. After some debugging on the Github CI I've seen cases where it seems to get stuck within the `WaitAny` call itself, even after the timeout nanoseconds have passed, leading me to believe there is a bug within the interface between Dawn and llvm-pipe. Setting timeout to 0 from the WebGPU side creates a busy-wait loop on the ggml side, but hopefully avoids deadlocking in most scenarios, and in practice the busy-wait loop does not occur that often in my tests.
+- **b8888**: sycl: Improve mul_mat_id memory efficiency and add BF16 fast path ([#22119](https://github.com/ggml-org/llama.cpp/pull/22119))
+  - This PR addresses memory exhaustion issues (`UR_RESULT_ERROR_OUT_OF_HOST_MEMORY`) encountered on SYCL Level Zero when handling large-vocabulary models and MoE architectures.
+  - **Key Changes:**
+  - 1. **BF16 Fast Path via DNNL:**
+- **b8901**: metal : fix event synchronization ([#22260](https://github.com/ggml-org/llama.cpp/pull/22260))
+  - cont #20463
+  - cont #18919
+  - Fix the event synchronization logic when using virtual Metal devices.
+- **b8905**: ci : fix build number for sycl release ([#22283](https://github.com/ggml-org/llama.cpp/pull/22283))
+  - Fix SYCL release binaries having `b1` as build number.
+  - Build number was not calculated correctly due to checkout depth.
+- **b8919**: common : fix jinja warnings with clang 21 ([#22313](https://github.com/ggml-org/llama.cpp/pull/22313))
+  - Fix jinja warnings with clang 21
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8933**: chat: fix handling of space in reasoning markers ([#22353](https://github.com/ggml-org/llama.cpp/pull/22353))
+  - Extracted from #22162 (thanks @roj234 ), just the fix for the parser
+  - We're putting off the prefill changes for a further PR (prepared by @aldehir ) so I'm just taking this fix as a standalone.
+- **b8937**: cpu : re-enable fast gelu_quick_f16 ([#22339](https://github.com/ggml-org/llama.cpp/pull/22339))
+  - Enable disabled `ggml_vec_gelu_quick_f16`.
+  - I couldn't find any reason why this was disabled, and the current version is 10-20x slower.
+  - Another puzzling fact is that we use the same table for `ggml_vec_gelu_quick_f32` (as `GGML_GELU_QUICK_FP16` is enabled) so there should be no issue?
+- **b8940**: [Tensor Parallel] Fix recurrent state serialization for partial reads and writes ([#22362](https://github.com/ggml-org/llama.cpp/pull/22362))
+  - The previous code worked only for full tensor reads and writes and was hitting `GGML_ASSERT(size == ggml_nbytes(tensor)); ` assert when tested with llama-server.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Additional Changes
+30 minor improvements: 7 documentation, 18 examples, 5 maintenance.
+
+### Full Commit Range
+- b8863 to b8946 (63 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8863...b8946
+
+---
+
 ## 2026-04-21: Update to llama.cpp b8863
 
 ### Summary
