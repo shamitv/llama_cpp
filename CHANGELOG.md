@@ -1,5 +1,66 @@
 # Changelog
 
+## 2026-05-02: Update to llama.cpp b9002
+
+### Summary
+Updated llama.cpp from b8992 to b9002, incorporating 10 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b8994**: ggml-webgpu: add the upscale shader ([#22419](https://github.com/ggml-org/llama.cpp/pull/22419))
+  - In this PR, I added the upscale shader. Based on the test cases, nearest, bilinear (w/t antialias) and bicubic methods are implemented with/without the aligned_corner flags. Some other combinations are currectly ignored,
+  - All tests passed; did not find performance tests so cannot run a comparison test.
+- **b8995**: vulkan: Support asymmetric FA in coopmat2 path ([#21753](https://github.com/ggml-org/llama.cpp/pull/21753))
+  - There has been some recent interest/experimentation with mixed quantization types for FA. I had originally designed the cm2 FA shader with this in mind (because I didn't realize it wasn't supported at the time!), this change adds the missing pieces and enables it.
+  - Also support Q1_0 since people have been trying that out (seems crazy, but who knows).
+  - We should be able to do similar things in the coopmat1/scalar path, but there's another change open against the scalar path and I don't want to conflict.
+- **b8998**: hexagon: enable non-contiguous row tensor support for unary ops ([#22574](https://github.com/ggml-org/llama.cpp/pull/22574))
+  - Enable hexagon support for unary ops for non-contiguous row-strided tensors.
+  - Relax support check to accept row-contiguous tensors (`ggml_is_contiguous_rows`) instead of requiring full contiguity
+  - Add `unary_row_offset()` to compute correct DDR byte offsets using actual tensor strides for non-contiguous tensors
+- **b8999**: llama-quant : fix `--tensor-type` when default `qtype` is overriden ([#22572](https://github.com/ggml-org/llama.cpp/pull/22572))
+  - fix #22544 (my fault!)
+  - Currently, when using `--tensor-type "<regex>=GGML_TYPE"`, if the `GGML_TYPE` override matches the default type for the chosen output `ftype`, the internal heuristics in `llama_tensor_get_type_impl` may still take effect, rather than being locked to the specified `GGML_TYPE`.
+  - This is my own mistake that I introduced in #19770.
+- **b8999**: llama-quant : honor --tensor-type override when it matches the global ftype ([#22559](https://github.com/ggml-org/llama.cpp/pull/22559))
+  - Fixes #22544.
+  - When a user supplies an explicit `--tensor-type "<pattern>=<type>"` mapping that happens to match the requested global ftype, the user's intent (lock that tensor to that exact type) is silently dropped and the imatrix/heuristic path is allowed to override it.
+  - `llama_tensor_get_type` only set `manual = true` from inside the `qtype != new_type` branch:
+- **b9000**: hexagon: hmx flash attention ([#22347](https://github.com/ggml-org/llama.cpp/pull/22347))
+  - This PR implemented hmx based flash attetion for Hexagon backend.
+  - Profiling shows that the main bottleneck is the `exp` computation (about 40% of total FA runtime). I experimented with a LUT-based, lossless optimization, but it appears that `vgather` cannot be effectively parallelized—multithreaded `vgather` provided no measurable speedup. ~~I’m not sure whether this is due to an issue in my implementation or an inherent hardware limitation.~~ As mentioned [here](https://github.com/ggml-org/llama.cpp/pull/22347#issuecomment-4357254968), `vgather` is aborted.
+  - As an alternative, I implemented an FP16 version of exp to improve performance. This does introduce some numerical loss, so it is disabled by default. Enabling it via `GGML_HEXAGON_FA_EXP2_HF=ON` yields an additional ~10% performance gain.
+- **b9000**: hexagon: optimization for HMX mat_mul ([#21554](https://github.com/ggml-org/llama.cpp/pull/21554))
+  - This PR introduces two additional optimizations for the Hexagon HMX backend:
+  - 1. **Enable asynchronous HMX execution**
+  - HMX computations are now executed asynchronously, allowing them to overlap with HVX dequantization and DMA stages within the pipeline. Previously, synchronous HMX calls blocked the main thread and limited parallelism.
+
+#### 🚀 Performance Improvements
+- **b8996**: ggml-webgpu: Fix vectorized handling in mul-mat and mul-mat-id ([#22578](https://github.com/ggml-org/llama.cpp/pull/22578))
+  - This PR fixes two issues with the handling of vectorized in mul-mat.
+  - Remove the `dst->ne[1]` check of `key.vectorized` from mul-mat-fast, as it looks unnecessary in both `mul_mat_reg_tile` and `mul_mat_subgroup_matrix`. The following shows an example of the performance improvement.
+  - Add the missing vectorized variant name to the mul-mat-id pipeline.
+
+#### 🐛 Bug Fixes
+- **b8992**: Update llama-mmap to work with 32-bit emscripten ([#22497](https://github.com/ggml-org/llama.cpp/pull/22497))
+  - When compiling to 32-bit WebAssembly through Emscripten, `std::fseek` and `std::ftell` return a `long`, which is interpreted as a 32-bit signed value. Unfortunately, this means that any files above 2GB overflow the maximum positive integer, leading to bad results. This fixes that by delegating to `fseeko` and `ftello` in Emscripten builds, which return a 64-bit `off_t` that can be interpreted correctly in both 32-bit and 64-bit WASM builds.
+  - Note that ggml does something similar in all cases: https://github.com/ggml-org/llama.cpp/blob/master/ggml/src/gguf.cpp#L25. However I didn't make that full change here because I'm not sure if it would lead to issues in other places.
+  - For a little more context, this, in combination with the origin private file system (OPFS), allows models > 2GB to be loaded by the WebGPU backend in the browser without splitting the models into shards.
+
+
+### Additional Changes
+1 minor improvements: 1 maintenance.
+
+- **b9002**: b9002
+  - <details open>
+
+### Full Commit Range
+- b8992 to b9002 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8992...b9002
+
+---
+
 ## 2026-05-01: Update to llama.cpp b8992
 
 ### Summary
