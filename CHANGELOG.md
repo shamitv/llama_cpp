@@ -1,5 +1,142 @@
 # Changelog
 
+## 2026-05-01: Update to llama.cpp b8992
+
+### Summary
+Updated llama.cpp from b8946 to b8992, incorporating 41 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b8946**: fix(graph): remove duplicate wo_s scale after build_attn (Qwen3, LLaMA) ([#22421](https://github.com/ggml-org/llama.cpp/pull/22421))
+  - Observed that build_attn present in llama-graph already applies  NVFP4 per tensor scale (wo_s) via
+  - llama-graph.cpp (build_lora_mm(wo, cur, wo_s) or explicit wo_s mul).
+  - Also observed these model builders(qwen3, qwen3moe, llama) are also multiplied the
+- **b8981**: common : do not pass prompt tokens to reasoning budget sampler ([#22488](https://github.com/ggml-org/llama.cpp/pull/22488))
+  - cont: #22323
+  - Do not pass prompt tokens through the reasoning budget sampler, mirroring grammar behavior. Renamed `accept_grammar` to `is_generated` to better convey the purpose of this flag.
+  - Also adjusted the prefill logic to pass the generation prompt through the reasoning budget sampler as well. I removed the `prefill_tokens` parameter, as it required the prefill to match the starting token sequence exactly. Instead, we simply feed each token individually so it gets processed by the state machine.
+
+#### 🆕 New Features
+- **b8950**: Additional test for common/gemma4 : handle parsing edge cases ([#22420](https://github.com/ggml-org/llama.cpp/pull/22420))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add few test cases for #21760
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8951**: ggml-webgpu: fast matrix-vector multiplication for i-quants ([#22344](https://github.com/ggml-org/llama.cpp/pull/22344))
+  - Adds fast WebGPU mat-vec implementations for all nine i-quant types (IQ1_S, IQ1_M, IQ2_XXS, IQ2_XS, IQ2_S, IQ3_XXS, IQ3_S, IQ4_NL, IQ4_XS). The kernels are added to `mul_mat_vec.wgsl` and selected through the existing `use_fast` dispatcher in `ggml_webgpu_mul_mat`.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Numbers below are from `test-backend-ops perf`, comparing this branch vs. current master for the variant
+- **b8953**: ggml-webgpu: add Q1_0 support ([#22374](https://github.com/ggml-org/llama.cpp/pull/22374))
+  - Adds WebGPU support for the Q1_0 quantization type, including a fast mat-vec kernel (`MUL_ACC_Q1_0` in `mul_mat_vec.wgsl`), a fast mat-mat block (`INIT_SRC0_SHMEM_Q1_0` in `mul_mat_decls.tmpl`) that enables both the register-tile and subgroup-matrix paths, and a `GET_ROWS` dequant (`Q1_0` block in `get_rows.wgsl`), along with the dispatcher and `supports_op` updates for `MUL_MAT` and `MUL_MAT_ID`.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Q1_0 was previously not supported on the WebGPU backend, so both mat-vec and mat-mat dispatched to the CPU fallback. With this PR the kernels run on WebGPU.
+- **b8956**: CANN: Add support for Qwen35 ops ([#21204](https://github.com/ggml-org/llama.cpp/pull/21204))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR adds support for several missing operators in the CANN (Ascend NPU) backend for qwen3.5
+  - New operators:
+- **b8960**: vulkan: add barrier after writetimestamp ([#21865](https://github.com/ggml-org/llama.cpp/pull/21865))
+  - Add a pipelinebarrier after each writetimestamp call in the perf_logger code.
+  - The vulkan spec doesn't prevent commands issued after a timestamp from starting to execute before the timestamp is written. The NV driver had been ordering these, but future drivers won't. So we need a barrier after each timestamp to order the timestamp vs the next commands.
+- **b8962**: ggml-webgpu: fix buffer aliasing for ssm_scan and refactor aliasing logic ([#22456](https://github.com/ggml-org/llama.cpp/pull/22456))
+  - @SharmaRithik noticed that when running Granite 4.0 ssm_scan aliases several tensors, which this PR fixes by adding logic to merge those tensors into a single binding in the shader. After making that change, I realized that some of the logic for calculating aliasing could be refactored so that it is consistent across all operations and takes place in the shader library during preprocessing, so I made that change as well. I also added a test for the overlapping tensors for ssm_scan.
+  - fyi @yomaytk
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8964**: common : re-arm reasoning budget after DONE on new <think> ([#22323](https://github.com/ggml-org/llama.cpp/pull/22323))
+  - DONE state in reasoning budget state machine absorbs start tags, causing any <think> block after the first to run unbudgeted. This makes it so the reasoning budget is a no-op for multi-block thinking models. Using the Qwen3.6-27B model with the recommended settings causes this issue to appear [1]. The fix is to re-arm in DONE on a match and transition to COUNTING with a fresh budget. I've added a regression test in test-reasoning-budget to test for this new behavior and all 6 tests pass.
+  - [1] "Thinking Preservation: we've introduced a new option to retain reasoning context from historical messages, streamlining iterative development and reducing overhead." - [https://huggingface.co/Qwen/Qwen3.6-27B](https://huggingface.co/Qwen/Qwen3.6-27B)
+  - Reproducible using: `unsloth/Qwen3.6-27B-GGUF`, server flags: `--reasoning-budget 128 --reasoning-format deepseek --jinja`, base commit: master at `15fa3c493` (b8920)
+- **b8966**: ggml-cuda: add flash-attn support for DKQ=320/DV=256 with ncols2=32 (… ([#22286](https://github.com/ggml-org/llama.cpp/pull/22286))
+  - …GQA=32)
+  - Adds MMA-f16 and tile kernel configs, dispatch logic, template instances, and tile .cu file for Mistral Small 4 (head sizes 320/256), restricting to ncols2=32 to support GQA ratio 32 only.
+  - Add fattn-kernel instantiation for dimension DQK=320 and DV-256 required for Mistal small 4. forced kernel instantiation to ncols2=32
+- **b8967**: ggml-cuda: Repost of 21896: Blackwell native NVFP4 support ([#22196](https://github.com/ggml-org/llama.cpp/pull/22196))
+  - This is a restored clone of PR #21896 [ggml-cuda: Blackwell native NVFP4 support ](https://github.com/ggml-org/llama.cpp/pull/21896).
+  - Unfortunately it closed during a rebase error and it cannot be reopened
+  - The exact commits are here as they were before. Sorry about this mixup!
+- **b8969**: Added sve tuned code for gemm_q8_0_4x8_q8_0() kernel ([#21916](https://github.com/ggml-org/llama.cpp/pull/21916))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR introduces support for SVE (Scalable Vector Extensions) kernels for the q8_0_q8_0 gemm using i8mm and vector instructions. ARM Neon support for this kernel added Earlier.
+  - This PR contains the SVE implementation of the gemm used to compute the Q8_0 quantization.
+- **b8974**: ggml-cpu : disable tiled matmul on AIX to fix page boundary segfault ([#22293](https://github.com/ggml-org/llama.cpp/pull/22293))
+  - vec_xst operations in the tiled path crash on AIX when writing near 4KB page boundaries due to strict memory protection. Fall back to mnpack implementation on AIX for stable execution.
+  - This patch fixes segmentation faults in q4_0 model inference on AIX PowerPC systems by disabling the tiled matrix multiplication path in llamafile's sgemm implementation.
+  - `vec_xst` operations crash on AIX when writing near 4KB page boundaries due to strict memory protection. The `vec_xst` instruction cannot write across page boundaries on AIX, and when the buffer offset lands at addresses like `0x1100ed000` (exactly at a page boundary), the write operation attempts to access unmapped memory, triggering a segfault.
+- **b8979**: CUDA: fuse SSM_CONV + ADD(bias) + SILU ([#22478](https://github.com/ggml-org/llama.cpp/pull/22478))
+  - Adds a CUDA fusion for `SSM_CONV + ADD(bias) + SILU`. The existing `SSM_CONV + SILU` fusion didn't match on Mamba-1 and Mamba-2 layers (used by Nemotron-H, Granite-Hybrid, Jamba, and other Mamba-style hybrids) because of a bias `ADD` operation between the conv and the SILU.
+  - | Model             | Test          |   t/s master |   t/s ssm_conv-bias-silu-fusion |   Speedup |
+  - |:------------------|:--------------|-------------:|--------------------:|----------:|
+- **b8980**: hexagon: make vmem and buffer-size configurable ([#22487](https://github.com/ggml-org/llama.cpp/pull/22487))
+  - This PR adds two new knobs to the Hexagon backend
+  - `GGML_HEXAGON_VMEM`
+  - Allows for overriding default VMEM limit. The default is the same as before (around 3.2GB)
+- **b8984**: ggml-webgpu: add fast mat-mat path for i-quants ([#22504](https://github.com/ggml-org/llama.cpp/pull/22504))
+  - Adds i-quant support to the WebGPU fast mat-mat path. Previously i-quants (IQ1_S, IQ1_M, IQ2_XXS, IQ2_XS, IQ2_S, IQ3_XXS, IQ3_S, IQ4_NL, IQ4_XS) only had a fast mat-vec kernel; mat-mat (prefill) fell back to the legacy non-tiled `mul_mat.wgsl` path. This PR adds the missing `INIT_SRC0_SHMEM_IQ*` blocks to `mul_mat_decls.tmpl` so the same shared memory dequant feeds both fast paths.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Numbers below are kernel-level throughput (GFLOPS) from `test-backend-ops perf -o MUL_MAT` at `m=4096, n=512, k=14336`. The register-tile column was measured by disabling the `subgroup_matrix` capability so the fallback fast path runs directly.
+- **b8990**: vulkan: add get/set tensor 2d functions ([#22514](https://github.com/ggml-org/llama.cpp/pull/22514))
+  - Implement the 2d tensor copy functions that were added for TP support to the Vulkan backend. This shouldn't make a performance difference, but it was not much work since the 2d functions basically already existed.
+  - I also noticed that the interface comments for the functions were universally wrong, so I corrected them, too. Sorry about the pings that causes.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🐛 Bug Fixes
+- **b8948**: common: Fix type casting for unaccounted memory calculation ([#22424](https://github.com/ggml-org/llama.cpp/pull/22424))
+  - fix unaccounted mem showing huge numbers (like 2^44, 2^44 = 2^64/1024/1024) when running llama-server --fit on.
+  - changed unaccounted from size_t to int64_t so it can show negative values properly.
+  - before pr:
+- **b8949**: fix: rpc-server cache may not work in Windows environments ([#22394](https://github.com/ggml-org/llama.cpp/pull/22394))
+  - Even when cache is enabled on the rpc-server in a Windows environment, the rpc directory is not automatically created, and therefore, cache files within that directory are not created.
+  - Furthermore, only the first character of the cache file name is output to the log, making it difficult to notice that cache files are not being generated.
+  - Before
+- **b8957**: ggml : revert to -lm linking instead of find_library ([#22355](https://github.com/ggml-org/llama.cpp/pull/22355))
+  - `find_library(MATH_LIBRARY m)` was introduced recently, but it breaks CUDA compilation with GGML_STATIC. I could not find any valid use case where we would prefer `find_library` over the standard `-lm` approach.
+  - This commit is also meant to start a discussion if there is a valid reason to keep `find_library(MATH_LIBRARY m)`, we should clarify what problem it was solving and find an alternative fix that does not break CUDA with GGML_STATIC.
+  - Found with installama.sh: https://github.com/angt/installama.sh/actions/runs/24885620138/job/72864816848
+- **b8968**: TP: fix delayed AllReduce + zero-sized slices ([#22489](https://github.com/ggml-org/llama.cpp/pull/22489))
+  - Fixes https://github.com/ggml-org/llama.cpp/issues/22391 .
+  - The problem is that k-quants have a block size of 256 vs. the size of a single expert at 512. So for 3+ GPUs one of them ends up with a zero-sized slice. This would normally not be an issue since a zero-sized slice is supported; the corresponding nodes are disabled and the backend participates in the following AllReduce with a zeroed out buffer in order to receive the results of other backends. However, the interaction of a zero-sized slice and a delayed AllReduce for better MoE performance does not work correctly. For those the range of disabled nodes needs to be extended, otherwise one of the backends will have garbage data prior to the AllReduce.
+  - Using 3x RTX 4090 the Qwen 3.6 q4_K_M PPL on the first 512 tokens of Wikitext is 4.1590 for `-sm layer`, for `-sm tensor` on master it's 8.3604, for `-sm tensor` with this PR it's `4.1554`.
+- **b8970**: common: Intentionally leak logger instance to fix hanging on Windows  ([#22273](https://github.com/ggml-org/llama.cpp/pull/22273))
+  - Added workaround for #22142. There are three points in this PR:
+  - Intentional leak of logger instance
+  - `~common_log()` called at DLL teardown phase was causing hanging on Windows. DLL teardown phase seems to be a fragile timing to do system calls like mutex lock, cond notify, thread join, etc. which did not provide sane results. We are working around this by intentionally leaking the logger instance to skip cleanup.
+- **b8971**: ggml-webgpu: Fix bug in FlashAttention support check ([#22492](https://github.com/ggml-org/llama.cpp/pull/22492))
+  - https://github.com/ggml-org/llama.cpp/pull/22199 enabled FlashAttention in the browser (non subgroup-matrix paths). However, the check in supports-op had a fallback to the subgroup-matrix path if the new tile path wasn't supported (e.g., if the browser doesn't support subgroups). This caused an error when calculating some of the shader parameters. This PR fixes the issue by returning false early in the support check if none of the flashattention variants will work.
+  - fyi @ArberSephirotheca.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8972**: ggml-cpu: cmake: append xsmtvdotii march for SpacemiT IME ([#22317](https://github.com/ggml-org/llama.cpp/pull/22317))
+  - When GGML_CPU_RISCV64_SPACEMIT=ON is set, ime1_kernels.cpp contains inline asm for the vmadot family which requires the xsmtvdotii custom extension.(problem can see in some blogs and make sure in K3 platform) The current CMakeLists does not include xsmtvdotii, so any toolchain that honours the explicit -march (tested with SpacemiT GCC 15.2) fails at the assembler stage:
+  - Error: unrecognized opcode `vmadot v16,v14,v0',
+  - extension `xsmtvdotii' required
+- **b8973**: ggml-cuda: refactor fusion code ([#22468](https://github.com/ggml-org/llama.cpp/pull/22468))
+  - Refactor the fusion code to be a single function. Also fix a bug in the fusion code where it does not check the value of the env variable to disable fusion.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b8982**: spec : fix vocab compat checks ([#22358](https://github.com/ggml-org/llama.cpp/pull/22358))
+  - Fix the logic for checking compatibility of the special tokens in the target and draft vocabs.
+  - For example, this makes the vocabs of Qwen3.6 27B and Qwen3.5 0.8B compatible.
+- **b8986**: CUDA: fix tile FA kernel on Pascal ([#22541](https://github.com/ggml-org/llama.cpp/pull/22541))
+  - Fixes https://github.com/ggml-org/llama.cpp/issues/22491 .
+  - The problem is that the new kernel for Mistral Small 4 is being compiled unconditionally with 32 columns / CUDA block. On Pascal that puts it above the 38 kiB / CUDA block shared memory limit. This PR makes it so that 32 columns/block continue to be used for AMD where this fits and on Pascal 2 CUDA blocks with 16 columns each are used instead.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b8989**: spec: fix cli argument typo ([#22552](https://github.com/ggml-org/llama.cpp/pull/22552))
+  - Fix a typo in cli arguments
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b8992**: Update llama-mmap to work with 32-bit emscripten ([#22497](https://github.com/ggml-org/llama.cpp/pull/22497))
+  - When compiling to 32-bit WebAssembly through Emscripten, `std::fseek` and `std::ftell` return a `long`, which is interpreted as a 32-bit signed value. Unfortunately, this means that any files above 2GB overflow the maximum positive integer, leading to bad results. This fixes that by delegating to `fseeko` and `ftello` in Emscripten builds, which return a 64-bit `off_t` that can be interpreted correctly in both 32-bit and 64-bit WASM builds.
+  - Note that ggml does something similar in all cases: https://github.com/ggml-org/llama.cpp/blob/master/ggml/src/gguf.cpp#L25. However I didn't make that full change here because I'm not sure if it would lead to issues in other places.
+  - For a little more context, this, in combination with the origin private file system (OPFS), allows models > 2GB to be loaded by the WebGPU backend in the browser without splitting the models into shards.
+
+
+### Additional Changes
+12 minor improvements: 1 documentation, 6 examples, 5 maintenance.
+
+### Full Commit Range
+- b8946 to b8992 (41 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b8946...b8992
+
+---
+
 ## 2026-04-27: Update to llama.cpp b8946
 
 ### Summary
