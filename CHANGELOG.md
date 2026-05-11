@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-05-11: Update to llama.cpp b9105
+
+### Summary
+Updated llama.cpp from b9076 to b9105, incorporating 23 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9080**: Gemma4_26B_A4B_NvFp4 hf checkpoint convert to gguf format fixes ([#22804](https://github.com/ggml-org/llama.cpp/pull/22804))
+  - Gemma4_26B_A4B_NvFp4 hf checkpoint convert to gguf format fixes. This PR fixes the following:
+  - 1) Excluded weight_scale, weight_scale_2, and input_scale from the existing + ".weight" rename for .experts. tensors. The original rename was causing issue with NVFP4 scale tensor names (e.g. experts.0.down_proj.weight_scale_2 => experts.0.down_proj.weight_scale_2.weight), breaking the NVFP4 lookup at _generate_nvfp4_tensors
+  - 2) Added FFN_GATE_EXP, FFN_UP_EXP, alongside the existing FFN_GATE_UP_EXP in the GEMMA4 tensor allow-list. Originally only fused FFN_GATE_UP_EXP was allowed. HF NVFP4 checkpoints store gate/up/down as separate per-expert tensors, so the converter couldn't map them especially for NvFP4 . Other option was to re-quantize if want to fuse gate and up proj.
+
+#### 🆕 New Features
+- **b9082**: Feature hexagon l2 norm ([#22816](https://github.com/ggml-org/llama.cpp/pull/22816))
+  - Add `GGML_OP_L2_NORM` support to the Hexagon HTP backend via an HVX vectorized kernel.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, used Claude Code to generate the initial version based on other HVX code then iterated/tested/updated manually.
+- **b9084**: hexagon: add HTP kernel for GGML_OP_GATED_DELTA_NET ([#22837](https://github.com/ggml-org/llama.cpp/pull/22837))
+  - Add a high-performance HVX kernel for `GGML_OP_GATED_DELTA_NET` on Hexagon HTP, enabling Gated Delta Net models (e.g. Qwen3.5) to run the recurrence entirely on-device instead of falling back to CPU.
+  - Key optimizations:
+  - **Fused multi-row kernels** (4-row for PP, 8-row for TG): reduces K/Q/gate vector reload overhead by 2–4×
+- **b9085**: Add flash attention MMA / Tiles to support MiMo-V2.5 ([#22812](https://github.com/ggml-org/llama.cpp/pull/22812))
+  - MiMo-V2.5 has asymmetric head sizes for K=192, v=128 which causes a fallback to CPU when using CUDA with flash attention enabled. This PR adds the required MMA / Tiles entries to support compilation for those sizes.
+  - `llama-sweep-bench` speeds, `master`:
+  - ```
+- **b9088**: [SYCL] Add BF16 support to GET_ROWS operation ([#21391](https://github.com/ggml-org/llama.cpp/pull/21391))
+  - Add `GGML_TYPE_BF16` support to the SYCL backend's `GET_ROWS` operation. Currently `GET_ROWS` supports F16, F32, and several quantized types but **not BF16**, causing models with BF16 tensors to fall back to CPU for this operation — triggering catastrophic performance degradation due to full GPU→CPU tensor transfers on every token.
+  - > **Disclosure:** This PR was authored with the assistance of AI (GitHub Copilot / Claude). The bug was discovered through systematic debug log analysis of real-world performance issues.
+  - The SYCL backend's `ggml_backend_sycl_device_supports_op()` does not list `GGML_TYPE_BF16` in the `GGML_OP_GET_ROWS` switch. When a model has BF16 tensors that require `GET_ROWS`, the scheduler falls back to CPU, which requires downloading the **entire tensor** from GPU to CPU via PCIe every single token.
+- **b9093**: model: add sarvam_moe architecture support ([#20275](https://github.com/ggml-org/llama.cpp/pull/20275))
+  - Add support for `sarvam_moe` architecture ([sarvamai/sarvam-30b](https://huggingface.co/sarvamai/sarvam-30b)).
+  - `SarvamMoEForCausalLM` is a straightforward extension of `BailingMoeForCausalLM` (see [vLLM PR #33942](https://github.com/vllm-project/vllm/pull/33942))
+  - 19 layers: 1 dense FFN + 18 MoE layers (128 routed experts, top-6, 1 shared expert)
+
+#### 🐛 Bug Fixes
+- **b9079**: common : revert reasoning budget +inf change ([#22740](https://github.com/ggml-org/llama.cpp/pull/22740))
+  - fixes #22717
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9081**: common : do not wrap raw strings in schema parser for tagged parsers ([#22827](https://github.com/ggml-org/llama.cpp/pull/22827))
+  - Fixes #22240
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9094**: model : fix model type check for granite/llama3 and deepseek2/glm4.7 lite ([#22870](https://github.com/ggml-org/llama.cpp/pull/22870))
+  - cont #22004
+  - Fixes https://github.com/ggml-org/llama.cpp/pull/22004#issuecomment-4412473268
+  - The checks used uninitialized `n_vocab` instead of fetching from metadata as was done before refactor.
+
+
+### Additional Changes
+14 minor improvements: 3 documentation, 6 examples, 5 maintenance.
+
+### Full Commit Range
+- b9076 to b9105 (23 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9076...b9105
+
+---
+
 ## 2026-05-02: Update to llama.cpp b9002
 
 ### Summary
