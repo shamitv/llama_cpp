@@ -1,5 +1,66 @@
 # Changelog
 
+## 2026-05-14: Update to llama.cpp b9145
+
+### Summary
+Updated llama.cpp from b9133 to b9145, incorporating 10 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9139**: ggml-webgpu: Support GPU profiling beyond the maximum query count ([#22995](https://github.com/ggml-org/llama.cpp/pull/22995))
+  - This PR fixes the bug described in the Additional Information section.
+  - Flush timestamp slots and reset the timestamp state when the number of used timestamp slots is nearly full.
+  - I confirmed that GPU profiles can now be collected for `Qwen3.5-35B-A3B-GGUF` and several other models (Qwen3.5, Qwen3.6, Gemma 4, and Llama 3).
+- **b9142**: opencl: add q5_0 and q5_1 MoE for Adreno ([#22985](https://github.com/ggml-org/llama.cpp/pull/22985))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add Q5_0 and Q5_1 MoE OpenCL support for Adreno.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9144**: ggml-webgpu: only use subgroup-matrix path when head dims are divisib… ([#23020](https://github.com/ggml-org/llama.cpp/pull/23020))
+  - Previously, WebGPU FlashAttention selected the subgroup matrix path whenever subgroup matrix support was available. However, this fails in certain cases. For example, Jetson Thor’s smallest supported subgroup matrix shape is 16x16x16, which is incompatible with head dimensions such as 40 and 72.
+  - This change adds a shape guard before selecting the subgroup matrix path. Specifically, it requires:
+  - `head_dim_qk % sg_mat_k == 0` and `head_dim_v % sg_mat_n == 0`.
+
+#### 🐛 Bug Fixes
+- **b9134**: download: do not exit() on error ([#23008](https://github.com/ggml-org/llama.cpp/pull/23008))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/23002
+  - throw a runtime error instead of `exit()`, allowing downstream code to catch it
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9140**: opencl: fix crash when warming up MoE on Adreno ([#22876](https://github.com/ggml-org/llama.cpp/pull/22876))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - When warming up MoE models on Adreno (in this case, gpt-oss-20b-mxfp4), it crashes with invalid workgroup size.
+  - This is because the warmup run `ne20 = 128` (use all experts) and the workgroup size ends up exceeding the max workgroup size of 1024. During a normal run, `ne20` is the number of used experts and the workgroup size does not exceed the max workgroup size.
+- **b9143**: Fix for issue #22974. Cast intermediate results to float before adding. ([#22994](https://github.com/ggml-org/llama.cpp/pull/22994))
+  - Fix for issue [22974](https://github.com/ggml-org/llama.cpp/issues/22974). Cast intermediate results to float before adding and casting the result to the destination type. Avoids half+half operator ambiguity.
+  - None. Claude was used to develop the change.
+
+
+### Additional Changes
+4 minor improvements: 1 documentation, 3 examples.
+
+- **b9145**: SYCL: fix multi-GPU system RAM exhaustion by using Level Zero allocations ([#21597](https://github.com/ggml-org/llama.cpp/pull/21597))
+  - Replace `sycl::malloc_device` with `zeMemAllocDevice` for GPU memory allocation in the SYCL backend
+  - Replace `sycl::free` with `zeMemFree` for corresponding deallocations
+  - Replace host-staged `dev2dev_memcpy` with direct Level Zero cross-device copy
+- **b9133**: server, webui: support continue generation on reasoning models ([#22727](https://github.com/ggml-org/llama.cpp/pull/22727))
+  - Reasoning models can now use the Continue button. Stopping mid thought saves the partial chain of thought, F5 keeps it, and clicking Continue resumes inside the thinking block instead of restarting from scratch. Same behavior for stops after the thinking ends. Plain content prefill is unchanged.
+  - https://github.com/user-attachments/assets/02a61a8d-c02f-4c00-86f0-f0098fc94dc4
+  - Backend resolves the old TODO in oaicompat_chat_params_parse: removes the throw blocking assistant prefill on reasoning models and the forced reasoning_format = NONE workaround, then orchestrates thinking_start_tag, thinking_end_tag and generation_prompt around the prefilled message so the prompt is rebuilt correctly and the parser introduced in PR #20424 routes the next stream chunks to reasoning_content or content depending on whether the prefill is plain content, mid reasoning, or post reasoning. Bridges the API field from #21036, the parser routing from #20424 and the webui storage from #21249.
+- **b9133**: server, webui: support continue generation on reasoning models ([#22727](https://github.com/ggml-org/llama.cpp/pull/22727))
+  - Reasoning models can now use the Continue button. Stopping mid thought saves the partial chain of thought, F5 keeps it, and clicking Continue resumes inside the thinking block instead of restarting from scratch. Same behavior for stops after the thinking ends. Plain content prefill is unchanged.
+  - https://github.com/user-attachments/assets/02a61a8d-c02f-4c00-86f0-f0098fc94dc4
+  - Backend resolves the old TODO in oaicompat_chat_params_parse: removes the throw blocking assistant prefill on reasoning models and the forced reasoning_format = NONE workaround, then orchestrates thinking_start_tag, thinking_end_tag and generation_prompt around the prefilled message so the prompt is rebuilt correctly and the parser introduced in PR #20424 routes the next stream chunks to reasoning_content or content depending on whether the prefill is plain content, mid reasoning, or post reasoning. Bridges the API field from #21036, the parser routing from #20424 and the webui storage from #21249.
+- **b9141**: server, webui: accept continue_final_message flag for vLLM API compat ([#23012](https://github.com/ggml-org/llama.cpp/pull/23012))
+  - Add the continue_final_message body flag from the vLLM and transformers API. When set together with add_generation_prompt false, it triggers the existing prefill_assistant code path, regardless of the server side opt.prefill_assistant option. Mutual exclusion with add_generation_prompt true is enforced, matching vLLM behavior.
+  - WebUI sends continue_final_message and add_generation_prompt false on the Continue button, with the matching opt in option on the chat service.
+  - Pure API alignment, no change to the prefill logic itself. Paves the way for the upcoming per-template prefill plumbing in common/chat.
+
+### Full Commit Range
+- b9133 to b9145 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9133...b9145
+
+---
+
 ## 2026-05-13: Update to llama.cpp b9129
 
 ### Summary
