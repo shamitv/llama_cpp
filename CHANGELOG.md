@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-05-13: Update to llama.cpp b9129
+
+### Summary
+Updated llama.cpp from b9106 to b9129, incorporating 15 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9128**: hexagon: eliminate scalar VTCM loads via HVX splat helpers ([#22993](https://github.com/ggml-org/llama.cpp/pull/22993))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Scalar loads from VTCM are expensive on Hexagon. This PR removes scalar VTCM loads in matmul and flash attention, replacing them with HVX vector loads + splat (`vdelta`) operations so the data stays in HVX registers end to end.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+#### 🆕 New Features
+- **b9106**: vulkan: Support asymmetric FA in scalar/mmq/coopmat1 paths ([#22589](https://github.com/ggml-org/llama.cpp/pull/22589))
+  - Enable asymmetric K/V types in scalar/mmq/coopmat1 FA.
+  - I ran the backend perf tests before/after on mmq/coopmat1/coopmat2 paths and there were no regressions.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9113**: opencl: add q4_1 MoE for Adreno ([#22856](https://github.com/ggml-org/llama.cpp/pull/22856))
+  - Q4_1 MoE kernel optimized for Adreno OpenCL backend.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9116**: feat: add MiMo v2.5 vision ([#22883](https://github.com/ggml-org/llama.cpp/pull/22883))
+  - This PR adds image input mmproj support for MiMo-V2.5.
+  - Testing:
+  - <details>
+- **b9119**: vulkan: Fix Windows performance regression on Intel GPU BF16 workloads for Xe2 and newer ([#22461](https://github.com/ggml-org/llama.cpp/pull/22461))
+  - This is a minor fix to #18178 . At the moment Intel Windows GPU driver does not expose BF16 availability (=`VK_KHR_shader_bfloat16` is not listed as device extension). Since the current code does not consider a case where coopmat is available but BF16 coopmat is unavailable, we are using `l_warptile` for BF16 scalar kernels. This is causing a regression vs non-coopmat config for n=512.
+  - This PR addresses the regresion by using `l_warptile` only when coopmat is truly available for BF16. We are seeing 8-9% performance improvement on pp512 of gemma-4-E2B-it-BF16.gguf using Xe2/Xe3 GPUs. For Linux we see no change since BF16 is already enabled by default.
+  - cc: @virajwad
+- **b9122**: ggml-webgpu: address precision issues for multimodal  ([#22808](https://github.com/ggml-org/llama.cpp/pull/22808))
+  - In this PR, I addressed the precision issues for multimodal. More specifically, when mixed types are used in models and projectors, I use f32 for precision in the flash attention (more specifically, in the tile path) for the browser. I did not edit `flash_attn.wgsl` since `subgroup_matrix` isn't enabled in my test environment.
+  - Inputs:
+  - Tested model: LFM2.5-VL-450M-F16 with F16 mmproj.
+- **b9127**: ggml-opencl: add opt-in Adreno xmem F16xF32 GEMM for prefill ([#22755](https://github.com/ggml-org/llama.cpp/pull/22755))
+  - This PR adds an opt-in Adreno xmem GEMM path for OpenCL prefill matmul.
+  - Scope:
+  - build-time gated by `GGML_OPENCL_USE_ADRENO_KERNELS`
+- **b9129**: ggml-zendnn : adaptive fallback to CPU backend for small batch sizes ([#22681](https://github.com/ggml-org/llama.cpp/pull/22681))
+  - Introduces an adaptive fallback mechanism in the ZenDNN backend that ensures ZenDNN never regresses against the native CPU backend, and also updates to the latest ZendNN version (ZenDNN-2026-WW17).
+  - **Problem**
+  - ZenDNN's `lowoha::matmul` is slower than ggml-cpu for:
+
+#### 🐛 Bug Fixes
+- **b9118**: vulkan: Check shared memory size for mmq shaders ([#22693](https://github.com/ggml-org/llama.cpp/pull/22693))
+  - Calculate shared memory usage for mmq shaders, and choose smaller tile sizes when they don't fit.
+  - Should fix #22690.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Additional Changes
+6 minor improvements: 2 documentation, 2 examples, 2 maintenance.
+
+### Full Commit Range
+- b9106 to b9129 (15 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9106...b9129
+
+---
+
 ## 2026-05-11: Update to llama.cpp b9105
 
 ### Summary
