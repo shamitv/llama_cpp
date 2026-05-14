@@ -1,5 +1,184 @@
 # Changelog
 
+## 2026-05-14: Update to llama.cpp b9145
+
+### Summary
+Updated llama.cpp from b9133 to b9145, incorporating 10 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9139**: ggml-webgpu: Support GPU profiling beyond the maximum query count ([#22995](https://github.com/ggml-org/llama.cpp/pull/22995))
+  - This PR fixes the bug described in the Additional Information section.
+  - Flush timestamp slots and reset the timestamp state when the number of used timestamp slots is nearly full.
+  - I confirmed that GPU profiles can now be collected for `Qwen3.5-35B-A3B-GGUF` and several other models (Qwen3.5, Qwen3.6, Gemma 4, and Llama 3).
+- **b9142**: opencl: add q5_0 and q5_1 MoE for Adreno ([#22985](https://github.com/ggml-org/llama.cpp/pull/22985))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add Q5_0 and Q5_1 MoE OpenCL support for Adreno.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9144**: ggml-webgpu: only use subgroup-matrix path when head dims are divisib… ([#23020](https://github.com/ggml-org/llama.cpp/pull/23020))
+  - Previously, WebGPU FlashAttention selected the subgroup matrix path whenever subgroup matrix support was available. However, this fails in certain cases. For example, Jetson Thor’s smallest supported subgroup matrix shape is 16x16x16, which is incompatible with head dimensions such as 40 and 72.
+  - This change adds a shape guard before selecting the subgroup matrix path. Specifically, it requires:
+  - `head_dim_qk % sg_mat_k == 0` and `head_dim_v % sg_mat_n == 0`.
+
+#### 🐛 Bug Fixes
+- **b9134**: download: do not exit() on error ([#23008](https://github.com/ggml-org/llama.cpp/pull/23008))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/23002
+  - throw a runtime error instead of `exit()`, allowing downstream code to catch it
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9140**: opencl: fix crash when warming up MoE on Adreno ([#22876](https://github.com/ggml-org/llama.cpp/pull/22876))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - When warming up MoE models on Adreno (in this case, gpt-oss-20b-mxfp4), it crashes with invalid workgroup size.
+  - This is because the warmup run `ne20 = 128` (use all experts) and the workgroup size ends up exceeding the max workgroup size of 1024. During a normal run, `ne20` is the number of used experts and the workgroup size does not exceed the max workgroup size.
+- **b9143**: Fix for issue #22974. Cast intermediate results to float before adding. ([#22994](https://github.com/ggml-org/llama.cpp/pull/22994))
+  - Fix for issue [22974](https://github.com/ggml-org/llama.cpp/issues/22974). Cast intermediate results to float before adding and casting the result to the destination type. Avoids half+half operator ambiguity.
+  - None. Claude was used to develop the change.
+
+
+### Additional Changes
+4 minor improvements: 1 documentation, 3 examples.
+
+- **b9145**: SYCL: fix multi-GPU system RAM exhaustion by using Level Zero allocations ([#21597](https://github.com/ggml-org/llama.cpp/pull/21597))
+  - Replace `sycl::malloc_device` with `zeMemAllocDevice` for GPU memory allocation in the SYCL backend
+  - Replace `sycl::free` with `zeMemFree` for corresponding deallocations
+  - Replace host-staged `dev2dev_memcpy` with direct Level Zero cross-device copy
+- **b9133**: server, webui: support continue generation on reasoning models ([#22727](https://github.com/ggml-org/llama.cpp/pull/22727))
+  - Reasoning models can now use the Continue button. Stopping mid thought saves the partial chain of thought, F5 keeps it, and clicking Continue resumes inside the thinking block instead of restarting from scratch. Same behavior for stops after the thinking ends. Plain content prefill is unchanged.
+  - https://github.com/user-attachments/assets/02a61a8d-c02f-4c00-86f0-f0098fc94dc4
+  - Backend resolves the old TODO in oaicompat_chat_params_parse: removes the throw blocking assistant prefill on reasoning models and the forced reasoning_format = NONE workaround, then orchestrates thinking_start_tag, thinking_end_tag and generation_prompt around the prefilled message so the prompt is rebuilt correctly and the parser introduced in PR #20424 routes the next stream chunks to reasoning_content or content depending on whether the prefill is plain content, mid reasoning, or post reasoning. Bridges the API field from #21036, the parser routing from #20424 and the webui storage from #21249.
+- **b9133**: server, webui: support continue generation on reasoning models ([#22727](https://github.com/ggml-org/llama.cpp/pull/22727))
+  - Reasoning models can now use the Continue button. Stopping mid thought saves the partial chain of thought, F5 keeps it, and clicking Continue resumes inside the thinking block instead of restarting from scratch. Same behavior for stops after the thinking ends. Plain content prefill is unchanged.
+  - https://github.com/user-attachments/assets/02a61a8d-c02f-4c00-86f0-f0098fc94dc4
+  - Backend resolves the old TODO in oaicompat_chat_params_parse: removes the throw blocking assistant prefill on reasoning models and the forced reasoning_format = NONE workaround, then orchestrates thinking_start_tag, thinking_end_tag and generation_prompt around the prefilled message so the prompt is rebuilt correctly and the parser introduced in PR #20424 routes the next stream chunks to reasoning_content or content depending on whether the prefill is plain content, mid reasoning, or post reasoning. Bridges the API field from #21036, the parser routing from #20424 and the webui storage from #21249.
+- **b9141**: server, webui: accept continue_final_message flag for vLLM API compat ([#23012](https://github.com/ggml-org/llama.cpp/pull/23012))
+  - Add the continue_final_message body flag from the vLLM and transformers API. When set together with add_generation_prompt false, it triggers the existing prefill_assistant code path, regardless of the server side opt.prefill_assistant option. Mutual exclusion with add_generation_prompt true is enforced, matching vLLM behavior.
+  - WebUI sends continue_final_message and add_generation_prompt false on the Continue button, with the matching opt in option on the chat service.
+  - Pure API alignment, no change to the prefill logic itself. Paves the way for the upcoming per-template prefill plumbing in common/chat.
+
+### Full Commit Range
+- b9133 to b9145 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9133...b9145
+
+---
+
+## 2026-05-13: Update to llama.cpp b9129
+
+### Summary
+Updated llama.cpp from b9106 to b9129, incorporating 15 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9128**: hexagon: eliminate scalar VTCM loads via HVX splat helpers ([#22993](https://github.com/ggml-org/llama.cpp/pull/22993))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Scalar loads from VTCM are expensive on Hexagon. This PR removes scalar VTCM loads in matmul and flash attention, replacing them with HVX vector loads + splat (`vdelta`) operations so the data stays in HVX registers end to end.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+#### 🆕 New Features
+- **b9106**: vulkan: Support asymmetric FA in scalar/mmq/coopmat1 paths ([#22589](https://github.com/ggml-org/llama.cpp/pull/22589))
+  - Enable asymmetric K/V types in scalar/mmq/coopmat1 FA.
+  - I ran the backend perf tests before/after on mmq/coopmat1/coopmat2 paths and there were no regressions.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9113**: opencl: add q4_1 MoE for Adreno ([#22856](https://github.com/ggml-org/llama.cpp/pull/22856))
+  - Q4_1 MoE kernel optimized for Adreno OpenCL backend.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9116**: feat: add MiMo v2.5 vision ([#22883](https://github.com/ggml-org/llama.cpp/pull/22883))
+  - This PR adds image input mmproj support for MiMo-V2.5.
+  - Testing:
+  - <details>
+- **b9119**: vulkan: Fix Windows performance regression on Intel GPU BF16 workloads for Xe2 and newer ([#22461](https://github.com/ggml-org/llama.cpp/pull/22461))
+  - This is a minor fix to #18178 . At the moment Intel Windows GPU driver does not expose BF16 availability (=`VK_KHR_shader_bfloat16` is not listed as device extension). Since the current code does not consider a case where coopmat is available but BF16 coopmat is unavailable, we are using `l_warptile` for BF16 scalar kernels. This is causing a regression vs non-coopmat config for n=512.
+  - This PR addresses the regresion by using `l_warptile` only when coopmat is truly available for BF16. We are seeing 8-9% performance improvement on pp512 of gemma-4-E2B-it-BF16.gguf using Xe2/Xe3 GPUs. For Linux we see no change since BF16 is already enabled by default.
+  - cc: @virajwad
+- **b9122**: ggml-webgpu: address precision issues for multimodal  ([#22808](https://github.com/ggml-org/llama.cpp/pull/22808))
+  - In this PR, I addressed the precision issues for multimodal. More specifically, when mixed types are used in models and projectors, I use f32 for precision in the flash attention (more specifically, in the tile path) for the browser. I did not edit `flash_attn.wgsl` since `subgroup_matrix` isn't enabled in my test environment.
+  - Inputs:
+  - Tested model: LFM2.5-VL-450M-F16 with F16 mmproj.
+- **b9127**: ggml-opencl: add opt-in Adreno xmem F16xF32 GEMM for prefill ([#22755](https://github.com/ggml-org/llama.cpp/pull/22755))
+  - This PR adds an opt-in Adreno xmem GEMM path for OpenCL prefill matmul.
+  - Scope:
+  - build-time gated by `GGML_OPENCL_USE_ADRENO_KERNELS`
+- **b9129**: ggml-zendnn : adaptive fallback to CPU backend for small batch sizes ([#22681](https://github.com/ggml-org/llama.cpp/pull/22681))
+  - Introduces an adaptive fallback mechanism in the ZenDNN backend that ensures ZenDNN never regresses against the native CPU backend, and also updates to the latest ZendNN version (ZenDNN-2026-WW17).
+  - **Problem**
+  - ZenDNN's `lowoha::matmul` is slower than ggml-cpu for:
+
+#### 🐛 Bug Fixes
+- **b9118**: vulkan: Check shared memory size for mmq shaders ([#22693](https://github.com/ggml-org/llama.cpp/pull/22693))
+  - Calculate shared memory usage for mmq shaders, and choose smaller tile sizes when they don't fit.
+  - Should fix #22690.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Additional Changes
+6 minor improvements: 2 documentation, 2 examples, 2 maintenance.
+
+### Full Commit Range
+- b9106 to b9129 (15 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9106...b9129
+
+---
+
+## 2026-05-11: Update to llama.cpp b9105
+
+### Summary
+Updated llama.cpp from b9076 to b9105, incorporating 23 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9080**: Gemma4_26B_A4B_NvFp4 hf checkpoint convert to gguf format fixes ([#22804](https://github.com/ggml-org/llama.cpp/pull/22804))
+  - Gemma4_26B_A4B_NvFp4 hf checkpoint convert to gguf format fixes. This PR fixes the following:
+  - 1) Excluded weight_scale, weight_scale_2, and input_scale from the existing + ".weight" rename for .experts. tensors. The original rename was causing issue with NVFP4 scale tensor names (e.g. experts.0.down_proj.weight_scale_2 => experts.0.down_proj.weight_scale_2.weight), breaking the NVFP4 lookup at _generate_nvfp4_tensors
+  - 2) Added FFN_GATE_EXP, FFN_UP_EXP, alongside the existing FFN_GATE_UP_EXP in the GEMMA4 tensor allow-list. Originally only fused FFN_GATE_UP_EXP was allowed. HF NVFP4 checkpoints store gate/up/down as separate per-expert tensors, so the converter couldn't map them especially for NvFP4 . Other option was to re-quantize if want to fuse gate and up proj.
+
+#### 🆕 New Features
+- **b9082**: Feature hexagon l2 norm ([#22816](https://github.com/ggml-org/llama.cpp/pull/22816))
+  - Add `GGML_OP_L2_NORM` support to the Hexagon HTP backend via an HVX vectorized kernel.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, used Claude Code to generate the initial version based on other HVX code then iterated/tested/updated manually.
+- **b9084**: hexagon: add HTP kernel for GGML_OP_GATED_DELTA_NET ([#22837](https://github.com/ggml-org/llama.cpp/pull/22837))
+  - Add a high-performance HVX kernel for `GGML_OP_GATED_DELTA_NET` on Hexagon HTP, enabling Gated Delta Net models (e.g. Qwen3.5) to run the recurrence entirely on-device instead of falling back to CPU.
+  - Key optimizations:
+  - **Fused multi-row kernels** (4-row for PP, 8-row for TG): reduces K/Q/gate vector reload overhead by 2–4×
+- **b9085**: Add flash attention MMA / Tiles to support MiMo-V2.5 ([#22812](https://github.com/ggml-org/llama.cpp/pull/22812))
+  - MiMo-V2.5 has asymmetric head sizes for K=192, v=128 which causes a fallback to CPU when using CUDA with flash attention enabled. This PR adds the required MMA / Tiles entries to support compilation for those sizes.
+  - `llama-sweep-bench` speeds, `master`:
+  - ```
+- **b9088**: [SYCL] Add BF16 support to GET_ROWS operation ([#21391](https://github.com/ggml-org/llama.cpp/pull/21391))
+  - Add `GGML_TYPE_BF16` support to the SYCL backend's `GET_ROWS` operation. Currently `GET_ROWS` supports F16, F32, and several quantized types but **not BF16**, causing models with BF16 tensors to fall back to CPU for this operation — triggering catastrophic performance degradation due to full GPU→CPU tensor transfers on every token.
+  - > **Disclosure:** This PR was authored with the assistance of AI (GitHub Copilot / Claude). The bug was discovered through systematic debug log analysis of real-world performance issues.
+  - The SYCL backend's `ggml_backend_sycl_device_supports_op()` does not list `GGML_TYPE_BF16` in the `GGML_OP_GET_ROWS` switch. When a model has BF16 tensors that require `GET_ROWS`, the scheduler falls back to CPU, which requires downloading the **entire tensor** from GPU to CPU via PCIe every single token.
+- **b9093**: model: add sarvam_moe architecture support ([#20275](https://github.com/ggml-org/llama.cpp/pull/20275))
+  - Add support for `sarvam_moe` architecture ([sarvamai/sarvam-30b](https://huggingface.co/sarvamai/sarvam-30b)).
+  - `SarvamMoEForCausalLM` is a straightforward extension of `BailingMoeForCausalLM` (see [vLLM PR #33942](https://github.com/vllm-project/vllm/pull/33942))
+  - 19 layers: 1 dense FFN + 18 MoE layers (128 routed experts, top-6, 1 shared expert)
+
+#### 🐛 Bug Fixes
+- **b9079**: common : revert reasoning budget +inf change ([#22740](https://github.com/ggml-org/llama.cpp/pull/22740))
+  - fixes #22717
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9081**: common : do not wrap raw strings in schema parser for tagged parsers ([#22827](https://github.com/ggml-org/llama.cpp/pull/22827))
+  - Fixes #22240
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9094**: model : fix model type check for granite/llama3 and deepseek2/glm4.7 lite ([#22870](https://github.com/ggml-org/llama.cpp/pull/22870))
+  - cont #22004
+  - Fixes https://github.com/ggml-org/llama.cpp/pull/22004#issuecomment-4412473268
+  - The checks used uninitialized `n_vocab` instead of fetching from metadata as was done before refactor.
+
+
+### Additional Changes
+14 minor improvements: 3 documentation, 6 examples, 5 maintenance.
+
+### Full Commit Range
+- b9076 to b9105 (23 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9076...b9105
+
+---
+
 ## 2026-05-02: Update to llama.cpp b9002
 
 ### Summary
