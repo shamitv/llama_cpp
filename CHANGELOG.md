@@ -1,5 +1,84 @@
 # Changelog
 
+## 2026-05-19: Update to llama.cpp b9222
+
+### Summary
+Updated llama.cpp from b9151 to b9222, incorporating 33 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9219**: common : remove hf cache migration ([#23266](https://github.com/ggml-org/llama.cpp/pull/23266))
+  - Remove HF migration cache
+  - I think we kept it long enough and we don’t have issues with the migration itself anymore
+
+#### 🆕 New Features
+- **b9156**: ggml-webgpu: Enable NVIDIA self-hosted CI ([#22976](https://github.com/ggml-org/llama.cpp/pull/22976))
+  - Enables the self-hosted NVIDIA CI for the WebGPU backend. In order to pass the CI, the NMSE threshold had to be relaxed, to avoid errors in many operations that write to `f16` tensors. This includes operations like `DIV`, where even if the calculation is done in `f32`, casting to `f16` causes slight drift, and `SET_ROWS`, where the operation is a straightahead cast. I found that the errors were usually between `2e-7` to `3e-7`, just above the default `1e-7` threshold set by `test-backend-ops`.
+  - Since the WebGPU backend ultimately lowers to Vulkan on this CI host, I investigated the difference in the SPIR-V code between the two, and found that while the instruction for the cast is the same (`OpFConvert`), the Vulkan backend adds Vulkan's "round-to-even" mode, which matches ggml-cpu's conversion from `f32` to `f16`. However, WebGPU [does not specify](https://www.w3.org/TR/WGSL/#floating-point-accuracy) the rounding mode, leaving it implementation-defined, and Dawn currently does not expose rounding mode control to my knowledge (although interestingly, rounding mode is an example in a [hypothetical extension](https://www.w3.org/TR/WGSL/#example-bbb80169) for WGSL).
+  - Ultimately, this means that the WebGPU backend may need slightly looser tolerances for floating-point operations. While that may mean some models on some devices are slightly off compared to other backends, that is already the case right now, so I think enabling this CI and making it an explicit decision for now is worth it. If Dawn or WebGPU ever adds support for rounding mode, we can revisit this.
+- **b9158**: HIP: RDNA3 mma FA, faster AMD transpose, tune AMD ([#22880](https://github.com/ggml-org/llama.cpp/pull/22880))
+  - This PR adds RDNA3 support to the CUDA mma FA kernel. To make the RDNA3 tensor cores work with the FP16 accumulation for VKQ the tiles they need to be 32 logical units long in direction of the attention head; for head sizes 80 and 112 that are not exactly divided by 32 the regular length of 16 with FP32 accumulation is used instead. The longer tiles also enable more efficient transposition for a warp size of 32 which is why it's also used for RDNA4. However, this scrambles the data layout of the accumulators along the attention head dimension. To prevent accidental misuse I added another entry to `ggml_cuda_mma::data_layout`.
+  - I also tuned the kernel parameters for RDNA3, RDNA4, and CDNA1 in general, during which I discovered that the kernel can be made to work for head sizes up to 256 for CDNA. For RDNA3/4 I was not able to get better performance that the tile kernel for head sizes > 128.
+  - <details>
+- **b9159**: ggml-hexagon: cpy: add contiguous fast-path in reshape copy ([#23076](https://github.com/ggml-org/llama.cpp/pull/23076))
+  - Added a fast copy path for contiguous data
+- **b9194**: vulkan: fuse SSM_CONV + ADD + SILU ([#22653](https://github.com/ggml-org/llama.cpp/pull/22653))
+  - This implements fusion for SSM_CONV + (optional)bias+ SILU, similar to https://github.com/ggml-org/llama.cpp/pull/22478. Worth about 4% in TG on RTX 5090.
+  - ```
+  - before
+- **b9196**: vulkan: Support unaligned tensors for ROPE ([#22637](https://github.com/ggml-org/llama.cpp/pull/22637))
+  - Handle unaligned tensor offsets for ROPE. May fix #22516.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, written using Claude, I told it what specifically to do.
+- **b9197**: vulkan: add cpy bf16 -> f32 pipelines ([#22677](https://github.com/ggml-org/llama.cpp/pull/22677))
+  - Add the missing reverse direction "cpy bf16 -> f32" to the Vulkan backend. Currently only "cpy f32 -> bf16" is supported, which causes runtime aborts when models or LoRAs stored in BF16 need to be transferred back to F32 buffers
+  - (typical case: BF16-trained LoRA merge at runtime, yes, I'm merging with the GPU, it's much faster: same code work on CUDA)
+  - Downstream issue (Successfully tested by me, awaiting user feedback): https://github.com/ServeurpersoCom/acestep.cpp/issues/69
+- **b9198**: ggml-vulkan/CMakeLists: add a check for SPIRV-Headers ([#22009](https://github.com/ggml-org/llama.cpp/pull/22009))
+  - This makes the build fail at configure time instead of build time in case any of the sysroots included does not contain SPIRV-Headers. Generally it is preferred to fail as quickly as possible if a required dependency is not available.
+  - Files related to this package are installed as part of the SPIRV-Headers project (both cmake files as well as a pkg-config file).
+  - ```
+- **b9204**: feat: Support d_conv=15 for ssm-conv.cu ([#23017](https://github.com/ggml-org/llama.cpp/pull/23017))
+  - Closes #23015
+  - This PR adds the missing kernel dispatch for `d_conv=15` for Granite Speech 4.0 and 4.1 mmproj QFormer projectors.
+  - ```sh
+- **b9221**: ggml-hexagon: add PAD op HVX kernel ([#23078](https://github.com/ggml-org/llama.cpp/pull/23078))
+  - Add `GGML_OP_PAD` support to the Hexagon HTP backend.
+  - Includes HVX implementation for triangular masking, lower and upper variants.
+  - Verified correctness against CPU implementation and measured on device
+- **b9222**: hexagon: add support for TRI op ([#22822](https://github.com/ggml-org/llama.cpp/pull/22822))
+  - Add `GGML_OP_TRI` support to the Hexagon HTP backend.
+  - Includes HVX implementation with kernels for zero and circular padding.
+  - Verified correctness against CPU implementation and measured on device
+
+#### 🚀 Performance Improvements
+- **b9165**: ci : fix transform of top . entry in release archive ([#23080](https://github.com/ggml-org/llama.cpp/pull/23080))
+  - Fixes #23048
+  - The top `.` entry does not match the transform with `/`, improve matching to prevent including `.` in release archives.
+  - Test release run: https://github.com/CISC/llama.cpp/actions/runs/25892234097
+
+#### 🐛 Bug Fixes
+- **b9173**: ci : fix release symlinks ([#23119](https://github.com/ggml-org/llama.cpp/pull/23119))
+  - cont #23080
+  - Escape the `.` which also transformed the first character in symlinks (for some reason treated as a literal `.` in path elsewhere).
+- **b9202**: cmake : do not install conversion script ([#23204](https://github.com/ggml-org/llama.cpp/pull/23204))
+  - Fixes #23171
+  - Installing it never really made sense in the first place.
+- **b9213**: fix: initialize `embeddings_pre_norm_masked=false` in `llama_context` ([#23256](https://github.com/ggml-org/llama.cpp/pull/23256))
+  - This PR fixes a bug introduced in #23198 by the new `embeddings_pre_norm_masked` struct member for `llama_context`. When left uninitialised `embeddings_pre_norm_masked` caused a bug in the construction of Qwen3.5 graphs where `get_rows_f32` failed in an assert because it tried to grab an invalid row index.
+  - [Failing CI run with the relevant assert](https://github.com/abetlen/llama-cpp-python/actions/runs/26019550305/job/76477517913)
+
+
+### Additional Changes
+18 minor improvements: 12 examples, 6 maintenance.
+
+### Full Commit Range
+- b9151 to b9222 (33 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9151...b9222
+
+---
+
 ## 2026-05-14: Update to llama.cpp b9145
 
 ### Summary
