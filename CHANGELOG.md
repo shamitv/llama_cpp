@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-05-21: Update to llama.cpp b9260
+
+### Summary
+Updated llama.cpp from b9222 to b9260, incorporating 16 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9222**: hexagon: add support for TRI op ([#22822](https://github.com/ggml-org/llama.cpp/pull/22822))
+  - Add `GGML_OP_TRI` support to the Hexagon HTP backend.
+  - Includes HVX implementation with kernels for zero and circular padding.
+  - Verified correctness against CPU implementation and measured on device
+- **b9243**: hexagon: add MROPE and IMROPE support in HTP rope op ([#23317](https://github.com/ggml-org/llama.cpp/pull/23317))
+  - Add support for GGML_ROPE_TYPE_MROPE (8) and GGML_ROPE_TYPE_IMROPE (40) in the Hexagon backend.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9244**: opencl: add MoE support for q4_k, q5_k, q6_k on Adreno ([#23303](https://github.com/ggml-org/llama.cpp/pull/23303))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add Q4_K, Q5_K and Q6_K MoE OpenCL support for Adreno.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9255**: hexagon: HMX quantized matmul rework ([#23368](https://github.com/ggml-org/llama.cpp/pull/23368))
+  - This PR updates the HMX matmul to use activation depth mode, and simplifies quantized HMX matmul implementation.
+  - Based on testing with latest models (see the sweep below) we do not really need non-pipelined kernel flavors any more.
+  - Perhaps, at some point those provided benefits but after all the recent updates and fixes they do not.
+- **b9260**: opencl: refactor backend initilization ([#23318](https://github.com/ggml-org/llama.cpp/pull/23318))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Currently, OpenCL backend performs full initialization at backend registration time via the registry constructor. This works but brings some problems, e.g.,
+  - 1. Initialization is done before commandline is processed so with the new logger, initialization logs never show up because `-lv` setting is processed after initialization
+
+#### 🚀 Performance Improvements
+- **b9247**: metal : optimize pad + cpy ([#23354](https://github.com/ggml-org/llama.cpp/pull/23354))
+  - Improved performance with the new MTP Qwen3.6 graphs - 10%-20% TG uplift
+  - Optimize the `GGML_OP_PAD` Metal kernel by launching more threadgroups when `ne00` is large
+  - Optimize the `GGML_OP_CPY` Metal kernel by packing `src0` rows in the threadgroup more efficiently
+- **b9257**: vulkan: optimize operations in the IM2COL shader ([#22685](https://github.com/ggml-org/llama.cpp/pull/22685))
+  - This optimizes the IM2COL shader by extracting redundant operations from the loops, similar to how I already did it in this: https://github.com/ggml-org/llama.cpp/pull/11826.
+  - `Radeon RX 7800XT`
+  - <img width="1600" height="933" alt="7800XT_im2col" src="https://github.com/user-attachments/assets/e322f3d4-8904-4620-a1b2-98d0f78ff9f0" />
+
+#### 🐛 Bug Fixes
+- **b9240**: common: fix --help for --verbosity ([#23278](https://github.com/ggml-org/llama.cpp/pull/23278))
+  - To my understanding the `--help` for `--verbosity` is wrong on master. 4 is trace, 5 is debug.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9259**: common/speculative : fix nullptr crash in get_devices_str ([#23386](https://github.com/ggml-org/llama.cpp/pull/23386))
+  - Fix crash when `ggml_backend_dev_name` is called on a nullptr sentinel entry.
+  - `ggml_backend_dev_by_name` always appends a nullptr at the end of the devices
+  - vector, which caused an assertion failure in the speculative devices string
+
+
+### Additional Changes
+7 minor improvements: 2 documentation, 4 examples, 1 maintenance.
+
+### Full Commit Range
+- b9222 to b9260 (16 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9222...b9260
+
+---
+
 ## 2026-05-19: Update to llama.cpp b9222
 
 ### Summary
