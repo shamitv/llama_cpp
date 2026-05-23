@@ -1,5 +1,88 @@
 # Changelog
 
+## 2026-05-23: Update to llama.cpp b9295
+
+### Summary
+Updated llama.cpp from b9263 to b9295, incorporating 24 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9290**: [SYCL] Level Zero detection in ggml_sycl_init ([#23097](https://github.com/ggml-org/llama.cpp/pull/23097))
+  - As we already iterate over all devices in `ggml_sycl_init`, let's remove the second device-enumeration loop and reuse the existing one. After all, we only need to verify L0 backend usage once.
+  - Follow up to #21597
+  - The warning now goes off unconditionally (so you can see if your non-Intel device is not supported)
+
+#### 🆕 New Features
+- **b9267**: Check the right iface method before using the fallback 2d get ([#23306](https://github.com/ggml-org/llama.cpp/pull/23306))
+  - Probably no backends implement only one of 2d get/set, but this might be annoying for some future backend developer trying to add 2d get/set.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: NO
+- **b9270**: vocab : add Carbon-3B (HybridDNATokenizer) support ([#23410](https://github.com/ggml-org/llama.cpp/pull/23410))
+  - Adds a new BPE pre-type LLAMA_VOCAB_PRE_TYPE_CARBON for the HybridDNATokenizer used by HuggingFaceBio/Carbon-{500M,3B,8B}. The base BPE is Qwen3-4B-Base's; what differs is that text inside <dna>...</dna> regions is chunked into fixed 6-mers (right-padded with 'A' on the trailing partial), and any base outside ACGT maps to <oov>.
+  - src/llama-vocab.{h,cpp}: new pre-type, dispatched from llm_tokenizer_bpe_session::tokenize.
+  - src/llama-vocab-carbon.h: pure helpers (tokenize_carbon, emit_dna_kmers) factored out for unit testing — no llama_vocab dependency, vocab access goes through a std::function.
+- **b9279**: vulkan: fuse snake activation (mul, sin, sqr, mul, add) ([#22855](https://github.com/ggml-org/llama.cpp/pull/22855))
+  - Vulkan version of the snake activation fusion. Symmetric counterpart of https://github.com/ggml-org/llama.cpp/pull/22667 (CUDA): same matcher (mul, sin, sqr, mul, add rewritten to y = x + sin(a*x)^2 * inv_b), same broadcast contract (a / inv_b shaped [1, C] over x [T, C]), same F32 / F16 / BF16 coverage.
+  - The shader uses a native 2D dispatch via gl_GlobalInvocationID.x/y so the c = idx / T resolution that needs fastdiv on CUDA is free here. Otherwise the design is one-to-one with the CUDA path.
+  - test_snake_fuse from the CUDA PR is backend-agnostic and now also covers Vulkan: it builds the 5 op chain a frontend emits and compares the CPU naive path against the Vulkan fused path via run_whole_graph(), so passing implies the rewrite preserves the math.
+- **b9286**: ggml-zendnn : add Q8_0 quantization support ([#23414](https://github.com/ggml-org/llama.cpp/pull/23414))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR adds Q8_0 quantization support in the ggml-zendnn backend.
+  - The implementation enables ZenDNN execution paths for Q8_0 models and integrates the required handling for quantized weights and matmul operations.
+
+#### 🚀 Performance Improvements
+- **b9275**: metal : optimize concat kernel and fix set kernel threads ([#23411](https://github.com/ggml-org/llama.cpp/pull/23411))
+  - cont #23354
+  - Optimize the Metal concat kernel with row batching for small widths to improve GPU occupancy, extend test_cpy for reshaping operations, and fix the GGML_OP_SET kernel threads.
+  - <img width="1270" height="924" alt="image" src="https://github.com/user-attachments/assets/9e1a476f-b4a9-4dcf-9637-7a9408f9d0a4" />
+- **b9289**: SYCL gated_delta_net K>1 ([#23174](https://github.com/ggml-org/llama.cpp/pull/23174))
+  - Fix failures in test-backend-ops gated_delta_net related to K>1 by porting MTP relevant code snippets from ggml-cuda/gated_delta_net.cu to ggml-sycl/gated_delta_net.cpp. Without this patch, MTP on SYCL gives garbled output after a few tokens. After this patch, MTP on SYCL output is normal and is similar in speed to MTP on Vulkan, though it is not necessarily faster than without MTP on SYCL yet.
+  - No new code just copy-pasted to relevant sections.
+  - Prior to this PR:
+- **b9291**: [SYCL] improve MoE prefill throughput (+70% with Qwen3.6-35B) ([#23142](https://github.com/ggml-org/llama.cpp/pull/23142))
+  - This PR improves the throughput for MoE workloads.
+  - This PR changes  `k_copy_src1_to_contiguous` so that uses a precomputed contiguous mapping where all rows "owned" by an expert are in one slice with a know starts and ends, not all over the place. So it no longer scans `ids` on the device or uses the device atomic. That's most of the gains.
+  - This PR also switches the `O(n_as * n_routed_rows)` contraption to a [counting sort](https://en.wikipedia.org/wiki/Counting_sort)-based procedure with `O(n_as + n_routed_rows)` complexity. It was a by-product of the original goal, but as I tried to reduce the scope of this PR, I found that it contributed up to 10% to the gains, depending on the model.
+- **b9294**: opencl: Generalize Adreno MoE kernels on size M ([#23449](https://github.com/ggml-org/llama.cpp/pull/23449))
+  - Generalize Adreno MoE Optimized kernels to accept all experts with M that is multiple of 32 instead of 64.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🐛 Bug Fixes
+- **b9265**: hexagon: ssm-conv fix for large prompts ([#23307](https://github.com/ggml-org/llama.cpp/pull/23307))
+  - Refactor Hexagon SSM_CONV to use HVX path for large prompts and reduce fallback to scalar.
+- **b9266**: llama-graph: fix null-buffer crash in llm_graph_input_attn_kv_iswa for SWA-only models ([#23131](https://github.com/ggml-org/llama.cpp/pull/23131))
+  - When a model has **zero non-SWA attention layers** (e.g. a SWA-only model), the base KV cache has no layer tensors. The input tensors (self_k_idxs, self_v_idxs, self_kq_mask) are created as graph input nodes but never consumed by any compute node, so the backend scheduler never allocates a buffer for them.
+  - Calling mctx->get_base()->set_input_k_idxs() then triggers:
+  - `
+- **b9271**: mtp: use inp_out_ids for skipping logit computation ([#23433](https://github.com/ggml-org/llama.cpp/pull/23433))
+  - When doing a follow-up decode for the draft model, we were always doing the logits computation even though it is not required. Thanks for comment at https://github.com/ggml-org/llama.cpp/issues/23230#issuecomment-4493653900 for pointing this out
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9284**: vocab : keep DNA k-mer ids distinct from colliding BPE tokens ([#23466](https://github.com/ggml-org/llama.cpp/pull/23466))
+  - Follow-up to #23410. The HybridDNA tokenizer gives every DNA k-mer its own id,   but one 6-mer (`CCCCCC`) also exists as a Qwen3 BPE token. Because `get_vocab()`  is keyed by text, the DNA id (154402) was dropped in favor of the BPE id (91443)   and written out as an unused pad — so `<dna>…CCCCCC…</dna>` encoded to the wrong  id and 154402 detokenized to `[PAD154402]`, diverging from the Python tokenizer.
+  - A naive conversion fix can't work: llama.cpp's vocab is a 1:1 text↔id map, so two  tokens named `CCCCCC` won't load. transformers avoids this by resolving k-mers   through a dedicated DNA map in `<dna>` context. This PR does the same in   `src/llama-vocab.cpp` only: inside `<dna>` a k-mer resolves to its own id by  product-order index (not the shared text→id map), and at load the colliding   k-mer's text is restored from its index so it detokenizes correctly.
+  - Result matches transformers both ways: DNA `CCCCCC` → 154402, plain `CCCCCC` →   91443, both detokenize to `CCCCCC`. Verified with full token-id parity against   `AutoTokenizer(..., trust_remote_code=True)`.
+- **b9285**: cmake : build router app only during standalone builds ([#23521](https://github.com/ggml-org/llama.cpp/pull/23521))
+  - CMake projects that use llama.cpp as a library currently fail to build because router app building is always ON and it fails with:
+  - ```
+  - /home/phm/Projects/fetch-test/build-master/_deps/llama-src/app/llama.cpp:1:10: fatal error: build-info.h: No such file or directory
+- **b9295**: vulkan: fix windows find_package of SPIRV-Headers ([#23215](https://github.com/ggml-org/llama.cpp/pull/23215))
+  - Fix ggml-vulkan windows build (see https://github.com/ggml-org/llama.cpp/pull/22009#issuecomment-4471041844).
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: Claude suggested this fix.
+
+
+### Additional Changes
+9 minor improvements: 8 examples, 1 maintenance.
+
+### Full Commit Range
+- b9263 to b9295 (24 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9263...b9295
+
+---
+
 ## 2026-05-21: Update to llama.cpp b9260
 
 ### Summary
