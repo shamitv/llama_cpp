@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-05-25: Update to llama.cpp b9310
+
+### Summary
+Updated llama.cpp from b9305 to b9310, incorporating 2 upstream commits.
+
+### Additional Changes
+2 minor improvements: 2 examples.
+
+- **b9305**: cmake : fix ui build ([#23592](https://github.com/ggml-org/llama.cpp/pull/23592))
+  - Fix llama-ui builds.
+  - Thought I had all the builds working, guess I missed some.
+- **b9310**: server: fix checkpoints creation ([#22929](https://github.com/ggml-org/llama.cpp/pull/22929))
+  - Implemented as requested in https://github.com/ggml-org/llama.cpp/pull/22826#issuecomment-4403137727
+  - extract `message_spans` from chat templates
+  - use the autoparser to support more chat templates
+
+### Full Commit Range
+- b9305 to b9310 (2 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9305...b9310
+
+---
+
 ## 2026-05-24: Update to llama.cpp b9297
 
 ### Summary
