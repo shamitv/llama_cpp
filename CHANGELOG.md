@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-05-24: Update to llama.cpp b9297
+
+### Summary
+Updated llama.cpp from b9296 to b9297, incorporating 2 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9297**: Add NVFP4 MTP scale tensors ([#23563](https://github.com/ggml-org/llama.cpp/pull/23563))
+  - This PR adds the additional MTP NVFP4 weight scale and input scale tensors for:
+  - `eh_proj`
+  - `shared_head_head`
+
+#### 🐛 Bug Fixes
+- **b9296**: ggml: Check the right iface method before using the fallback 2d get ([#23514](https://github.com/ggml-org/llama.cpp/pull/23514))
+  - Same oversight as #23306 but for the async (backend-based) path.
+  - `ggml_backend_tensor_get_2d_async` was checking `set_tensor_2d_async` instead of `get_tensor_2d_async`, and the bounds assertion said "write" when it should say "read".
+  - Let me know if this fix is appropriate, or if there's a better way to handle this.
+
+
+### Full Commit Range
+- b9296 to b9297 (2 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9296...b9297
+
+---
+
 ## 2026-05-23: Update to llama.cpp b9295
 
 ### Summary
