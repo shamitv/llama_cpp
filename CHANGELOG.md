@@ -1,5 +1,103 @@
 # Changelog
 
+## 2026-05-28: Update to llama.cpp b9371
+
+### Summary
+Updated llama.cpp from b9326 to b9371, incorporating 19 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9371**: ggml-webgpu: remove legacy constants ([#23672](https://github.com/ggml-org/llama.cpp/pull/23672))
+  - Removes legacy dependency of memset pipeline on a hardcoded 288 workgroup size, which breaks some systems with lower limits (https://github.com/ngxson/wllama/issues/229). Also remove another legacy unused constant.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🆕 New Features
+- **b9329**: CUDA: add fast walsh-hadamard transform ([#23615](https://github.com/ggml-org/llama.cpp/pull/23615))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Implement FWHT for CUDA, speed-up for cases when we quantize the kv-cache.
+  - Performance on a 5090 with `-ctk q8_0 -ctv q8_0`
+- **b9330**: model: tag ffn_latent as MUL_MAT to fix buft probe ([#23664](https://github.com/ggml-org/llama.cpp/pull/23664))
+  - The LLM_TENSOR_INFOS table declared ffn_latent_down and ffn_latent_up as GGML_OP_MUL, but nemotron-h feeds both through ggml_mul_mat. The loader buft probe builds a fake node from this op to pick a buffer type, so it asked the backend whether it could run an elementwise MUL on a q8_0 weight.
+  - That used to return true unconditionally, so the wrong tag stayed harmless and the weight landed on GPU by luck. Once supports_op started reporting the truth for ADD/SUB/MUL/DIV, the probe got an honest no, the loader pushed the latent weight and its matmul to CPU, and the split graph added host/device copies per token. Hence the regression on Nemotron 3 Super mixed quants.
+  - Tagging the latent projections as MUL_MAT makes the probe ask the real question, the weight stays on GPU, and the math is unchanged.
+- **b9333**: Metal : detect Apple SoC at backend init ([#23566](https://github.com/ggml-org/llama.cpp/pull/23566))
+  - Adds a small Metal device-family detection layer. Parses [mtl_device name] into a ggml_metal_device_id enum (M1..M5 + GENERIC) and stores it in props.device_id. Unknown devices fall back to GENERIC.
+  - No consumers yet — this just lays the groundwork for the hardware-aware Metal work discussed in [#23114](https://github.com/ggml-org/llama.cpp/pull/23114#issuecomment-4519488076)
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9352**: ggml-zendnn: fixed naming of matmul function ([#20964](https://github.com/ggml-org/llama.cpp/pull/20964))
+  - This PR fixes the naming of function used to switch between proper ZenDNN MatMul kernel implementation.
+  - Hi, @z-vishal, here is small clarification, hope you will be agree .
+  - Basically, SGEMM is a **Single**-precision General Matrix Multiply, it means it use F32 gemm kernel.
+- **b9354**: Add MiniCPM5 tokenizer support ([#23384](https://github.com/ggml-org/llama.cpp/pull/23384))
+  - Adds MiniCPM5 support for HF → GGUF conversion and inference.
+  - Detect MiniCPM5 in LlamaModel and use the correct Llama3-style BPE + ByteLevel vocab path
+  - Register the minicpm5 BPE pre-tokenizer fingerprint
+- **b9366**: feat: add Vulkan REPEAT op support for f16 to f16. ([#23298](https://github.com/ggml-org/llama.cpp/pull/23298))
+  - Add Vulkan REPEAT op support for f16 to f16.
+  - (Please advise if the PR is redundant and/or missing steps to full implementation)
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+- **b9367**: vulkan: use GL_NV_cooperative_matrix_decode_vector for faster matmul ([#23541](https://github.com/ggml-org/llama.cpp/pull/23541))
+  - Use the new GL_NV_cooperative_matrix_decode_vector extension to decode multiple elements at a time when loading a matrix. This change does 4 elements at a time, which performs better than the 2 at a time the driver currently does, and is less fragile to shader or compiler changes that could break the commoning that the driver implementation relies on.
+  - If glslc supports the extension, this will generate a single set of coopmat2 shaders that use this extension, rather than variants with/without. If the driver doesn't support the extension, ggml-vulkan.cpp will strip it out of the SPIR-V.
+  - This extension is currently available in the NVIDIA vulkan developer driver (https://developer.nvidia.com/vulkan-driver), and will eventually be in the general driver releases.
+- **b9370**: hexagon: add support for Q4_1 in MUL_MAT and MUL_MAT_ID ([#23647](https://github.com/ggml-org/llama.cpp/pull/23647))
+  - This PR adds support for Q4_1 quantized tensors in MUL_MAT and MUL_MAT_ID ops.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🚀 Performance Improvements
+- **b9357**: vulkan: avoid preferring transfer queue on AMD UMA devices ([#22455](https://github.com/ggml-org/llama.cpp/pull/22455))
+  - On discrete GPUs (dGPUs), a dedicated transfer queue is beneficial because memory is separate from the CPU, so offloading transfers improves throughput. On UMA devices, CPU and GPU share memory, so the extra queue synchronization adds overhead without benefit.
+  - Attached the benchmark result running on my device. The benchmark measures the performance impact of the transfer-queue UMA patch by comparing two queue scheduling behaviors in isolated, repeatable conditions.
+  - ```
+- **b9368**: vulkan: Switch MUL_MAT_VEC to 4 K per iteration for F16/32 ([#22887](https://github.com/ggml-org/llama.cpp/pull/22887))
+  - Against mesa git, this shows a 9% performance improvement for tg128 on Qwen3.5-9B:BF16 on Intel BMG.
+  - A few cleanups to MUL_MAT_VEC including fixing the OOB A read, but the real commit is 1 and 2, which shows a total ~9% performance improvement on Intel Arc B60 on mesa (where we're back to beating SYCL!). I'm curious how other devices deal with this.
+  - I'm not really a huge fan of the code duplication but its not that bad, and more splitting stuff up didn't seem worth it. We could compile a different shader to make this all compile-time but that similarly didn't seem worth all that much.
+
+#### 🐛 Bug Fixes
+- **b9334**: CUDA: missing PDL sync for FWHT, better fallback ([#23690](https://github.com/ggml-org/llama.cpp/pull/23690))
+  - Fixes problem described in https://github.com/ggml-org/llama.cpp/pull/23615#issuecomment-4536471987 .
+  - The problem is that the new kernel is being launched with `ggml_cuda_kernel_launch` but is missing a call to `ggml_cuda_pdl_sync`. As a consequence on Blackwell there is a race condition that can lead to incorrect results. This PR adds the missing call (and also changes the code slightly to fall back to regular GEMM instead of aborting on failure).
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9365**: ci : move ARM jobs to self-hosted + disable kleidiai mac release ([#23780](https://github.com/ggml-org/llama.cpp/pull/23780))
+  - cont #23705
+  - Just realized we can run the arm jobs on the graviton runners provided by Arm
+  - I don't see the point of a kleidiai-enabled release for mac. On macs, we simply use the Metal backend which should always be the better option. Disabling this release for now to save CI resources. If we want to provide a kleidiai-enabled releases, they should be built on Arm-hosted runners and target appropriate Arm hardware/OS (cont #21259)
+- **b9369**: ggml-webgpu: fix workgroup dispatching for several ops ([#23750](https://github.com/ggml-org/llama.cpp/pull/23750))
+  - This PR fixes how workgroups are dispatched for several ops.
+  - `cpy`: Dispatching workgroups on a single dimension can be insufficient for the specified tensor size, so I changed it to use two dimensions. This fixes the bug described in the additional information section.
+  - `mul_mat_id_gather`: A single dimension is sufficient for dispatching workgroups.
+
+
+### Additional Changes
+5 minor improvements: 1 documentation, 1 examples, 3 maintenance.
+
+- **b9360**: common : fix env names to all have `LLAMA_ARG_` prefix ([#23778](https://github.com/ggml-org/llama.cpp/pull/23778))
+  - For consistency, make all env arguments have the same prefix: `LLAMA_ARG_`
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9353**: server : fix the log message when using SSL ([#23393](https://github.com/ggml-org/llama.cpp/pull/23393))
+  - When llama-server is started with SSL key and cert, the log says that it listens on http instead of https. This patch fixes this.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: yes, opus 4.7
+- **b9326**: b9326
+  - <details open>
+- **b9331**: ci : reduce PR jobs by matching backend paths ([#23675](https://github.com/ggml-org/llama.cpp/pull/23675))
+  - Move backend-specific jobs into separate workflows to be triggered less often:
+  - `hip` + `musa`
+  - `rpc`
+- **b9351**: b9351
+  - <details open>
+
+### Full Commit Range
+- b9326 to b9371 (19 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9326...b9371
+
+---
+
 ## 2026-05-25: Update to llama.cpp b9310
 
 ### Summary
