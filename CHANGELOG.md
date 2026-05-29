@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-05-29: Update to llama.cpp b9409
+
+### Summary
+Updated llama.cpp from b9409 to b9409, incorporating 1 upstream commits.
+
+### Additional Changes
+1 minor improvements: 1 maintenance.
+
+- **b9409**: b9409
+  - <details open>
+
+### Full Commit Range
+- b9409 to b9409 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9409...b9409
+
+---
+
 ## 2026-05-28: Update to llama.cpp b9371
 
 ### Summary
