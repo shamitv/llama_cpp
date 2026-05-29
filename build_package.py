@@ -26,6 +26,14 @@ LLAMA_CPP_PACKAGE_BINARIES_PATH = os.path.join(PROJECT_ROOT, "llama_cpp", "binar
 LLAMA_CPP_EXAMPLES_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "examples")
 LLAMA_CPP_MODELS_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "models")
 LLAMA_CPP_CMAKE_FILE = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "CMakeLists.txt")
+LLAMA_CPP_UI_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "tools", "ui")
+LLAMA_CPP_UI_DIST_PATH = os.path.join(LLAMA_CPP_UI_PATH, "dist")
+LLAMA_CPP_UI_REQUIRED_ASSETS = (
+    "bundle.css",
+    "bundle.js",
+    "index.html",
+    "loading.html",
+)
 SETUP_PY_PATH = os.path.join(PROJECT_ROOT, "setup.py")
 CHANGELOG_PATH = os.path.join(PROJECT_ROOT, "CHANGELOG.md")
 GITHUB_API_BASE = "https://api.github.com"
@@ -34,16 +42,65 @@ GITHUB_API_BASE = "https://api.github.com"
 LLAMA_CPP_REPO_OWNER = "ggml-org"
 LLAMA_CPP_REPO_NAME = "llama.cpp"
 
-def run_command(command, cwd=None, check=True, shell=False):
+def run_command(command, cwd=None, check=True, shell=False, env=None):
     """Helper function to run a shell command."""
     logging.info(f"Running command: {command if shell else ' '.join(command)} (in {cwd or PROJECT_ROOT})")
-    process = subprocess.run(command, cwd=cwd, capture_output=True, text=True, shell=shell)
+    process = subprocess.run(command, cwd=cwd, capture_output=True, text=True, shell=shell, env=env)
     if check and process.returncode != 0:
         logging.error(f"Error running command: {command if shell else ' '.join(command)}")
         logging.error(f"Stdout: {process.stdout}")
         logging.error(f"Stderr: {process.stderr}")
         raise subprocess.CalledProcessError(process.returncode, command, output=process.stdout, stderr=process.stderr)
     return process
+
+
+def validate_staged_ui_assets(dist_path=LLAMA_CPP_UI_DIST_PATH):
+    """Ensure the packaged UI asset directory contains the files llama.cpp expects."""
+    missing_assets = [
+        asset for asset in LLAMA_CPP_UI_REQUIRED_ASSETS
+        if not os.path.exists(os.path.join(dist_path, asset))
+    ]
+    if missing_assets:
+        raise RuntimeError(
+            "Missing staged UI assets: "
+            + ", ".join(missing_assets)
+            + f" (expected under {dist_path})"
+        )
+
+
+def clean_staged_ui_assets(dist_path=LLAMA_CPP_UI_DIST_PATH):
+    """Remove staged UI build output so release builds do not dirty the vendored tree."""
+    if os.path.isdir(dist_path):
+        logging.info(f"Removing staged UI assets from {dist_path}")
+        shutil.rmtree(dist_path)
+
+
+def stage_llama_ui_assets():
+    """Build the llama.cpp web UI into tools/ui/dist for packaging."""
+    package_json_path = os.path.join(LLAMA_CPP_UI_PATH, "package.json")
+    package_lock_path = os.path.join(LLAMA_CPP_UI_PATH, "package-lock.json")
+    if not os.path.exists(package_json_path):
+        raise RuntimeError(f"UI package manifest not found at {package_json_path}")
+
+    npm_executable = shutil.which("npm")
+    if not npm_executable:
+        raise RuntimeError("npm is required to stage llama.cpp UI assets for packaging")
+
+    clean_staged_ui_assets()
+
+    build_env = os.environ.copy()
+    build_env["LLAMA_UI_OUT_DIR"] = LLAMA_CPP_UI_DIST_PATH
+
+    node_modules_path = os.path.join(LLAMA_CPP_UI_PATH, "node_modules")
+    if not os.path.isdir(node_modules_path):
+        install_command = [npm_executable, "ci"] if os.path.exists(package_lock_path) else [npm_executable, "install"]
+        logging.info(f"Installing llama.cpp UI dependencies with {' '.join(install_command[1:])}...")
+        run_command(install_command, cwd=LLAMA_CPP_UI_PATH, env=build_env)
+
+    logging.info("Building llama.cpp UI assets for packaging...")
+    run_command([npm_executable, "run", "build"], cwd=LLAMA_CPP_UI_PATH, env=build_env)
+    validate_staged_ui_assets()
+    logging.info(f"Staged llama.cpp UI assets in {LLAMA_CPP_UI_DIST_PATH}")
 
 def download_and_place_windows_binary(tag_name):
     """Downloads the Windows binary for the given tag and places it in the package."""
@@ -590,6 +647,14 @@ def main():
             "(no version bump even if submodule tag changes)."
         ),
     )
+    parser.add_argument(
+        "--preserve-staged-ui",
+        action="store_true",
+        help=(
+            "Keep vendor_llama_cpp_pydist/llama.cpp/tools/ui/dist after packaging "
+            "for debugging or inspection."
+        ),
+    )
     args = parser.parse_args()
 
     os.chdir(PROJECT_ROOT) # Ensure commands run from project root
@@ -669,6 +734,8 @@ def main():
 
     # Build the source distribution and wheel
     try:
+        logging.info("Staging llama.cpp UI assets for offline package builds...")
+        stage_llama_ui_assets()
         logging.info("Building source distribution (sdist)...")
         run_command(["python3", SETUP_PY_PATH, "sdist"], cwd=PROJECT_ROOT)
         logging.info("Building wheel (bdist_wheel)...")
@@ -677,6 +744,14 @@ def main():
     except subprocess.CalledProcessError as e:
         logging.error(f"Error during wheel build: {e}")
         return # Or raise
+    except RuntimeError as e:
+        logging.error(f"Error staging UI assets for package build: {e}")
+        return
+    finally:
+        if args.preserve_staged_ui:
+            logging.info(f"Preserving staged UI assets at {LLAMA_CPP_UI_DIST_PATH}")
+        else:
+            clean_staged_ui_assets()
     
     logging.info("\n--- Automation Script Finished ---")
     logging.info(f"Check the '{os.path.join(PROJECT_ROOT, 'dist')}' directory for the generated wheel and source distribution.")

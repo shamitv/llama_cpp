@@ -2,6 +2,11 @@ graft vendor_llama_cpp_pydist/llama.cpp
 prune vendor_llama_cpp_pydist/llama.cpp/.git
 prune vendor_llama_cpp_pydist/llama.cpp/models
 prune vendor_llama_cpp_pydist/llama.cpp/examples
+prune vendor_llama_cpp_pydist/llama.cpp/tools/ui/.svelte-kit
+prune vendor_llama_cpp_pydist/llama.cpp/tools/ui/node_modules
+prune vendor_llama_cpp_pydist/llama.cpp/tools/ui/test-results
+prune vendor_llama_cpp_pydist/llama.cpp/tools/ui/coverage
+prune vendor_llama_cpp_pydist/llama.cpp/tools/ui/playwright-report
 # recursive-include vendor_llama_cpp_pydist/llama.cpp *
 
 include CHANGELOG.md
