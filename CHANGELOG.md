@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-05-29: Update to llama.cpp b9410
+
+### Summary
+Updated llama.cpp from b9410 to b9410, incorporating 1 upstream commits.
+
+### Additional Changes
+1 minor improvements: 1 maintenance.
+
+- **b9410**: llama: use f16 mask for FA to save VRAM ([#23764](https://github.com/ggml-org/llama.cpp/pull/23764))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Currently we reserve the KQ mask in f32 even if FA is used, which is then is converted to f16 while passing to backends. The f32 mask still uses the compute buffer even though is not used, taking up extra VRAM. This PR reserves the kq-mask in f16. This provides 1.2GB of VRAM saving at `-ub 2048` and ~300Mb at `-ub 512` when using MTP
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+### Full Commit Range
+- b9410 to b9410 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9410...b9410
+
+---
+
 ## 2026-05-29: Update to llama.cpp b9409
 
 ### Summary
