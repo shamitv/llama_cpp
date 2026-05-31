@@ -1,5 +1,72 @@
 # Changelog
 
+## 2026-05-31: Update to llama.cpp b9441
+
+### Summary
+Updated llama.cpp from b9415 to b9441, incorporating 11 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9431**: ci : update ios-xcode release job to macos-26 ([#23906](https://github.com/ggml-org/llama.cpp/pull/23906))
+  - cont https://github.com/ggml-org/llama.cpp/pull/23895#issuecomment-4582075330
+  - Update the job and removed `libcommon` from the build to save some time.
+  - Sample run: https://github.com/ggerganov/tmp2/actions/runs/26680300939/job/78639474398
+
+#### 🆕 New Features
+- **b9430**: Loongarch: Add some lsx support ([#23798](https://github.com/ggml-org/llama.cpp/pull/23798))
+  - This add some lsx support for LoongArch
+  - Since some machines only have lsx, add lsx support for q8_0, q6_K, iq4_xs, fp16 load and store.
+- **b9433**: metal : restore im2col implementation for large kernels ([#23901](https://github.com/ggml-org/llama.cpp/pull/23901))
+  - cont #16219
+  - Some use cases require 2D kernel size where `KH*KW > 1024`. Restore the old implementation for those (even though it is a bit slow).
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9436**: opencl: support bf16 by converting to f16 ([#23839](https://github.com/ggml-org/llama.cpp/pull/23839))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR adds support for bf16 by converting bf16 to f16 on host and storing the resulting f16 in GPU memory. Existing f16f32 mm/mv kernels can be reused with some host side changes.
+  - This reduces graph splits for models containing bf16 weights, e.g., gemma-4-E2B and gemma-4-E4B.
+
+#### 🐛 Bug Fixes
+- **b9428**: ci : fix s390x release job ([#23898](https://github.com/ggml-org/llama.cpp/pull/23898))
+  - cont #23895
+  - Fix for https://github.com/ggml-org/llama.cpp/actions/runs/26676181236/job/78628391004
+  - Multi-thread the `ios-xcode` builds
+- **b9432**: test: (test-llama-archs) log the config name first [no release] ([#23885](https://github.com/ggml-org/llama.cpp/pull/23885))
+  - This is a QoL change
+  - Log the first part of a test case first, e.g. `|          talkie|        Meta| Dense|`, flush it then run the test
+  - If it crashes, we at least know which test case was faulty.
+- **b9434**: TP: fix granularity for Qwen 3.5/3.6 + 3 GPUs ([#23843](https://github.com/ggml-org/llama.cpp/pull/23843))
+  - Fixes https://github.com/ggml-org/llama.cpp/issues/22817 .
+  - The problem is that the wrong tensors are being used to determine the granularity when splitting quantized tensors across GPUs. For the combination of Qwen 3.5/3.6, 3 GPUs, and a heterogeneous quant mix that can lead to inconsistencies regarding the data split. This PR adds the missing logic to determine the correct tensor for retrieving the quantization type whose block size to use as the granularity.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Additional Changes
+4 minor improvements: 1 documentation, 3 examples.
+
+- **b9439**: llama: only use one iGPU device by default ([#23897](https://github.com/ggml-org/llama.cpp/pull/23897))
+  - After #23007 Vulkan is no longer the only backend reporting devices as iGPU, so we now get the case that multiple backends report the same iGPU. On my DGX Spark that leads to the model being split between CUDA and Vulkan.
+  - This is the simplest solution, just only ever allow a single iGPU. I think that there should never be a case with multiple iGPUs, so this is okay. The dGPU deduplication logic by device_id would also work on DGX Spark and (Linux) AMD, but I don't think it is needed here.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9415**: download: add option to skip_download ([#23059](https://github.com/ggml-org/llama.cpp/pull/23059))
+  - Add a new flag `skip_download` to the `common_params_handle_models` function. This is a clean up for the upcoming model download / management API (cc @allozaur ). **It is useful to know if a download is required before running a model.**
+  - Its meaning:
+  - `offline = false` --> normal case, ETag is validated and if mismatch, redownload the GGUF
+- **b9437**: Support `-fa auto` in llama-bench ([#23714](https://github.com/ggml-org/llama.cpp/pull/23714))
+  - Support `-fa on|off|auto` in `llama-bench`, similar to other tools. The default is still kept as `-fa off` not to change the existing behavior, but using `-fa auto` allows enabling `llama-server` and `llama-cli` behavior in `llama-bench`.
+  - Make the default value of `-ngl` -1, similar to other tools. For most models, this won't have any impact as the previous default was 99.
+  - Update README with the latest usage and examples.
+- **b9441**: ui: fix ETag truncation with MSVC compiler ([#23917](https://github.com/ggml-org/llama.cpp/pull/23917))
+  - In the process of generating ETags for embedded web UI files, the `uint64_t` file hash is casted into a `unsigned long` value before being converted into a 64-bit hexadecimal string. MSVC compiler uses 32 bit `long` values, and thus will truncate the hash value. This don't really affect anything (aside for some ridiculous hypothetical load-balancing setup with servers running different OSes), but hey, why do a type cast when you can use the full value just like on Linux?
+  - For consistency, type cast on the `size_t` value above is also removed. I don't really believe we will have 4GB+ of static files, though.
+  - Tested on Windows 11 with Visual Studio 2026.
+
+### Full Commit Range
+- b9415 to b9441 (11 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9415...b9441
+
+---
+
 ## 2026-05-29: Update to llama.cpp b9410
 
 ### Summary
