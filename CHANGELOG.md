@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-06-01: Update to llama.cpp b9453
+
+### Summary
+Updated llama.cpp from b9442 to b9453, incorporating 5 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9451**: vulkan: Removed unused function ([#23175](https://github.com/ggml-org/llama.cpp/pull/23175))
+  - | Name                            | Status                  |
+  - |---------------------------------|-------------------------|
+  - | ggml_vk_create_binary_semaphore | Never called           |
+
+#### 🆕 New Features
+- **b9442**: vocab: add tokenizer support for jina-embeddings-v2-base-zh ([#18756](https://github.com/ggml-org/llama.cpp/pull/18756))
+  - The `jina-embeddings-v2-base-zh` model uses:
+  - Whitespace pre-tokenizer
+  - Raw Unicode vocabulary (tokens stored as original characters like `你好`)
+- **b9452**: vulkan: Block-load Q3_K/Q6_K block data and subtract on 32b ints ([#23056](https://github.com/ggml-org/llama.cpp/pull/23056))
+  - This is the non-padding part of #22951.
+  - Q3_K/Q6_K do much better when using MMVQ on Intel BMG even though they're only 2-byte aligned.
+  - mesa isn't all that great at coalescing back-to-back loads from alternating arrays, so we force it instead. Further, we can do subtraction directly on a full int32_t rather than an i8vec4 with bit twiddling because the high bit is always free to start.
+
+
+### Additional Changes
+2 minor improvements: 2 examples.
+
+- **b9444**: server: handle If-None-Match weak ETags ([#23916](https://github.com/ggml-org/llama.cpp/pull/23916))
+  - See #23849 for details. In short, current logic of comparing ETags in `If-None-Match` HTTP header does not consider "weak" ETags (prepended with `W/`) to be the same as "strong" ones, while HTTP specs requires this. This causes reverse proxies which compress HTTP responses (and "weakens" the ETag in the process) to break browser cache validation.
+  - This PR provides a "quick" fix, which assumes llama-server never generate weak ETags by itself. While HTTP specs requires handling more cases (e.g. `*` wildcard, or multiple ETags), I don't think they are worth to implement here.
+  - Fixes #23849.
+- **b9453**: Add EXAONE 4.5 implementations ([#21733](https://github.com/ggml-org/llama.cpp/pull/21733))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add support for the EXAONE 4.5 architecture for the [EXAONE 4.5 model](https://huggingface.co/LGAI-EXAONE/EXAONE-4.5-33B) released by LG AI Research.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+### Full Commit Range
+- b9442 to b9453 (5 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9442...b9453
+
+---
+
 ## 2026-05-31: Update to llama.cpp b9441
 
 ### Summary
