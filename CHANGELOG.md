@@ -1,5 +1,132 @@
 # Changelog
 
+## 2026-06-04: Update to llama.cpp b9505
+
+### Summary
+Updated llama.cpp from b9505 to b9505, incorporating 1 upstream commits.
+
+### Additional Changes
+1 minor improvements: 1 examples.
+
+- **b9505**: fix issue #22920 by including unordered_map in tools/server/server-ht… ([#24089](https://github.com/ggml-org/llama.cpp/pull/24089))
+  - …tp.h
+  - This includes a fix for issue https://github.com/ggml-org/llama.cpp/issues/22920 where a missing include for `unordered_map` in `tools/server/server-http.h` causes a compile-time break in macos 15.xx. The latest main branch now builds on macos 15.7.7.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+### Full Commit Range
+- b9505 to b9505 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9505...b9505
+
+---
+
+## 2026-06-04: Update to llama.cpp b9505
+
+### Summary
+Updated llama.cpp from b9453 to b9505, incorporating 40 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9483**: hexagon: profiler output fix and script updates ([#24042](https://github.com/ggml-org/llama.cpp/pull/24042))
+  - My previous fix for Op fusion ended up breaking the profiler output (started adding a bunch of NONEs for empty tensors).
+  - This PR fixes that issue and updates the post-proc script to add support for total-usec column.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9485**: removed unecesary mmproj download when users pass --no-mmproj ([#23425](https://github.com/ggml-org/llama.cpp/pull/23425))
+  - When --no-mmproj is passed the mmproj file is still being downloaded before the flag was checked. The flag was only used to clear params.mmproj after the download already completed. Also .. in common/arg.cpp the download_mmproj flag in `common_download_model` was hardcoded to true.
+  - The fix uses the no_mmproj bool in the common_params struct when `common_params_handle_model` is called
+  - Fixes #23265
+- **b9489**: cuda: reserve space for quantize kv-cache at startup ([#23907](https://github.com/ggml-org/llama.cpp/pull/23907))
+  - ref https://github.com/ggml-org/llama.cpp/pull/23646#issuecomment-4532354461. Quantized kv-cache can lead to OOM even when using `--fit` since it does not know about these backend allocations. There are some other quantization buffers in FA and MMQ which should also be removed, but this one seems it takes the most space as it scales with ctx size.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+#### 🆕 New Features
+- **b9455**: TP: quantized KV cache support ([#23792](https://github.com/ggml-org/llama.cpp/pull/23792))
+  - This PR implements support for the combination of `-sm tensor` and quantized KV cache. The reason why this doesn't work on master is that the flattening of tensors for the KV cache rotation leads to the loss of shape information which the meta backend cannot handle. There were previous PRs which resolved the issue by changing the shapes of the KV cache rotation but that is an undesirable solution because batched matrix multiplications may not be as well-supported in ggml backends as a single large matrix multiplication. Also it is generally better to extend the meta backend with capabilities to handle a compute graph than to require compute graphs to conform to the meta backend's requirments.
+  - The approach in this PR is to extend the specification `ggml_backend_meta_split_state` with a value that specifies how often a given segment repeats. When a tensor is flattened the meta backend uses segments to specify the data layout within the flattened dimension so that upon a further reshape the correct data layout can be restored. No changes to the llama.cpp compute graphs are required.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9457**: vulkan: reduces lock contention ([#23376](https://github.com/ggml-org/llama.cpp/pull/23376))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - In a production runtime, write operations are restricted to initial setup, graph allocation, or the dynamic loading of new model layers. Once the execution graph is finalized, the layout of `device->pinned_memory` remains entirely static for the duration of the inference step. Utilizing a `shared_mutex` ensures that concurrent read operations can execute in parallel without blocking one another.
+  - [The comparison benchmark code](https://gist.github.com/winstonma/7c34d88dc84167a74a2572ed0b471e46) simulates this specific read-heavy workflow; the raw output from my machine is captured below:
+- **b9458**: vulkan: don't hold the device mutex while compiling pipelines ([#23641](https://github.com/ggml-org/llama.cpp/pull/23641))
+  - We need to hold a lock while we traverse all pipelines and lazily initialize them, but we don't need to hold it while the pipeline is being compiled. And it doesn't need to be the same lock as the device mutex. We call load_shaders each time a pipeline is needed, so we only need to compile that one pipeline (and, for example, don't want to end up compiling a pipeline that another thread should be compiling).
+  - test-backend-ops timings with shader disk cache disabled: 8:24 (single thread) -> 7:23 (PR #23637) -> 2:26 (PR #23637 + this PR)
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9459**: metal: template GLU kernels to support f16/f32 ([#23882](https://github.com/ggml-org/llama.cpp/pull/23882))
+  - Part of #14909. drops the hardcoded f32 GLU kernels in favor of a single template. we now load and store in the native tensor type (half or float) to save memory bandwidth, but keep the actual ALU compute in float to avoid exploding math in geglu/swiglu. Also opened up the dispatch gate to allow f16 inputs.
+  - Tested on Apple M3 Max
+  - ```
+- **b9468**: common : support manually triggering the reasoning budget end sequence ([#23949](https://github.com/ggml-org/llama.cpp/pull/23949))
+  - Add a way to force the reasoning budget end sequence when in a `COUNTING` state. This will allow the server to manually trigger the reasoning to close.
+  - ```cpp
+  - bool common_sampler_reasoning_budget_force(struct common_sampler * gsmpl)
+- **b9469**: hexagon: add gelu_quick ([#24007](https://github.com/ggml-org/llama.cpp/pull/24007))
+  - <!-- Describe what this PR does and why. Be concise but complete --> Add GELU_QUICK op to Hexagon backend
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9480**: StepFun 3.5 MTP ([#23274](https://github.com/ggml-org/llama.cpp/pull/23274))
+  - MTP implementation for StepFun 3.5.
+  - Required a few changes to the core logic because StepFun uses a slightly different MTP architecture - it has 3 MTP layers which are used in a round-robin manner for tokens n+1, n+2 and n+3 respectively.
+  - I'm running a suboptimal setup for testing this, but FWIW testing this on a `--cpu-moe` StepFun3.5 increased token generation from 15 to 18 t/s.
+- **b9481**: Adding support for the granite multilingual embeddings R2 (ibm-granite/granite-embedding-{97,311}... ([#22716](https://github.com/ggml-org/llama.cpp/pull/22716))
+  - **modern-bert: support SwiGLU FFN for Granite Embedding R2**
+  - **Update: Add support for "granite-embed-r2" in hash matching, vocab pre-types, and tokenizer configurations**
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+- **b9482**: model: add Mellum architecture ([#23966](https://github.com/ggml-org/llama.cpp/pull/23966))
+  - This PR adds support for the new Mellum architecture (see [hf](https://huggingface.co/collections/JetBrains/mellum-2)).
+  - It is important to note that the `transformers` version has been updated in this PR. This is because the converter does not work without the [fix](https://github.com/huggingface/transformers/pull/45887) for one bug.
+- **b9488**: tests : add support for qwen3 SSM archs ([#24031](https://github.com/ggml-org/llama.cpp/pull/24031))
+  - Enable `test-llama-archs` for Qwen3 architectures using SSM.
+  - ```
+  - |       qwen3next|Apple M2 Ultra|   MoE|  OK (8.53e-08)|       OK|
+- **b9498**: ggml-cpu: extend RVV quantization vec dot to higher VLENs ([#22754](https://github.com/ggml-org/llama.cpp/pull/22754))
+  - This PR adds RVV implementations for quantized vector dot kernels (for VLENs 512-bit and 1024-bit).
+  - Added the following RVV kernels:
+  - | Kernel | VLEN |
+- **b9499**: ggml-webgpu: FlashAttention refactor + standardize quantization support ([#23834](https://github.com/ggml-org/llama.cpp/pull/23834))
+  - With three separate FlashAttention paths depending on sequence length and device capability, the code was getting messy. Quantized KV-caches also weren't supported by the `tile` path, which means that quantized KV-caches wouldn't run in WebGPU in the browser. This PR does a number of refactors to clean up the paths and add the same quantized KV-cache functionality everywhere:
+  - In `ggml-webgpu.cpp`:
+  - `supports_op`: checks only whether the `sg_matrix` or `tile` shader paths will work. This is because the `auto` FlashAttention setting uses a sequence length of 1 to probe support, but we want to ensure that FlashAttention will also work for larger sequence lengths, e.g., during prefill. Otherwise, we may end up in scenarios where the FlashAttention tensor used at runtime (with a larger sequence length then the initial check) can't fit on the GPU and runs on the CPU instead, which would be slower than not using FlashAttention to begin with.
+
+#### 🚀 Performance Improvements
+- **b9484**: opencl: use flat variants of gemv for very large M ([#24006](https://github.com/ggml-org/llama.cpp/pull/24006))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - After some profiling, it turns out that `gemv-noshuffle` kernels for Q4_K and Q6_K are slow with very large M (those seen in vocab). On the contrary, the flat variants are faster. This PR uses flat GEMV variants for such large M.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9491**: Avoid PDL race conditions by disabling __restrict__ when PDL is used ([#24030](https://github.com/ggml-org/llama.cpp/pull/24030))
+  - Follow up to https://github.com/ggml-org/llama.cpp/pull/23825.
+  - Together with CUDA engineers, we identified the suspected bug of https://github.com/ggml-org/llama.cpp/pull/23825; PDL and `__restrict__` cannot coexist, as `__restrict__` can move data reads before the PDL barrier and cause race conditions in the GPU byte code.
+  - This PR disables `__restrict__ ` for device code which leverages PDL, and retains `__restrict__` (and thus performance) for all other GPU architectures.
+
+#### 🐛 Bug Fixes
+- **b9466**: opencl: fix compiler warnings for non-adreno path ([#23922](https://github.com/ggml-org/llama.cpp/pull/23922))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Fix warnings for non-Adreno path - some variables are only used by Adreno.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9471**: llama : deprecate `llama_set_warmup` ([#24009](https://github.com/ggml-org/llama.cpp/pull/24009))
+  - cont #11571
+  - Deprecate the functionality for pre-loading all MoE experts at the context/graph level. The user code would now have to be responsible to do the necessary warmup runs to guarantee that the weights are hot (in case that is needed by the application).
+  - The `cparams.warmup` flag changes the tensor shapes in the FFN graph. Before #23861 this wasn't causing problems because we were over-allocating outputs in the compute buffer that silently covered for the extra experts during warmup. Now after being more strict with the output allocations, the issue shows up: https://github.com/ggml-org/llama.cpp/actions/runs/26794936619/job/78989134399#step:5:3668
+- **b9473**: kv-cache : SWA checkpoints store only non-masked cells ([#23981](https://github.com/ggml-org/llama.cpp/pull/23981))
+  - fix #23720
+  - This change reduces the size of the SWA checkpoints and should make it possible to always restore them with unified KV cache.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9490**: ggml-cpu: use runtime SVE width in FWHT ([#24059](https://github.com/ggml-org/llama.cpp/pull/24059))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Fix CPU FWHT to use svcntw() instead of the fixed GGML_F32_EPR when SVE is enabled, avoiding incorrect lane stepping on systems with 128-bit SVE  such as Graviton 4. Also updates the flash-attention tiled gate to use the runtime SVE width.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+
+### Additional Changes
+19 minor improvements: 1 documentation, 15 examples, 3 maintenance.
+
+### Full Commit Range
+- b9453 to b9505 (40 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9453...b9505
+
+---
+
 ## 2026-06-01: Update to llama.cpp b9453
 
 ### Summary
