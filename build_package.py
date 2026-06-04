@@ -92,10 +92,14 @@ def stage_llama_ui_assets():
     build_env["LLAMA_UI_OUT_DIR"] = LLAMA_CPP_UI_DIST_PATH
 
     node_modules_path = os.path.join(LLAMA_CPP_UI_PATH, "node_modules")
-    if not os.path.isdir(node_modules_path):
-        install_command = [npm_executable, "ci"] if os.path.exists(package_lock_path) else [npm_executable, "install"]
-        logging.info(f"Installing llama.cpp UI dependencies with {' '.join(install_command[1:])}...")
-        run_command(install_command, cwd=LLAMA_CPP_UI_PATH, env=build_env)
+    # Always sync dependencies: node_modules may be stale after a submodule update
+    # that added/changed packages (e.g. mermaid added in b9505).
+    if os.path.exists(package_lock_path):
+        install_command = [npm_executable, "ci"]
+    else:
+        install_command = [npm_executable, "install"]
+    logging.info(f"Installing llama.cpp UI dependencies with {' '.join(install_command[1:])}...")
+    run_command(install_command, cwd=LLAMA_CPP_UI_PATH, env=build_env)
 
     logging.info("Building llama.cpp UI assets for packaging...")
     run_command([npm_executable, "run", "build"], cwd=LLAMA_CPP_UI_PATH, env=build_env)
