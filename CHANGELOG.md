@@ -1,5 +1,68 @@
 # Changelog
 
+## 2026-06-05: Update to llama.cpp b9528
+
+### Summary
+Updated llama.cpp from b9510 to b9528, incorporating 10 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9522**: kleidiai : dynamic chunck-based scheduling for hybrid execution ([#23819](https://github.com/ggml-org/llama.cpp/pull/23819))
+  - This update is to replace the static weighting model with a dynamic chunk-based scheduling approach, leveraging the recently introduced repack matmul chunking mechanism (PR #16833). The goal is to enable adaptive, runtime-driven work distribution between SME and NEON kernels without relying on hardcoded ratios.
+  - Benchmarks from Samsung S26 Exynos — Llama-3.2-1B-Instruct-Q4_0 (pp512)
+  - Threads | Global Queue (t/s) | Static Quadratic (t/s) | Δ (%)
+- **b9528**: ui: run npm install when package-lock.json is newer than node_modules ([#24171](https://github.com/ggml-org/llama.cpp/pull/24171))
+  - This PR makes ui-assets.cmake rerun npm install whenever package-lock.json is newer than the node_modules/.package-lock.json marker that npm writes on every successful install. Same timestamp comparison technique already used by npm_build_should_skip. No extra install on up-to-date trees.
+  - Follow-up to #24119 (reported by @el00ruobuob): when node_modules predates that PR, the build script skips npm install (it only runs it when node_modules is missing), so the new `@vitest/browser-playwright` import in vite.config.ts fails with ERR_MODULE_NOT_FOUND.
+
+#### 🚀 Performance Improvements
+- **b9519**: sycl : port multi-column MMVQ from CUDA backend (~45% speculative decoding speedup on Intel Arc) ([#21845](https://github.com/ggml-org/llama.cpp/pull/21845))
+  - Speculative decoding on SYCL is currently *slower* than single-token-prediction because the MMVQ dispatch launches a separate kernel per column, reading the full weight matrix N times.
+  - Port the multi-column optimization from the CUDA backend (`ggml/src/ggml-cuda/mmvq.cu`) so weights are read once and all columns are computed in a single dispatch.
+  - ***AND***
+- **b9523**: hparams : refactor `hparams.n_layer` ([#24060](https://github.com/ggml-org/llama.cpp/pull/24060))
+  - Attempting to improve the logic of enumerating layers:
+  - `hparams.n_layer_all` -> all layers loaded from the model file (including extra layers such as `nextn`)
+  - `hparams.n_layer()` -> number of layers of the model
+
+#### 🐛 Bug Fixes
+- **b9512**: fix: step35 MTP does not allocate KV cache for all layers ([#24125](https://github.com/ggml-org/llama.cpp/pull/24125))
+  - While testing the Step3.5 mtp feature from #23274 (cc @pwilkin ), the memory watermark felt high. Turns out draft context allocates a KV cache for all layers, even though it only runs the NextN block(s).
+  - STEP35 isn't a hybrid arch, so it misses the per-context KV layer filter that Qwen3.5 already has. This just adds the same filter for STEP35: the MTP context keeps only the NextN blocks (`il >= n_main`), the main context keeps the trunk (`il < n_main`).
+  - **Before**:
+- **b9524**: minor : fix lint issues ([#24165](https://github.com/ggml-org/llama.cpp/pull/24165))
+  - cont #24060
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Additional Changes
+4 minor improvements: 2 examples, 2 maintenance.
+
+- **b9515**: Move duplicated imatrix code into single common imatrix-loader.cpp ([#22445](https://github.com/ggml-org/llama.cpp/pull/22445))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - `quantize.cpp` and `imatrix.cpp` duplicated the same code for loading the imatrix
+  - This change pulls those functions out to a common file with the same imatrix and legacy imatrix loading functions
+- **b9518**: server : disable on-device spec checkpoints ([#24108](https://github.com/ggml-org/llama.cpp/pull/24108))
+  - fix #23929
+  - cont #22679
+  - On-device checkpoints require extra device memory which is currently not accounted upon startup. Also, they are not fully compatible with meta devices.
+- **b9510**: ggml: vectorize ggml_vec_dot_q4_1_q8_1 with WASM SIMD128 ([#22209](https://github.com/ggml-org/llama.cpp/pull/22209))
+  - Vectorizes the inner loop of `ggml_vec_dot_q4_1_q8_1_generic` using WASM SIMD128 intrinsics. The change is gated behind `#ifdef __wasm_simd128__` so non-wasm builds are completely unaffected and fall through to the existing scalar path.
+  - Approach:
+  - single `wasm_v128_load` covers all 32 packed 4-bit weights
+- **b9521**: CUDA: enroll mul_mat_vec_q_moe into pdl ([#24087](https://github.com/ggml-org/llama.cpp/pull/24087))
+  - Gives small perf boost in 1 < BS < 8 setting.
+  - Numbers collected on a B4500
+  - ```
+
+### Full Commit Range
+- b9510 to b9528 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9510...b9528
+
+---
+
 ## 2026-06-04: Update to llama.cpp b9505
 
 ### Summary
