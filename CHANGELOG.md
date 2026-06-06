@@ -1,5 +1,66 @@
 # Changelog
 
+## 2026-06-06: Update to llama.cpp b9538
+
+### Summary
+Updated llama.cpp from b9528 to b9538, incorporating 10 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9528**: ui: run npm install when package-lock.json is newer than node_modules ([#24171](https://github.com/ggml-org/llama.cpp/pull/24171))
+  - This PR makes ui-assets.cmake rerun npm install whenever package-lock.json is newer than the node_modules/.package-lock.json marker that npm writes on every successful install. Same timestamp comparison technique already used by npm_build_should_skip. No extra install on up-to-date trees.
+  - Follow-up to #24119 (reported by @el00ruobuob): when node_modules predates that PR, the build script skips npm install (it only runs it when node_modules is missing), so the new `@vitest/browser-playwright` import in vite.config.ts fails with ERR_MODULE_NOT_FOUND.
+- **b9534**: vulkan: add fwht support for Intel with shmem reduction ([#23964](https://github.com/ggml-org/llama.cpp/pull/23964))
+  - Add a FWHT shader path that does not rely on subgroup size and collectives for Intel GPUs.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, Claude wrote the code, I corrected and reviewed.
+- **b9536**: opencl: improve get_rows, cpy, concat and q6_k flat gemv ([#24160](https://github.com/ggml-org/llama.cpp/pull/24160))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Current implementations of get_rows, cpy and concat perform poorly with Qwen3.5. In particular, they all assign one workgroup to one row. When there is only one large row or a lot of very small rows, GPU becomes underutilized. This is improved in this PR.
+  - This PR also tweaks how threads are mapped to data to improve coalescing in Q6_K flat gemv kernel. This helps with models with Q6_K output weights.
+
+#### 🚀 Performance Improvements
+- **b9531**: TP: round up granularity to 128 ([#24180](https://github.com/ggml-org/llama.cpp/pull/24180))
+  - On master for `-sm tensor` the tensors are split to the minimum possible granularity. However, for performance it seems to be preferable to round the granularity up to a larger power of 2, 128 seems to be a good value. This should only make a difference when
+  - 1. the number of GPUs or the tensor dimensions are not a power of 2 and if
+  - 2. FP16/BF16/FP32 or a legacy quant are used.
+
+#### 🐛 Bug Fixes
+- **b9529**: model : fix llama_model::n_gpu_layers() ([#24188](https://github.com/ggml-org/llama.cpp/pull/24188))
+  - cont #24060
+  - fix #24183
+  - fix #24182
+- **b9533**: model: fix build failed ([#24193](https://github.com/ggml-org/llama.cpp/pull/24193))
+  - Small merge conflict from https://github.com/ggml-org/llama.cpp/pull/23545
+  - cc @ggml-org/maintainers if someone can give a quick approval
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9535**: common/chat : unify and fix LFM2/LFM2.5 tool parser ([#24178](https://github.com/ggml-org/llama.cpp/pull/24178))
+  - LFM2 and LFM2.5 share the same pythonic style tool-calling format, with the only difference being that LFM2 also wraps the system tool list in <|tool_list_start|>/<|tool_list_end|>.
+  - Two parsers are merged into `common_chat_params_init_lfm2(..., tool_list_tokens)` and share logic.
+  - Also fix and extend argument parsing:
+- **b9537**: context : fix off-by-one comparisons to n_gpu_layers ([#24208](https://github.com/ggml-org/llama.cpp/pull/24208))
+  - cont #24060
+  - Compare `n_gpu_layers` against `n_layer_all` instead of `n_layer`.
+
+
+### Additional Changes
+2 minor improvements: 1 examples, 1 maintenance.
+
+- **b9530**: llama-cli: fix model params not propagated ([#23893](https://github.com/ggml-org/llama.cpp/pull/23893))
+  - Fixes #23847
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9538**: model : rename local n_layer_all variable ([#24209](https://github.com/ggml-org/llama.cpp/pull/24209))
+  - cont #24060
+  - Non-functional change, just variable clarification.
+
+### Full Commit Range
+- b9528 to b9538 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9528...b9538
+
+---
+
 ## 2026-06-05: Update to llama.cpp b9528
 
 ### Summary
