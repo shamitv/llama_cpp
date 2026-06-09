@@ -1,5 +1,92 @@
 # Changelog
 
+## 2026-06-09: Update to llama.cpp b9581
+
+### Summary
+Updated llama.cpp from b9541 to b9581, incorporating 32 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9564**: [ggml-webgpu] Implement 2D workgroups for scale, binary, and unary ops ([#24044](https://github.com/ggml-org/llama.cpp/pull/24044))
+  - When running the WebGPU backend with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp/), it dispatched the following kernels with too many workgroups: `scale, add, mul, silu`.
+  - Apply the same technique as https://github.com/ggml-org/llama.cpp/pull/23750/ to dispatch 2D workgroups to run these models.
+  - Tested with `test-backend-ops -b WebGPU` and CI suite locally.
+- **b9568**: mtp: support for gemma-4 E2B and E4B assistants ([#24282](https://github.com/ggml-org/llama.cpp/pull/24282))
+  - Just a few small updates to enable conversion and loading of the smaller E2B and E4B gemma-4 assistant models.
+  - The main issue was that those models include two additional tensors that we currently do not support.
+  - `masked_embedding.centroids.weight` and `masked_embedding.token_ordering`.
+- **b9570**: ggml-webgpu: Add clang-format job ([#24308](https://github.com/ggml-org/llama.cpp/pull/24308))
+  - To avoid dealing with conflicting clang-format versions for contributors, this job ensures that the formatting is standardized. See discussion in https://github.com/ggml-org/llama.cpp/pull/24044.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9575**: Ggml/cpu col2im 1d ([#24206](https://github.com/ggml-org/llama.cpp/pull/24206))
+  - CPU part of #23424, split per review feedback; the CUDA backend follows in a separate PR.
+  - Modern neural audio vocoders (the BigVGAN family and its descendants) build their generator from upsampling blocks: a transposed 1D convolution followed by an AMP / Snake stack. The transposed conv is the upsampler, Snake ( https://github.com/ggml-org/llama.cpp/pull/22667 ) is the periodic activation, and both sit on the hot path of every generated frame.
+  - A ConvTranspose1d factorizes exactly as a GEMM followed by an overlap-add:
+- **b9580**: vulkan: add `v_dot2_f32_f16` support in matrix-matrix multiplication and Flash Attention ([#24123](https://github.com/ggml-org/llama.cpp/pull/24123))
+  - This PR adds basic support for the Vulkan extension `VK_VALVE_shader_mixed_float_dot_product`. The background to this is that AMD Vega20, Navi14 and RDNA2+ GPUs have fp16 dot2 instructions for machine learning acceleration that are not emitted by the shader compiler due to numerical inconsistencies. The extension allows shaders to manually emit them.
+  - This PR adds support for the `v_dot2_f32_f16` fp16 packed dot product with fp32 accumulator in matrix-matrix multiplications and Flash Attention. This is a good improvement for AMD GPUs with this instruction, but without coopmat support.
+  - <details>
+- **b9581**: vulkan: reduce iq1 shared memory usage for mul_mm ([#24287](https://github.com/ggml-org/llama.cpp/pull/24287))
+  - Ifdef iq1s_grid_gpu so it's only used in mmvq, this keeps the shared memory usage under 16KB for mul_mm.
+  - Fixes #24284.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🚀 Performance Improvements
+- **b9551**: kv-cache : avoid kv cells copies ([#24277](https://github.com/ggml-org/llama.cpp/pull/24277))
+  - cont #23398
+  - alt #24270
+  - The `llama_kv_cells` copy in `apply_ubatch` can become expensive in some host configurations. This will be refactored properly, but for now a quick patch to avoid the performance hit.
+- **b9558**: vulkan: Use cm2 decode_vector for mul_mat_id B matrix loads ([#23991](https://github.com/ggml-org/llama.cpp/pull/23991))
+  - This allows vec4 loads of the B elements. Also increase BK to 64 when this is enabled. Neither of these alone is consistently faster, but together these give a nice speedup.
+  - In ggml-vulkan.cpp, we need to make sure the B matrix alignment and stride are multiples of 4.
+  - ```
+
+#### 🐛 Bug Fixes
+- **b9544**: common/chat : fix LFM2/LFM2.5 reasoning round-trip and <think> leak ([#24234](https://github.com/ggml-org/llama.cpp/pull/24234))
+  - Follow-up on review comment https://github.com/ggml-org/llama.cpp/pull/24178#pullrequestreview-4438323720 made by @aldehir.
+  - For LFM2/LFM2.5 models, copy `reasoning_content` into `thinking`.
+  - [LFM2.5-8B-A1B](https://huggingface.co/LiquidAI/LFM2.5-8B-A1B) is always a reasoning model. The chat template doesn't have a switch to disable it. This leads to a leak of `thinking` into `content` with reasoning disabled (`-rea off`). (reported here https://github.com/ggml-org/llama.cpp/pull/24178#issuecomment-4638237698).
+- **b9548**: speculative : fix vocab compatibility check ([#24256](https://github.com/ggml-org/llama.cpp/pull/24256))
+  - Fixes `enum` being coerced to `bool` before comparison.
+  - This effectively made the check always succeed.
+- **b9550**: kv-cache: follow the source cache size when sharing cells ([#24267](https://github.com/ggml-org/llama.cpp/pull/24267))
+  - With --fit the trunk context can shrink below the draft default, the assistant then builds views sized for its own kv_size into the smaller shared K/V tensors and trips the ggml_view_4d assert during graph reserve. Follow the source cache size when sharing cells.
+  - Reproduced and verified on CUDA (RTX PRO 6000 Blackwell, single GPU) and confirmed by @Stastez on ROCm (dual GPU) in the original report: https://github.com/ggml-org/llama.cpp/pull/23398#issuecomment-4643048368
+  - The override also normalizes a small base/SWA sizing mismatch between the two caches (4608 vs 4096) that exists independently of --fit.
+- **b9555**: metal : fix im2col 1D case (audio models) ([#24220](https://github.com/ggml-org/llama.cpp/pull/24220))
+  - Fix a regression cause by #23901 , happens on conv1d op (audio models)
+  - With this change, audio models work correctly:
+  - ```
+- **b9556**: HIP: add gfx1152 and gfx1153 to RDNA3.5 ([#24129](https://github.com/ggml-org/llama.cpp/pull/24129))
+  - Add gfx1152 and gfx1153 definitions to RDNA3.5 macro in `ggml/src/ggml-cuda/vendors/hip.h`.
+  - Resolves https://github.com/ROCm/TheRock/issues/5579 where users report corrupted output with TheRock nightlies + llama.cpp build from source. Patching this change in resolves the issue.
+- **b9565**: [ggml-webgpu] Handle buffer overlap / buffer aliasing for concat operator ([#24000](https://github.com/ggml-org/llama.cpp/pull/24000))
+  - While testing the WebGPU backend with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp/), I encountered the following error:
+  - ```
+  - Device error! Reason: 2, Message: Writable storage buffer binding aliasing found between [BindGroup "concat_f32"]
+- **b9566**: graph: guard iswa kq_mask on its own buffer ([#24294](https://github.com/ggml-org/llama.cpp/pull/24294))
+  - Fix load crash for draft-mtp models with a SWA-only draft head (e.g. StepFun Step-3.7-Flash). The draft's base (non-SWA) sub-cache has no layers, so its kq_mask buffer stays null and set_input_kq_mask asserts during the seq_rm probe at load. Guard each kq_mask on its own buffer in set_input and can_reuse, base and swa.
+  - Following #23398 (Gemma 4 MTP), regression on StepFun Step-3.7-Flash loading reported by @vbooka1, confirmed by @forforever73. Thanks @ggerganov for the can_reuse guards; guarding on the mask's own buffer (not self_k_idxs_swa) covers the SWA-only case too. Tested on Step-3.7-Flash (Q2_K_XL + Q8/BF16 draft, q8_0 and f16 KV): loads clean, greedy output identical with/without MTP. Needs --spec-draft-n-max 1 (Step MTP head is single-token).
+- **b9572**: ggml-cpu : fix rms_norm_back wrong output under in-place aliasing ([#24305](https://github.com/ggml-org/llama.cpp/pull/24305))
+  - `ggml_compute_forward_rms_norm_back_f32` could produce wrong results when the destination aliases an input. `GGML_OP_RMS_NORM_BACK` is listed in `ggml_op_can_inplace`, so the scheduler may reuse `src0` (`dz`) or `src1` (`x`)'s buffer for `dx`. The old multi-step `cpy/scale/acc/scale` sequence overwrote that buffer in the `dx := x` step and then re-read it in the `+= dz` step. This replaces it with a single fused read-before-write loop, which is safe under either aliasing.
+  - Requested by @ggerganov in ggml-org/ggml#1519, where I originally reported and fixed this (#1491). Submitting the single ops.cpp change here as asked; no regression test per that thread. Built `ggml-cpu` locally on macOS to confirm it compiles.
+- **b9573**: model : fix plamo2 attention_key/value_length regression ([#24317](https://github.com/ggml-org/llama.cpp/pull/24317))
+  - Fixes incorrect tensor sizes and FPE due to bad assert.
+  - At some point after #16075, possibly during one of the refactors; hard to tell, these metadata overrides got lost.
+  - The assert was probably copy-pasted from `mamba-base`, but there `n_head` is reassigned while the same (`hparams.ssm_dt_rank`) variable is called `n_heads` here.
+
+
+### Additional Changes
+15 minor improvements: 1 documentation, 11 examples, 3 maintenance.
+
+### Full Commit Range
+- b9541 to b9581 (32 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9541...b9581
+
+---
+
 ## 2026-06-06: Update to llama.cpp b9538
 
 ### Summary
