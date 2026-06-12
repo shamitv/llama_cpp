@@ -1,5 +1,149 @@
 # Changelog
 
+## 2026-06-12: Update to llama.cpp b9611
+
+### Summary
+Updated llama.cpp from b9611 to b9611, incorporating 1 upstream commits with breaking changes.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9611**: fit : avoid including llama-ext.h in fit.h ([#24506](https://github.com/ggml-org/llama.cpp/pull/24506))
+  - cont #23485
+  - We should be careful to not include `llama-ext.h` in too many places. The header contains mostly temporary workarounds and it's impact has to be limited so that we can remove them over time.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Full Commit Range
+- b9611 to b9611 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9611...b9611
+
+---
+
+## 2026-06-12: Update to llama.cpp b9611
+
+### Summary
+Updated llama.cpp from b9596 to b9611, incorporating 10 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9604**: [SYCL] Fix CI build & release for SYCL backend ([#24387](https://github.com/ggml-org/llama.cpp/pull/24387))
+  - Fix CI build & release for SYCL backend:
+  - 1. restore build & release SYCL backend in CI
+  - 2. remove action for github cache.
+- **b9611**: fit : avoid including llama-ext.h in fit.h ([#24506](https://github.com/ggml-org/llama.cpp/pull/24506))
+  - cont #23485
+  - We should be careful to not include `llama-ext.h` in too many places. The header contains mostly temporary workarounds and it's impact has to be limited so that we can remove them over time.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+#### 🆕 New Features
+- **b9601**: vulkan: ifdef eMesaHoneykrisp (build fix) ([#24479](https://github.com/ggml-org/llama.cpp/pull/24479))
+  - Fixes build/CI after #24306.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, had codex find which version adds the enum, and then added the ifdef
+- **b9605**: ggml: support concat for scalar types at cuda backend ([#24011](https://github.com/ggml-org/llama.cpp/pull/24011))
+  - Make CUDA CONCAT support common non-quantized scalar tensor types, not just F32.
+  - The CUDA CONCAT kernel now works for same-type, non-quantized scalar tensors with 1, 2, 4, or 8 byte elements.
+  - F16, BF16, I8, I16, I32, I64, and F32.
+
+#### 🚀 Performance Improvements
+- **b9601**: vulkan: use medium matmul tile on Asahi Linux ([#24306](https://github.com/ggml-org/llama.cpp/pull/24306))
+  - This PR detects Apple AGX architecture and sets matmul tile size to medium. Currently the Asahi driver in Mesa reports a different vendor ID than VK_VENDOR_ID_APPLE so the 'picking medium tile size for apple' route doesn't trigger and falls back to large. This causes degraded prefill performance.
+  - ```
+  - xingjianliu@fedora:~/repos/llama.cpp$ ./build/bin/llama-bench -m ~/repos/llama-2-7b.Q4_0.gguf
+- **b9603**: opencl: add q5_0/q5_1 gemm and gemv kernels for Adreno ([#24319](https://github.com/ggml-org/llama.cpp/pull/24319))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add q5_0 and q5_1 GEMM and GEMV kernels to the Adreno backend to improve performance for q5 quantized models.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Additional Changes
+4 minor improvements: 2 examples, 2 maintenance.
+
+- **b9596**: server: skip unused log lines on router mode ([#24463](https://github.com/ggml-org/llama.cpp/pull/24463))
+  - Skip irrelevant log lines to avoid confusion
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9606**: [Speculative decoding] feat: add EAGLE3 speculative decoding support ([#18039](https://github.com/ggml-org/llama.cpp/pull/18039))
+  - > [!IMPORTANT]
+  - > The old PR has been backed up in this branch: https://github.com/ruixiang63/llama.cpp/tree/eagle3-v1-backup
+  - The new commits in this PR have been rebased onto the latest master branch, refactored to use the new speculative API, cherry-picked from https://github.com/ggml-org/llama.cpp/pull/22728, and made compatible with MTP.
+- **b9608**: vendor : update cpp-httplib to 0.47.0 ([#24395](https://github.com/ggml-org/llama.cpp/pull/24395))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9610**: b9610
+  - <details open>
+
+### Full Commit Range
+- b9596 to b9611 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9596...b9611
+
+---
+
+## 2026-06-11: Update to llama.cpp b9596
+
+### Summary
+Updated llama.cpp from b9581 to b9596, incorporating 10 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9584**: ci : fix windows release ([#24369](https://github.com/ggml-org/llama.cpp/pull/24369))
+  - Fix Windows release build.
+  - The `windows-2025` runner has started forwarding to `windows-2025-vs2026`, breaking build.
+  - Test run: https://github.com/CISC/llama.cpp/actions/runs/27220214596
+- **b9591**: Remove padding and multiple D2D copies for MTP ([#24086](https://github.com/ggml-org/llama.cpp/pull/24086))
+  - Based on @ggerganov's suggestion at https://github.com/ggml-org/llama.cpp/pull/23940#issuecomment-4602287259
+  - Make `ggml_gated_delta_net` take only the initial recurrent state (D, 1, n_seqs) and pass the snapshot count K as an op parameter instead of inferring it from state->ne[1].
+  - Remove the padding hack and copy all emitted snapshots into the recurrent cache with a single strided ggml_cpy
+
+#### 🆕 New Features
+- **b9581**: vulkan: reduce iq1 shared memory usage for mul_mm ([#24287](https://github.com/ggml-org/llama.cpp/pull/24287))
+  - Ifdef iq1s_grid_gpu so it's only used in mmvq, this keeps the shared memory usage under 16KB for mul_mm.
+  - Fixes #24284.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9587**: speculative : fix "ngram-map-k4v" name in logging ([#24253](https://github.com/ggml-org/llama.cpp/pull/24253))
+  - This is a non-functional change.
+  - When using `--spec-type ngram-map-k4v`, the log messages at startup and runtime say `ngram-map-k`. Added logic in the in the constructor of `common_speculative_impl_ngram_map_k` to pass the correct `COMMON_SPECULATIVE_TYPE_NGRAM_MAP_K4V` when `config.key_only` is `false`.
+  - After this change, the log messages use the correct name.
+- **b9594**: vocab : refactor normalizer flags into options struct, add strip_accents ([#24371](https://github.com/ggml-org/llama.cpp/pull/24371))
+  - WPM previously applied NFD unconditionally, so accented words on case-sensitive models (e.g. `German_Semantic_V3`, which sets `strip_accents: false`) didn't match `transformers`.
+  - NFD is now applied only when `strip_accents` is set.
+  - ---
+
+#### 🐛 Bug Fixes
+- **b9589**: CUDA: Fix ssm_scan_f32 data-races ([#24360](https://github.com/ggml-org/llama.cpp/pull/24360))
+  - Add required `__synchthreads()` to avoid data-races in `ssm_scan_f32`. Also remove unused smem from the kernel.
+  - Should supersede https://github.com/ggml-org/llama.cpp/pull/23983 as it fixes the underlying issues (which are data-races, where https://github.com/ggml-org/llama.cpp/commit/4fbecf73a583e9312249f8b7ef7c587b0eb1fcc3 applies to HIP/MUSA backends as well). For more details on the races, refer the individual commit messages.
+  - Should resolve sporadic failures of CUDA CI such as https://github.com/ggml-org/llama.cpp/actions/runs/27192383880/job/80275487186?pr=24331 (verified this on a local DGX Spark)
+- **b9590**: chat: fix LFM2/LFM2.5 ignoring json_schema ([#24377](https://github.com/ggml-org/llama.cpp/pull/24377))
+  - The LFM2 specialized template handler only built a grammar for tool-calling, silently ignoring json_schema from response_format.
+  - Use
+  - ```shell
+
+
+### Additional Changes
+3 minor improvements: 2 examples, 1 maintenance.
+
+- **b9585**: Fix granite speech model inference by applying embedding scale when deepstack is not used ([#24357](https://github.com/ggml-org/llama.cpp/pull/24357))
+  - Granite speech inference stopped working as a result of #23545 (found via git bisect). It would just output a bunch of asterisks indefinitely. The culprit was an if statement in llama-graph.cpp that didn't scale raw embeddings, which was correct for granite vision (since it has deepstack layers), but not for granite speech.
+  - This commit fixes that by adding a guard for deepstack layers to that if statement. This fixes granite speech without affecting granite vision.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9596**: server: skip unused log lines on router mode ([#24463](https://github.com/ggml-org/llama.cpp/pull/24463))
+  - Skip irrelevant log lines to avoid confusion
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9592**: vendor : update LibreSSL to 4.3.2 ([#24397](https://github.com/ggml-org/llama.cpp/pull/24397))
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+### Full Commit Range
+- b9581 to b9596 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9581...b9596
+
+---
+
 ## 2026-06-09: Update to llama.cpp b9581
 
 ### Summary
