@@ -23,6 +23,26 @@ Updated llama.cpp from b9611 to b9611, incorporating 1 upstream commits with bre
 ## 2026-06-12: Update to llama.cpp b9611
 
 ### Summary
+Updated llama.cpp from b9611 to b9611, incorporating 1 upstream commits with breaking changes.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9611**: fit : avoid including llama-ext.h in fit.h ([#24506](https://github.com/ggml-org/llama.cpp/pull/24506))
+  - cont #23485
+  - We should be careful to not include `llama-ext.h` in too many places. The header contains mostly temporary workarounds and it's impact has to be limited so that we can remove them over time.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Full Commit Range
+- b9611 to b9611 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9611...b9611
+
+---
+
+## 2026-06-12: Update to llama.cpp b9611
+
+### Summary
 Updated llama.cpp from b9596 to b9611, incorporating 10 upstream commits with breaking changes, new features, and performance improvements.
 
 ### Notable Changes

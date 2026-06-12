@@ -73,7 +73,7 @@ To build the Python wheel for this package, follow these steps:
 `llama.cpp` now expects prebuilt UI assets in `vendor_llama_cpp_pydist/llama.cpp/tools/ui/dist` before it falls back to `npm` or network downloads. The package build automation stages those assets before creating the sdist and wheel so downstream builds can stay offline.
 
 - `build_package.py` now runs the UI frontend build before `sdist` and `bdist_wheel`.
-- The staged assets must include `bundle.css`, `bundle.js`, `index.html`, and `loading.html` under `tools/ui/dist`.
+- The staged assets must include `index.html`, `loading.html`, and hashed bundle outputs under `tools/ui/dist/_app/immutable/`.
 - The staged `dist/` directory is removed after packaging unless you pass `--preserve-staged-ui`.
 
 Prerequisites for running `build_package.py`:
@@ -95,10 +95,10 @@ python3 build_package.py --preserve-staged-ui
 
 To verify the produced artifact is offline-safe, inspect the sdist or wheel contents and confirm these files are present:
 
-- `vendor_llama_cpp_pydist/llama.cpp/tools/ui/dist/bundle.css`
-- `vendor_llama_cpp_pydist/llama.cpp/tools/ui/dist/bundle.js`
 - `vendor_llama_cpp_pydist/llama.cpp/tools/ui/dist/index.html`
 - `vendor_llama_cpp_pydist/llama.cpp/tools/ui/dist/loading.html`
+- `vendor_llama_cpp_pydist/llama.cpp/tools/ui/dist/_app/immutable/bundle*.js`
+- `vendor_llama_cpp_pydist/llama.cpp/tools/ui/dist/_app/immutable/assets/bundle*.css`
 
 This command will generate a `.whl` file in the `dist/` directory. This wheel file will contain the `vendor_llama_cpp_pydist/llama.cpp` directory and its contents, which are essential for the C++ backend.
 

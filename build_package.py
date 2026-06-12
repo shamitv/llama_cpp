@@ -29,10 +29,12 @@ LLAMA_CPP_CMAKE_FILE = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "CMakeLists.txt")
 LLAMA_CPP_UI_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "tools", "ui")
 LLAMA_CPP_UI_DIST_PATH = os.path.join(LLAMA_CPP_UI_PATH, "dist")
 LLAMA_CPP_UI_REQUIRED_ASSETS = (
-    "bundle.css",
-    "bundle.js",
     "index.html",
     "loading.html",
+)
+LLAMA_CPP_UI_REQUIRED_ASSET_GLOBS = (
+    "_app/immutable/bundle*.js",
+    "_app/immutable/assets/bundle*.css",
 )
 SETUP_PY_PATH = os.path.join(PROJECT_ROOT, "setup.py")
 CHANGELOG_PATH = os.path.join(PROJECT_ROOT, "CHANGELOG.md")
@@ -60,10 +62,21 @@ def validate_staged_ui_assets(dist_path=LLAMA_CPP_UI_DIST_PATH):
         asset for asset in LLAMA_CPP_UI_REQUIRED_ASSETS
         if not os.path.exists(os.path.join(dist_path, asset))
     ]
-    if missing_assets:
+    missing_globs = [
+        pattern for pattern in LLAMA_CPP_UI_REQUIRED_ASSET_GLOBS
+        if not glob.glob(os.path.join(dist_path, pattern))
+    ]
+    if missing_assets or missing_globs:
+        missing_descriptions = []
+        if missing_assets:
+            missing_descriptions.extend(missing_assets)
+        if missing_globs:
+            missing_descriptions.extend(
+                f"<glob:{pattern}>" for pattern in missing_globs
+            )
         raise RuntimeError(
             "Missing staged UI assets: "
-            + ", ".join(missing_assets)
+            + ", ".join(missing_descriptions)
             + f" (expected under {dist_path})"
         )
 
