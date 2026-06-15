@@ -1,5 +1,72 @@
 # Changelog
 
+## 2026-06-15: Update to llama.cpp b9645
+
+### Summary
+Updated llama.cpp from b9611 to b9645, incorporating 19 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9611**: fit : avoid including llama-ext.h in fit.h ([#24506](https://github.com/ggml-org/llama.cpp/pull/24506))
+  - cont #23485
+  - We should be careful to not include `llama-ext.h` in too many places. The header contains mostly temporary workarounds and it's impact has to be limited so that we can remove them over time.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9616**: ci : unbreak release harder ([#24545](https://github.com/ggml-org/llama.cpp/pull/24545))
+  - cont #23871
+  - Some release builds broke due to missing line continuation.
+
+#### 🆕 New Features
+- **b9626**: Add arch support for cohere2-MoE ([#24260](https://github.com/ggml-org/llama.cpp/pull/24260))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - There's a new [early preview](https://www.reddit.com/r/LocalLLaMA/comments/1tylzy2/coheres_unreleased_coding_model_early_access_for/
+  - ) of CohereLab's `North-Mini-Code-1.0` MoE coding model with [weights](https://huggingface.co/CohereLabs/North-Mini-Code-1.0/tree/main) that I wanted to test and add full implementation for.
+- **b9628**: ci : add sycl to check-release ([#24583](https://github.com/ggml-org/llama.cpp/pull/24583))
+  - cont #24387
+  - Forgot to add `check-release` on SYCL jobs.
+- **b9630**: Add cohere2moe to llama-vocab for TINY_AYA ([#24601](https://github.com/ggml-org/llama.cpp/pull/24601))
+  - `cohere2moe` is missing from llama-vocap.cpp, resulting in it not being recognized and not loading
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9632**: jinja : add count/d/e filter aliases ([#24606](https://github.com/ggml-org/llama.cpp/pull/24606))
+  - Add missing filter aliases.
+  - `count` -> `length`
+  - `d` -> `default`
+- **b9637**: chat: add dedicated Cohere2MoE (North Code) parser ([#24615](https://github.com/ggml-org/llama.cpp/pull/24615))
+  - The Cohere2 MoE template is pretty special, so using the autoparser even with workarounds didn't really work. Needed a dedicated parser.
+  - Please use the template in `models/templates/Cohere2-MoE.jinja`  - some GGUFs have an old / incorrect template for some reason.
+- **b9642**: CUDA: only support F32/F16 for GGML_OP_REPEAT ([#24533](https://github.com/ggml-org/llama.cpp/pull/24533))
+  - `ggml_backend_cuda_device_supports_op` reported `GGML_OP_REPEAT` as supported  for every type except `I32`/`I16` (a blacklist). The CUDA path only implements `F32` and `F16`: other types (`BF16`, k-quants, ...) hit a `GGML_ASSERT` / `GGML_ABORT` in `ggml_cuda_op_bin_bcast` (`binbcast.cu`) at runtime instead of falling back to the CPU backend. `supports_op` should not advertise dtypes whose CUDA execution path asserts.
+  - Switch the check to a whitelist of the types the kernel actually implements  (`F32`/`F16`). Unsupported types now fall back to CPU; `I32`/`I16` behaviour is unchanged.
+- **b9645**: metal : add repeat bf16 ([#24638](https://github.com/ggml-org/llama.cpp/pull/24638))
+  - cont #24533
+  - Add BF16 variant of repeat kernel.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+#### 🚀 Performance Improvements
+- **b9622**: vulkan: Use cm2 decode_vector for mul_mat_id B matrix loads ([#23991](https://github.com/ggml-org/llama.cpp/pull/23991))
+  - This allows vec4 loads of the B elements. Also increase BK to 64 when this is enabled. Neither of these alone is consistently faster, but together these give a nice speedup.
+  - In ggml-vulkan.cpp, we need to make sure the B matrix alignment and stride are multiples of 4.
+  - ```
+
+#### 🐛 Bug Fixes
+- **b9623**: jinja : fix split and replace with empty first arg ([#24574](https://github.com/ggml-org/llama.cpp/pull/24574))
+  - Fixes #24555
+  - Properly support `split`/`rsplit`/`replace` methods with empty string as first argument (the two former will raise an error, as opposed to currently unsupported non-specified split (consecutive whitespace)).
+- **b9625**: jinja : fix negative step slice with start/stop values ([#24580](https://github.com/ggml-org/llama.cpp/pull/24580))
+  - Fixes #24556
+  - When doing negative step slices the `start` and `stop` values were being ignored.
+
+
+### Additional Changes
+7 minor improvements: 1 documentation, 6 examples.
+
+### Full Commit Range
+- b9611 to b9645 (19 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9611...b9645
+
+---
+
 ## 2026-06-12: Update to llama.cpp b9611
 
 ### Summary
