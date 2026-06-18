@@ -1,5 +1,115 @@
 # Changelog
 
+## 2026-06-18: Update to llama.cpp b9701
+
+### Summary
+Updated llama.cpp from b9656 to b9701, incorporating 36 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9661**: vulkan: add col2im_1d op ([#24425](https://github.com/ggml-org/llama.cpp/pull/24425))
+  - Vulkan backend follow-up to the CPU op ( https://github.com/ggml-org/llama.cpp/pull/24206 ), same formulation: a gather shader, one invocation per output, each reading only the ceil(K/stride) columns that scatter into it. F32 / F16 / BF16, the BF16 path stores as uint16_t and converts through bf16_to_fp32 so it runs even on devices without native bf16.
+  - A 2D dispatch maps invocations directly to (t_out, oc), so there is no flat index decomposition and no div/mod to begin with, unlike the CUDA side.
+  - Validated against the test-backend-ops grid merged with the CPU op, zero additional test code: 33/33 on Vulkan0 across the eight geometries and three types, plus the three perf entries. Wiring sits next to conv_transpose_1d: shader registration in vulkan-shaders-gen, pipelines, push constants, dispatch and the supports_op entry.
+- **b9664**: sycl: support reordered Q4_K/Q5_K/Q6_K MoE MUL_MAT_ID ([#24452](https://github.com/ggml-org/llama.cpp/pull/24452))
+  - Extends the existing SYCL MoE `mul_mat_id` reorder path to Q6_K expert weights.
+  - This completes reordered MoE coverage for mixed K-quant MoE models whose down-projection experts are Q6_K. Existing Q4_K/Q5_K behavior is unchanged.
+  - Validation:
+- **b9667**: vulkan: Support gated_delta_net with S_v=16 ([#24581](https://github.com/ggml-org/llama.cpp/pull/24581))
+  - Add a pipeline variant for S_v=16, and logic to make sure the constraints in the shader are still satisfied.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: Used codex, I reviewed all the changes.
+- **b9668**: vulkan: prefer host-visible memory buffers on UMA devices ([#22930](https://github.com/ggml-org/llama.cpp/pull/22930))
+  - On UMA (Unified Memory Architecture) devices the CPU and GPU share the same physical memory. Despite this, the Vulkan backend was still allocating device-local buffers without the eHostVisible flag, which prevented the CPU from directly accessing GPU tensor data. This meant that even on hardware where a zero-copy path was physically possible, the backend was forced to go through an unnecessary staging copy whenever tensor data needed to be read back to the host (e.g. during loss evaluation or prediction readback in training). The UMA zero copy was not implemented in this PR.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9669**: spec: add backend sampling support for eagle3 ([#24655](https://github.com/ggml-org/llama.cpp/pull/24655))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Following https://github.com/ggml-org/llama.cpp/pull/23287 to add backend sampling support for eagle3.
+  - Performance results on SpeedBench
+- **b9670**: Fix and restrict NVFP4 edge-cases in llama-graph ([#24331](https://github.com/ggml-org/llama.cpp/pull/24331))
+  - Resolve edge-cases for NVFP4 surfaced in https://github.com/ggml-org/llama.cpp/pull/23484. I presume the intended flow of interaction between NVFP4 and lora/bias-adds to be:
+  - `MUL_MAT / MUL_MAT_ID -> NVFP4-post-mul | lora-residuals | bias-add | LLM-arch-w_s`
+  - where `|` denotes optional operators. Current implementation did not adhere to this previously.
+- **b9677**: common: update logging to enforce max_capacity and optimize queue resizing ([#24490](https://github.com/ggml-org/llama.cpp/pull/24490))
+  - I'm working on adding more Op tracing to the hexagon backend and ran into an issue with our current logging implementation. If the logging rate is consistently much higher than the flushing rate then the queue will just keep growing and growing without any bounds eventually resulting in an exception when malloc finally fails.
+  - This PR updates the logger to enforce `max_capacity` limit which is currently set to 4K entries.
+  - I also re-wrote how the queue resizing is done. Now the producer threads are super simple they just block on full queue.
+- **b9689**: metal : add f16 and bf16 support for concat operator ([#24724](https://github.com/ggml-org/llama.cpp/pull/24724))
+  - Extend the Metal backend concat operator to support f16, bf16, i8, i16, and i64.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES. pi:llama.cpp/Qwen3.6-27B
+- **b9690**: metal : implement rope_back operator ([#24725](https://github.com/ggml-org/llama.cpp/pull/24725))
+  - Add Metal backend support for `ROPE_BACK` by reusing existing rope kernels with a function constant to toggle forward/backward rotation.
+  - [x] I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES. pi:llama.cpp/Qwen3.6-27B
+- **b9691**: ggml: Conditionally enable power11 backend based on compiler support ([#24687](https://github.com/ggml-org/llama.cpp/pull/24687))
+  - Guard POWER11 backend creation behind a compiler flag check for -mcpu=power11. This avoids build failures on current GCC/Clang toolchains while preserving forward compatibility once POWER11 support becomes available.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9699**: [SYCL] support MUL_MAT and OUT_PROD with Q1_0 ([#24721](https://github.com/ggml-org/llama.cpp/pull/24721))
+  - Implement the feature request: https://github.com/ggml-org/llama.cpp/issues/21641
+  - support MUL_MAT and OUT_PROD with Q1_0.
+  - all related UT cases are passed.
+
+#### 🚀 Performance Improvements
+- **b9678**: opencl: optimize mul_mat_f16_f32 for decode ([#24504](https://github.com/ggml-org/llama.cpp/pull/24504))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - The mul_mat_f16_f32 kernels do not perform well for decoding due to its work assignment, where each subgroup either produces a single result or in some cases half of a subgroup stays idle. This PR increase the work of each workgroup to better utilize the GPU.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+#### 🐛 Bug Fixes
+- **b9656**: chat: harden peg-native tool call parsing ([#24329](https://github.com/ggml-org/llama.cpp/pull/24329))
+  - While working we hit a silent bug on llama 3.3 dense: the assistant turn came back empty, no error shown. It only happened with tools enabled. The model emits a tool call in a variant format that the peg-native parser rejects, which blew up the whole turn. I landed a debug log first to confirm exactly what the model was emitting, then the actual fix: accept the "type": "function" variant, and fail soft on parse errors instead of tearing down the turn.
+  - A bug was discovered while working on this PR https://github.com/ggml-org/llama.cpp/pull/23226 that allows the system to see when an error occurs; otherwise, it's silent (empty assistant turn). This PR adds the missing error if the PEG fails.
+  - <img width="579" height="279" alt="604615515-bd9a70de-baf7-44bb-99c4-9701cd714d17" src="https://github.com/user-attachments/assets/f09ec7f8-eab5-402b-a503-3b19133747bb" />
+- **b9658**: chat: include full unparsed prompt in debug message on parse error ([#24650](https://github.com/ggml-org/llama.cpp/pull/24650))
+  - As in topic.
+  - Minimal change to enable dumping full unparsed prompt.
+  - Need for debugging parser errors.
+- **b9660**: chat : fix LFM2 tool-call parsing double-escaping ([#24667](https://github.com/ggml-org/llama.cpp/pull/24667))
+  - Prevent double escaping in the LFM2 tool-calling parser
+  - Output before fix:
+  - ```json
+- **b9674**: SYCL: fix use-after-free bug with async memcpy in MoE prefill ([#24676](https://github.com/ggml-org/llama.cpp/pull/24676))
+  - Make the source buffer persistent to make sure it survives the async host-to-device SYCL copy beyond the function scope. We rely on the existing synchronization to protect it against use-after-scope (or overwrite-before-drain).
+  - This dedicated buffer is metadata-only; for current MoE models it is well under 1 MiB.
+  - This a bugfix for a use-after-free bug in #23142.
+- **b9680**: ci: fix vulkan docker images ([#24595](https://github.com/ggml-org/llama.cpp/pull/24595))
+  - Starting with `b9438` vulkan docker images produced by CI are broken.  We run out of memory during shaders generation. CI doesn't report an error, but  build artifact are corrupted.
+  - https://github.com/ggml-org/llama.cpp/actions/runs/27397273833/job/80967212036#step:9:2828
+  - ```
+- **b9686**: spec: fix segfault error on long prompts for eagle3 ([#24707](https://github.com/ggml-org/llama.cpp/pull/24707))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/24637
+  - Eagle3 speculative decoding crashes with a segmentation on long prompts. The draft decoder sizes its input-embeddings batch with the wrong embedding dimension, producing an out-of-bounds read that only manifests once the prompt is long enough for the copy offset to cross the allocated buffer.
+  - Printing `n_embd_inp` / `n_embd` / `n_embd_out` shows a draft-only mismatch (Gemma4 26B-A4B):
+- **b9687**: fix: skip main_gpu validation when no gpus are available ([#23405](https://github.com/ggml-org/llama.cpp/pull/23405))
+  - Setting `--split-mode none` on a CPU-only build causes model loading to fail (see trace below), because main_gpu defaults to 0 and the bounds check fired against an empty device list. The accompanying warning already states that split mode should have no effect without GPU support - so this PR makes it so we skip the GPU filtering block entirely.
+  - ```none
+  - [52521] warning: llama.cpp was compiled without support for GPU offload. Setting the split mode has no effect.
+- **b9693**: metal : check for BF16 support in concat kernel ([#24747](https://github.com/ggml-org/llama.cpp/pull/24747))
+  - cont #24724
+  - Fixes https://github.com/ggml-org/llama.cpp/pull/24724#issuecomment-4736311329
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9694**: openvino: Fix Windows x64 (OpenVINO) release link. ([#24731](https://github.com/ggml-org/llama.cpp/pull/24731))
+  - Fixes the Windows x64 (OpenVINO) release link.
+  - The `windows-openvino` release job output-writing step is updated to use `shell: bash` to match the ` >> $GITHUB_OUTPUT` syntax.
+  - This step ran with PowerShell, which requires the $ env:$GITHUB_OUTPUT syntax. As a result, `needs.windows-openvino.outputs.openvino_version` was empty when generating the release notes and produced a broken link like:
+- **b9697**: ci : fix check-release message parsing ([#24751](https://github.com/ggml-org/llama.cpp/pull/24751))
+  - cont #23734
+  - Fixes https://github.com/ggml-org/llama.cpp/actions/runs/27677733066/job/81899124840
+  - The `check-release` job would fail if the commit message had quotes in it.
+
+
+### Additional Changes
+14 minor improvements: 7 documentation, 4 examples, 3 maintenance.
+
+### Full Commit Range
+- b9656 to b9701 (36 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9656...b9701
+
+---
+
 ## 2026-06-15: Update to llama.cpp b9645
 
 ### Summary
