@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-06-20: Update to llama.cpp b9733
+
+### Summary
+Updated llama.cpp from b9707 to b9733, incorporating 21 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9715**: Ggml/cuda col2im 1d ([#24417](https://github.com/ggml-org/llama.cpp/pull/24417))
+  - CUDA backend follow-up to the CPU op ( https://github.com/ggml-org/llama.cpp/pull/24206 ), same formulation: a gather kernel, one thread per output, each reading only the ceil(K/s0) columns that scatter into it. F32 / F16 / BF16 with an F32 accumulator.
+  - The flat idx -> (channel, time) decomposition uses fast_div_modulo, which buys back time on the cache resident F32 / F16 shapes where the kernel is ALU exposed; on the DRAM bound long shape it is a no op, as expected.
+  - Validated against the test-backend-ops grid merged with the CPU op, zero additional test code: 33/33 on CUDA0 across the eight geometries and three types, plus the three perf entries. CMake globs the new .cu, so the only wiring is the dispatch case and the supports_op entry next to conv_transpose_1d.
+
+#### 🚀 Performance Improvements
+- **b9717**: ggml-cpu: support K tails in power10 Q8/Q4 MMA matmul ([#24753](https://github.com/ggml-org/llama.cpp/pull/24753))
+  - This patch removes the requirement that K be divisible by kc in the tinyBlas_Q0_PPC tiled matmul path. Process the final K panel using its actual depth and pass the reduced panel size through packing and kernel execution.  This allows more workloads to use the MMA kernel and reduces fallback to mnpack.
+  - Performance Impact:
+  - ~ 60% gain in PP speed with granite-3.38b-instruct Q8_0 and Q4_0 models tested with llama-bench -p 512 -n 1 on power10 ppc64le box.
+
+#### 🐛 Bug Fixes
+- **b9712**: cmake : fix ui build with read-only source ([#24752](https://github.com/ggml-org/llama.cpp/pull/24752))
+  - When building out-of-tree against a read-only source, UI provisioning runs npm in the source tree, so it fails creating `node_modules` there. The fix stages the UI sources into a writable copy under the build dir and runs npm there, leaving the source tree untouched.
+  - Related issue:
+  - https://github.com/ggml-org/llama.cpp/issues/24745
+
+
+### Additional Changes
+18 minor improvements: 15 examples, 3 maintenance.
+
+### Full Commit Range
+- b9707 to b9733 (21 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9707...b9733
+
+---
+
 ## 2026-06-18: Update to llama.cpp b9701
 
 ### Summary
