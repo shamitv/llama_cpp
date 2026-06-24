@@ -1,5 +1,103 @@
 # Changelog
 
+## 2026-06-24: Update to llama.cpp b9780
+
+### Summary
+Updated llama.cpp from b9733 to b9780, incorporating 36 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9757**: Top-N-Sigma: Remove unconditional softmax+sort ([#22645](https://github.com/ggml-org/llama.cpp/pull/22645))
+  - Currently, the Top-N-Sigma sampler does an unconditional softmax+sort at the end.
+  - In the (common, I believe) case of Top-N-Sigma being followed by Dist, this expensive work is completely wasted.
+  - On my M3 Max MacBook Pro, this PR increases the t/s for `google_gemma-4-E4B-it-Q8_0` by 50%, from ~30t/s to ~45t/s, reducing the time per token by 10ms.
+- **b9780**: vulkan-shaders-gen : fail the build when a shader fails to compile ([#24450](https://github.com/ggml-org/llama.cpp/pull/24450))
+  - `vulkan-shaders-gen` ignores shader-compile **subprocess failures**, so a broken
+  - `libggml-vulkan` can be produced while the build reports success — the breakage only
+  - surfaces at run time. This PR makes the generator fail the build loudly instead:
+- **b9780**: vulkan-shaders-gen : fail the build when a shader fails to compile ([#24450](https://github.com/ggml-org/llama.cpp/pull/24450))
+  - `vulkan-shaders-gen` ignores shader-compile **subprocess failures**, so a broken
+  - `libggml-vulkan` can be produced while the build reports success — the breakage only
+  - surfaces at run time. This PR makes the generator fail the build loudly instead:
+
+#### 🆕 New Features
+- **b9736**: model : glm-dsa load DSA indexer tensors as optional ([#24770](https://github.com/ggml-org/llama.cpp/pull/24770))
+  - Loading any **GLM-5.2** GGUF (`GlmMoeDsaForCausalLM` / `GLM_DSA`) fails with `missing tensor 'blk.3.indexer.k_norm.weight'`. GLM-5.2 ships the DSA lightning indexer on only a subset of layers, but `llama_model_glm_dsa::load_arch_tensors` created the five `indexer_*` tensors on every layer as required.
+  - `GLM_DSA` uses `llama_model_deepseek2::graph` (plain MLA) and never references the indexer tensors (the DSA indexer runtime isn't implemented yet), so they are loaded-but-unused. Marking them `TENSOR_NOT_REQUIRED` lets layers without an indexer load as `nullptr`; the model runs as full MLA attention. DeepSeek-V3.2 (uniform indexer on every layer) is unaffected.
+  - Complements the conversion support in #19460. Verified by loading and generating from a GLM-5.2 GGUF on Metal (previously failed at load).
+- **b9739**: add missing link for win opencl adreno arm64 in release notes ([#24809](https://github.com/ggml-org/llama.cpp/pull/24809))
+  - add missing link for win opencl adreno arm64 in release notes
+- **b9741**: llama : use LLM_KV for quantization_version & file_type ([#24802](https://github.com/ggml-org/llama.cpp/pull/24802))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - `LLM_KV_GENERAL_FILE_TYPE` did not exist yet when the `// TODO: use LLM_KV` comment was added
+- **b9745**: Support Step3.5/3.7 flash mtp3 ([#24340](https://github.com/ggml-org/llama.cpp/pull/24340))
+  - follow-up to [#23274](https://github.com/ggml-org/llama.cpp/pull/23274).(cc @pwilkin )
+  - <details>
+  - <summary>📜 Full data-flow trace — couldn't think of a good way to draw this, so I wrote it all down instead. It's long, but every byte is load-bearing.</summary>
+- **b9750**: jinja : implement call statement ([#24847](https://github.com/ggml-org/llama.cpp/pull/24847))
+  - Implement `call` statement.
+  - Adds support for (with and without `call`/`caller` parameters):
+  - ```jinja
+- **b9754**: common/peg : implement ac parser for stricter grammar generation ([#24869](https://github.com/ggml-org/llama.cpp/pull/24869))
+  - Even after #24839, users are still seeing the model escape the grammar. It's because the exclusion grammar can accept a partial prefix of the delimiter and each use of `until(delim)` is typically followed by a `literal(delim)`.
+  - This PR uses the same AC type and adds an including variant: consume all characters up to and including a delimiter. This way it terminates on first occurrence of `\n</parameter>\n`.
+  - Fixes #24863
+- **b9758**: [SYCL] support bf16 on bin_bcast OP and unary OPs ([#24838](https://github.com/ggml-org/llama.cpp/pull/24838))
+  - The UT cases of bin_bcast OP and unary OPs for bf16 are created.
+  - SYCL backend didn't support the new cases.
+  - Support bf16 on bin_bcast OP and unary OPs.
+- **b9773**: vulkan: Support GET_ROWS_BACK ([#24883](https://github.com/ggml-org/llama.cpp/pull/24883))
+  - Support GET_ROWS_BACK, similar level of support to ggml-cuda.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, used codex to implement, I reviewed/tweaked.
+- **b9774**: vulkan: support all backend tests for SQR/SQRT/SIN/COS/CLAMP/LEAKY_RELU/NORM ([#24582](https://github.com/ggml-org/llama.cpp/pull/24582))
+  - SQR/SQRT/SIN/COS/CLAMP/LEAKY_RELU already supported noncontig, but were missing f16 variants. Port them to use unary.comp since they're all unary ops. NORM was missing support for noncontiguous tensors.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, used codex. I told it what to do and reviewed all the changes.
+- **b9777**: model : Add LFM2.5-ColBERT-350M and LFM2.5-Embedding-350M ([#24913](https://github.com/ggml-org/llama.cpp/pull/24913))
+  - Add support for Liquid AI embedding models
+  - [LiquidAI/LFM2.5-ColBERT-350M](https://huggingface.co/LiquidAI/LFM2.5-ColBERT-350M)
+  - [LiquidAI/LFM2.5-Embedding-350M](https://huggingface.co/LiquidAI/LFM2.5-Embedding-350M)
+
+#### 🚀 Performance Improvements
+- **b9735**: ggml : optimize AMX ([#24806](https://github.com/ggml-org/llama.cpp/pull/24806))
+  - Flatten the partition over n_batch * M so every thread participates in the quantization
+  - | CPU                             | Model                         | Test   |   t/s OLD |   t/s NEW |   Speedup |
+  - |:--------------------------------|:------------------------------|:-------|----------:|----------:|----------:|
+- **b9767**: ggml-webgpu: improve MTP inference by using mat-vec path for small batches ([#24811](https://github.com/ggml-org/llama.cpp/pull/24811))
+  - This PR improves small-batch decoding performance by applying the mat-vec path to these cases. This is particularly expected to improve the performance of speculative decoding, such as MTP.
+  - The following table shows the performance of token decoding with `llama-server` on native WebGPU on M2 Pro (32 GiB RAM).
+  - Based on [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B)
+
+#### 🐛 Bug Fixes
+- **b9740**: arg: try fixing test-args-parser randomly fails ([#24826](https://github.com/ggml-org/llama.cpp/pull/24826))
+  - no idea why `openvino-windows-2022` workflow randomly fails: https://github.com/ggml-org/llama.cpp/actions/runs/27849196743/job/82424736785
+  - the reported error is quite unexpected:
+  - <img width="997" height="397" alt="image" src="https://github.com/user-attachments/assets/d576867c-e22a-4324-a59d-ae09e74f2daf" />
+- **b9742**: fix(hexagon): use padded stride for ssm-conv weights ([#24470](https://github.com/ggml-org/llama.cpp/pull/24470))
+  - Qwen3.5-0.8B Q4_0 and Qwen3.5-2B Q4_0 already produced coherent output on HTP0, but Qwen3.5-4B Q4_0 could degrade into corrupted text on the same backend even though it uses the same model family structure. That made the issue look shape- or partition-dependent rather than a general Qwen3.5 HTP failure.
+  - The difference comes from how the SSM_CONV HVX path partitions `d_inner` across threads. For 0.8B and 2B with the tested thread configuration, the per-thread row partitions were aligned to the HVX vector width, so the existing staged weight layout happened to be safe. For 4B, the partition was not always `VLEN_FP32` aligned, which exposed a stride mismatch in `src1_T`: the buffer was sized with the padded per-thread row count, but `transpose_src1` and the HVX weight loads used the unpadded row count as the stride.
+  - This change makes the padded stride explicit for `src1_T` and aligns the per-thread row count to `VLEN_FP32`, so the staged VTCM weight layout matches the HVX vector access pattern.
+- **b9769**: vulkan: link ggml-cpu when GGML_VULKAN_CHECK_RESULTS / RUN_TESTS are enabled ([#24444](https://github.com/ggml-org/llama.cpp/pull/24444))
+  - -DGGML_VULKAN_CHECK_RESULTS=ON and -DGGML_VULKAN_RUN_TESTS=ON failed to link for some reason, and I noticed the debug code in ggml-vulkan.cpp calls ggml_graph_compute_with_ctx from ggml-cpu, but ggml-vulkan only links ggml-base and Vulkan. CI misses it because neither flag is built there i think..?
+  - Fix: link ggml-cpu under those two options
+  - Tested on Windows/MSVC: fails to link before, builds fine after.
+- **b9776**: vulkan: Apply bias before softmax in FA, to avoid overflow ([#24909](https://github.com/ggml-org/llama.cpp/pull/24909))
+  - Apply a bias in the scalar/cm1 FA paths to avoid fp16 overflow. Should fix https://github.com/leejet/stable-diffusion.cpp/pull/1678.
+  - This bias was already in the cm2 path. cm2 is still generating a bad image, but it appears to be related to conv2d rather than FA (works if I disable coopmat2 for conv2d).
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Additional Changes
+17 minor improvements: 15 examples, 2 maintenance.
+
+### Full Commit Range
+- b9733 to b9780 (36 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9733...b9780
+
+---
+
 ## 2026-06-20: Update to llama.cpp b9733
 
 ### Summary
