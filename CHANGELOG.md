@@ -1,5 +1,90 @@
 # Changelog
 
+## 2026-06-27: Update to llama.cpp b9821
+
+### Summary
+Updated llama.cpp from b9780 to b9821, incorporating 23 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9780**: vulkan-shaders-gen : fail the build when a shader fails to compile ([#24450](https://github.com/ggml-org/llama.cpp/pull/24450))
+  - `vulkan-shaders-gen` ignores shader-compile **subprocess failures**, so a broken
+  - `libggml-vulkan` can be produced while the build reports success — the breakage only
+  - surfaces at run time. This PR makes the generator fail the build loudly instead:
+- **b9780**: vulkan-shaders-gen : fail the build when a shader fails to compile ([#24450](https://github.com/ggml-org/llama.cpp/pull/24450))
+  - `vulkan-shaders-gen` ignores shader-compile **subprocess failures**, so a broken
+  - `libggml-vulkan` can be produced while the build reports success — the breakage only
+  - surfaces at run time. This PR makes the generator fail the build loudly instead:
+- **b9782**: common: remove unused json-partial ([#24968](https://github.com/ggml-org/llama.cpp/pull/24968))
+  - Unused code, seems like a left over from the old minja system
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9804**: mamba2: remove hardcoded 2x expansion factor and invalid d_inner % d_state check ([#23082](https://github.com/ggml-org/llama.cpp/pull/23082))
+  - This PR removes two unnecessary restrictions in Mamba2 that prevent loading models with custom architectures.
+  - **Changes:**
+  - 1. **Remove hardcoded 2x expansion factor** (`GGML_ASSERT(2 * n_embd == d_inner)`)
+
+#### 🆕 New Features
+- **b9786**: opencl: support non-contig rows in norm ([#24965](https://github.com/ggml-org/llama.cpp/pull/24965))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Support non-contig rows in norm, fix test-backend-ops failure.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9803**: opencl: flush profiling batch at shutdown for incomplete batches ([#25016](https://github.com/ggml-org/llama.cpp/pull/25016))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Profiling entries stay in profiling_info until the 2048 threshold, so smaller batches are never written. This PR adds a flush_profiling_batch() call before writing to include all entries.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9810**: CUDA: add cublasSgemmBatched mapping for HIP/MUSA vendor headers ([#25033](https://github.com/ggml-org/llama.cpp/pull/25033))
+  - Fixes the HIP/MUSA build break introduced by #24426. Adds the missing cublasSgemmBatched to hipblasSgemmBatched /mublasSgemmBatched mapping to the vendor headers.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9813**: vulkan: add INTEL_XE1 arch enum and enable coopmat1 on Intel Xe-LPG Plus ([#24404](https://github.com/ggml-org/llama.cpp/pull/24404))
+  - **Target platforms:** Xe-LPG Plus (Arrow Lake-H iGPU)
+  - Adds `INTEL_XE1` enum variant to `vk_device_architecture`
+  - Adds PTL (Panther Lake) device ID detection for future platform coverage
+- **b9814**: vulkan: opt mul_mat_vecq for mi50 ([#22933](https://github.com/ggml-org/llama.cpp/pull/22933))
+  - In `ggml-vulkan.cpp`, this adds a `subgroups_gcn_enabled` device flag and enables subgroup arithmetic for a small allowlisted set of AMD GPUs based on device name matching.
+  - Previously, AMD GCN devices were excluded from this subgroup path entirely. With this change, supported GCN 5.x devices can use subgroup arithmetic in `ggml_vk_load_shaders`.
+- **b9817**: Improved quantize script ([#222](https://github.com/ggml-org/llama.cpp/pull/222))
+  - I improved the quantize script by adding error handling and allowing to select many models for quantization at once in the command line. I also converted it to Python for generalization as well as extensibility.
+
+#### 🚀 Performance Improvements
+- **b9820**: CUDA:  Improve performance via less synchronizations between token ([#17795](https://github.com/ggml-org/llama.cpp/pull/17795))
+  - See [comment below](https://github.com/ggml-org/llama.cpp/pull/17795#issuecomment-3675566278)
+  - --------------
+  - This PR suggest to remove some superfluous synchronization calls between tokens to be faster on CUDA backends. I see between 1% and 2% perf gain depending on the model, GPU and settings.
+
+#### 🐛 Bug Fixes
+- **b9781**: vulkan: allow reducing graph submission batches to avoid device timeouts ([#24872](https://github.com/ggml-org/llama.cpp/pull/24872))
+  - ~~disable graph submission batching on UMA devices, to avoid "device lost" errors~~
+  - ~~reduce discrete GPU batching from 100 to 64~~
+  - allow overriding the max batching value with the GGML_VK_MAX_NODES_PER_SUBMIT env var
+- **b9787**: [SYCL] fix the failed UT cases of conv_3d ([#24900](https://github.com/ggml-org/llama.cpp/pull/24900))
+  - fix the failed UT cases of conv_3d。
+  - all related cases are passed.
+- **b9789**: quant : fix quantizing moe with mtp ([#24986](https://github.com/ggml-org/llama.cpp/pull/24986))
+  - Fixes #24379
+  - Fixes #24661
+  - Due to the following check and the fact that `n_layer()` instead of `n_layer_all` was being used it was impossible to quantize MoEs with MTP.
+- **b9811**: vulkan: Workaround compiler bug in conv2d coopmat2 path ([#24924](https://github.com/ggml-org/llama.cpp/pull/24924))
+  - This fixes a failure seen in https://github.com/leejet/stable-diffusion.cpp. The compiler messed up alignment with the odd size array.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, for debugging.
+- **b9820**: Sched: Reintroduce less synchronizations between token, with fixed pipeline parallelism. ([#20793](https://github.com/ggml-org/llama.cpp/pull/20793))
+  - Follow up to https://github.com/ggml-org/llama.cpp/pull/20463#issuecomment-4091342946.
+  - https://github.com/ggml-org/llama.cpp/pull/17795 improved performance in the single GPU setting on CUDA, but it was rolled back due to a bug surfacing in multi-GPU pipeline parallel settings.
+  - For the single GPU setting, it moved the scheduling from `sassassasg` to the more efficient `saaasg` pattern, where `s`= sync, `a`= async copy, `g`= graph execution.
+
+
+### Additional Changes
+7 minor improvements: 3 documentation, 2 examples, 2 maintenance.
+
+### Full Commit Range
+- b9780 to b9821 (23 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9780...b9821
+
+---
+
 ## 2026-06-24: Update to llama.cpp b9780
 
 ### Summary
