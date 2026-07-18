@@ -62,10 +62,6 @@ def validate_staged_ui_assets(dist_path=LLAMA_CPP_UI_DIST_PATH):
         asset for asset in LLAMA_CPP_UI_REQUIRED_ASSETS
         if not os.path.exists(os.path.join(dist_path, asset))
     ]
-    missing_optional_assets = [
-        asset for asset in LLAMA_CPP_UI_OPTIONAL_ASSETS
-        if not os.path.exists(os.path.join(dist_path, asset))
-    ]
     missing_globs = [
         pattern for pattern in LLAMA_CPP_UI_REQUIRED_ASSET_GLOBS
         if not glob.glob(os.path.join(dist_path, pattern))
@@ -84,11 +80,6 @@ def validate_staged_ui_assets(dist_path=LLAMA_CPP_UI_DIST_PATH):
             + f" (expected under {dist_path})"
         )
 
-    if missing_optional_assets:
-        logging.warning(
-            "Optional staged UI assets are missing: %s",
-            ", ".join(missing_optional_assets),
-        )
 
 
 def clean_staged_ui_assets(dist_path=LLAMA_CPP_UI_DIST_PATH):
