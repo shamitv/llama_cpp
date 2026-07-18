@@ -14,8 +14,6 @@ SCRIPTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts
 if SCRIPTS_PATH not in sys.path:
     sys.path.insert(0, SCRIPTS_PATH)
 
-from generate_changelog import ChangelogManager
-
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -30,6 +28,8 @@ LLAMA_CPP_UI_PATH = os.path.join(LLAMA_CPP_SUBMODULE_PATH, "tools", "ui")
 LLAMA_CPP_UI_DIST_PATH = os.path.join(LLAMA_CPP_UI_PATH, "dist")
 LLAMA_CPP_UI_REQUIRED_ASSETS = (
     "index.html",
+)
+LLAMA_CPP_UI_OPTIONAL_ASSETS = (
     "loading.html",
 )
 LLAMA_CPP_UI_REQUIRED_ASSET_GLOBS = (
@@ -58,18 +58,22 @@ def run_command(command, cwd=None, check=True, shell=False, env=None):
 
 def validate_staged_ui_assets(dist_path=LLAMA_CPP_UI_DIST_PATH):
     """Ensure the packaged UI asset directory contains the files llama.cpp expects."""
-    missing_assets = [
+    missing_required_assets = [
         asset for asset in LLAMA_CPP_UI_REQUIRED_ASSETS
+        if not os.path.exists(os.path.join(dist_path, asset))
+    ]
+    missing_optional_assets = [
+        asset for asset in LLAMA_CPP_UI_OPTIONAL_ASSETS
         if not os.path.exists(os.path.join(dist_path, asset))
     ]
     missing_globs = [
         pattern for pattern in LLAMA_CPP_UI_REQUIRED_ASSET_GLOBS
         if not glob.glob(os.path.join(dist_path, pattern))
     ]
-    if missing_assets or missing_globs:
+    if missing_required_assets or missing_globs:
         missing_descriptions = []
-        if missing_assets:
-            missing_descriptions.extend(missing_assets)
+        if missing_required_assets:
+            missing_descriptions.extend(missing_required_assets)
         if missing_globs:
             missing_descriptions.extend(
                 f"<glob:{pattern}>" for pattern in missing_globs
@@ -78,6 +82,12 @@ def validate_staged_ui_assets(dist_path=LLAMA_CPP_UI_DIST_PATH):
             "Missing staged UI assets: "
             + ", ".join(missing_descriptions)
             + f" (expected under {dist_path})"
+        )
+
+    if missing_optional_assets:
+        logging.warning(
+            "Optional staged UI assets are missing: %s",
+            ", ".join(missing_optional_assets),
         )
 
 
@@ -634,6 +644,16 @@ def update_changelog(old_tag: str, new_tag: str):
     if _parse_llama_tag_number(from_norm) < 0:
         logging.warning(f"Old submodule tag '{old_tag}' not parseable; using {new_norm} only.")
         from_norm = new_norm
+
+    try:
+        from generate_changelog import ChangelogManager
+    except ModuleNotFoundError as exc:
+        if exc.name == "github":
+            logging.warning(
+                "Optional changelog dependency 'PyGithub' is not installed; skipping changelog update."
+            )
+            return
+        raise
 
     config_path = os.path.join(PROJECT_ROOT, "scripts", "changelog", "config.yaml")
     manager = ChangelogManager(config_path=config_path)
