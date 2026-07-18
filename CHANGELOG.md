@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-07-18: Update to llama.cpp b10066
+
+### Summary
+Updated llama.cpp from b10063 to b10066, incorporating 3 upstream commits with performance improvements.
+
+### Notable Changes
+
+#### 🚀 Performance Improvements
+- **b10064**: opencl: transpose q4_K noshuffle scales to allow better coalesced reads for Adreno GPUs. ([#25805](https://github.com/ggml-org/llama.cpp/pull/25805))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR transposes the scales for Q4_K weights repack to allow coalesced load, improving both prefill and token generation performance for dense models having q4_K.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+#### 🐛 Bug Fixes
+- **b10066**: opencl: load and use `kernel_gemm_moe_q6_k_f32_ns` from bin kernel lib ([#25797](https://github.com/ggml-org/llama.cpp/pull/25797))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR allows loading and using `kernel_gemm_moe_q6_k_f32_ns` from binary kernel lib when it is available.
+  - It also fixes a bug when deciding if int8 dp4 kernel should be used for q5_K MoE GEMM -- the original  code incorrectly checks for `kernel_gemm_moe_q4_k_f32_ns_bin` availability.
+
+
+### Additional Changes
+1 minor improvements: 1 maintenance.
+
+- **b10063**: b10063
+  - <details open>
+
+### Full Commit Range
+- b10063 to b10066 (3 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10063...b10066
+
+---
+
 ## 2026-06-27: Update to llama.cpp b9821
 
 ### Summary
