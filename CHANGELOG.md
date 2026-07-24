@@ -1,5 +1,159 @@
 # Changelog
 
+## 2026-07-24: Update to llama.cpp b10105
+
+### Summary
+Updated llama.cpp from b10069 to b10105, incorporating 25 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b10075**: hexagon: add f32 CLAMP op support ([#25934](https://github.com/ggml-org/llama.cpp/pull/25934))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add support for f32 CLAMP op to Hexagon backend.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10077**: Add GGML_BACKEND_DL_IMPL invocation for OpenVINO backend ([#25795](https://github.com/ggml-org/llama.cpp/pull/25795))
+  - This adds the missing `GGML_BACKEND_DL_IMPL()` macro invocation, that other backends have, to register dynamic loading functionality. I don't know whether it was missing on purpose, though. Seems to have made it work for me, at least.
+  - Fixes #25586
+- **b10079**: server : properly handle null llama_context ([#25868](https://github.com/ggml-org/llama.cpp/pull/25868))
+  - When researching #25851 I noticed that `llama-server` does not handle case where `llama_context` creation failed and `ctx_tgt` is null, instead it crashes trying to access null context pointer. This PR adds a context nullity check to handle this case.
+  - This is purely cosmetic improvement - instead of:
+  - ```
+- **b10080**: webui : send both backend_sampling == false/true ([#18781](https://github.com/ggml-org/llama.cpp/pull/18781))
+  - I believe the webui does not send `backend_sampling == false` in the request when the checkbox is unchecked. The goal is when the server is started with `-bs` to be able to disable backend sampling from the client.
+  - Also I think the checkbox is currently not synchronized with the server argument like the rest of the sampling parameters. But not sure how to fix this of if it is supported for checkboxes.
+- **b10082**: kleidiai : warn once when a weight type has no KleidiAI kernel ([#25701](https://github.com/ggml-org/llama.cpp/pull/25701))
+  - KleidiAI provides matmul kernels only for `Q4_0` and `Q8_0` (plus `F32` activations). A model quantized to any other type — the whole K-quant and IQ family — silently falls back to the generic ggml CPU kernels, regardless of which CPU backend variant was loaded at startup. This PR adds a one-shot `GGML_LOG_WARN` at the point the fallback actually occurs, so users do not assume KleidiAI is accelerating a weight type it has no kernel for.
+  - Measured cost of the silent fallback on a MediaTek Dimensity 7300 phone (Llama-3.2-1B, PP 512, 4 threads): 43 tok/s prompt processing with Q3_K_L (generic path) vs 121 tok/s with Q4_0 (KleidiAI path).
+  - Following review feedback from @chaxu01, the warning is emitted from `get_tensor_traits()` rather than `supports_op()`: `supports_op()` is a capability query the scheduler may call speculatively during load or placement, which could fire the warning on ops that never execute and consume the one-shot flag before a real fallback. `get_tensor_traits()` runs per node of a graph actually being computed. The relocation also drops the requirement that src0 reside in the KleidiAI buffer type — weights of unsupported types are never placed there, which made the original check unreachable in the real fallback case.
+- **b10083**: cuda: add sqrt_softplus in topk-moe for dsv4 ([#25896](https://github.com/ggml-org/llama.cpp/pull/25896))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add sqrt_softplus to the list of supported topk-moe functions.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10084**: hexagon: check tensor type when reusing descriptors ([#25968](https://github.com/ggml-org/llama.cpp/pull/25968))
+  - This PR fixes incorrect reuse of Hexagon tensor descriptors exposed by Qwen3-VL-2B.
+  - For a full 512-token ubatch, Qwen3-VL's M-RoPE position input tensor is `I32[2048]`, while the `GET_ROWS` output is `F32[2048, 1]`. Since the hexagon op-batch descriptor lookup currently does not compare `type`, the `F32` output can reuse the `I32` descriptor. `GET_ROWS` then returns `HTP_STATUS_NO_SUPPORT` because `dst->type != HTP_TYPE_F32`, and leaves the inference path with invalid logits.
+  - This change includes a `type` check in `same_shape()`, which is only used in `add_tensor()`.
+- **b10087**: Add support for Laguna XS.2 & M.1 ([#25165](https://github.com/ggml-org/llama.cpp/pull/25165))
+  - This PR adds support for Poolside's Laguna XS.2 and M.1 models to llama.cpp. This PR is the official version of this implementation from Poolside; we love the llama.cpp project & we feel like support for our models is long overdue!
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR is broken up into 4 commits. The last three are pretty standard, but the first deserves more attention; there appears to be a backend bug when it comes to dispatching with certain gqa head ratios.
+- **b10088**: llama-arch: fix DeepSeek4 APE tensor representative op ([#25945](https://github.com/ggml-org/llama.cpp/pull/25945))
+  - In DeepSeek4, the compressor and indexer APE tensors are first read with `ggml_get_rows()`, and then the selected rows are added to the attention score. However, in `src/llama-arch.cpp`, both tensors currently use `GGML_OP_ADD` as their representative op.
+  - This PR changes the representative op for these two tensors to `GGML_OP_GET_ROWS`:
+  - `LLM_TENSOR_ATTN_COMPRESSOR_APE`
+- **b10089**: cuda: GET_ROWS quants ([#25962](https://github.com/ggml-org/llama.cpp/pull/25962))
+  - Adds k-quants, i-quants and mxfp4 support to CUDA GET_ROWS, bringing it to parity with the CPU, Metal, Vulkan and SYCL backends.
+  - I needed this for my GGML ASR audio projects: any model with a quantized embedding table (Q4_K_M GGUFs store token_embd as q6_K) had the lookup kicked out of the graph, and CUDA ended up slower than Vulkan on the same hardware, which was a shame. Decode on a Qwen3 1.7B went from 6.18 to 1.72 ms/token with the patch.
+  - The super-block dequantizers are factored out of convert.cu into shared device functions and reused by a new k_get_rows_kq kernel with the same thread layouts. supports_op gates the new types on ne0 % QK_K == 0 (iq4_nl and mxfp4 pack 32-value sub-blocks).
+- **b10092**: ggml: enable PowerPC backend variants on AIX ([#25983](https://github.com/ggml-org/llama.cpp/pull/25983))
+  - Allow the PowerPC CPU backend variants to be built on AIX by extending the platform check in the CMake configuration. This reuses the existing PowerPC backend implementations without changing their behavior.
+  - Also fix a missing semicolon in the PowerPC Q0 matmul implementation.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+- **b10093**: Fix DeepSeek4 crafted template ([#25414](https://github.com/ggml-org/llama.cpp/pull/25414))
+  - It seems like I've been a bit lazy implementing the DS4 template. I used the standard behavior (retain last reasoning trace). However, the reference behavior is different. DS4 will retain *all* reasoning traces in one of two cases:
+  - if `drop_reasoning` is set to false
+  - in case the message history contains at least one tool call
+- **b10098**: hexagon: activation ops update ([#25974](https://github.com/ggml-org/llama.cpp/pull/25974))
+  - <!-- Describe what this PR does and why. Be concise but complete -->GEGLU, SWIGLU and SWIGLU_OAI ops update.
+  - New all-in-one fused GEGLU microkernel.
+  - Non-contiguous-src support for all ACT ops lets these ops accept views/slices without a preceding copy and handle similarly to what other Hexagon backend ops (unary, binary) already support.
+- **b10103**: Add F16 type support to Leaky ReLU function on Metal ([#25981](https://github.com/ggml-org/llama.cpp/pull/25981))
+  - This PR comes as part of the effort in adding/extending ops support to the backends outlined [here](https://github.com/ggml-org/llama.cpp/issues/14909).
+  - Leaky ReLU op implementation supports 16 bit inputs but needed specific check to be extended and actually run it, tests are already present and locally passing on M5.
+
+#### 🚀 Performance Improvements
+- **b10076**: CUDA: vectorize same-type get_rows with int4 copy ([#25929](https://github.com/ggml-org/llama.cpp/pull/25929))
+  - GET_ROWS optimizations for ROCm for a small decode speed boost on Strix Halo (~1%).
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: Yes, Opus 4.8 for the patch.
+- **b10099**: CUDA: Improve NVFP4 W4A4 activation quantization ([#25730](https://github.com/ggml-org/llama.cpp/pull/25730))
+  - This PR improves NVFP4 W4A4 activation quantization in both quality and performance
+  - 1. Quality was gained by adding per-channel-based amax scaling as an alternative path to honoring pre-calibrated scales. This was proposed here https://github.com/ggml-org/llama.cpp/discussions/22042#discussioncomment-16681029
+  - 2. Perf was realized by:
+
+#### 🐛 Bug Fixes
+- **b10069**: opencl: Support broadcast for Adreno MUL_MAT and honor `view_offs` for Adreno Q8_0 MUL_MAT for ll... ([#25910](https://github.com/ggml-org/llama.cpp/pull/25910))
+  - This PR is to fix bugs in llama‐server that lead to garbage output for 3 out of 4 streams with Qwen3.5‐family GDN models, i.e., only single user works fine. There are two issues in the Adreno quantized mul_mat:
+  - `view_offs` was dropped and every non‐first sequence read slot‐0’s activations
+  - Broadcast was unsupported. The Adreno GEMM/GEMV kernels assume src1 `ne2==ne3==1`, while a GDN `ssm_out` is a broadcast matmul.
+- **b10080**: server: return 400 instead of 500 on validation error with X-Conversation-Id ([#25760](https://github.com/ggml-org/llama.cpp/pull/25760))
+  - server: validation errors on requests with X-Conversation-Id crashed into a 500 bad_function_call because on_complete() called next_orig before set_next() ever ran; treat the empty next_orig as "streaming never started" and evict the session so nothing is left behind for discovery or replay.
+  - ui: guard backend_sampling with hasValue() like its neighbor fields so the empty-string placeholder is no longer sent verbatim and rejected by validation.
+  - Fixes #25605
+- **b10081**: common: resolve draft repo to its requested sidecar (-hfd) ([#25955](https://github.com/ggml-org/llama.cpp/pull/25955))
+  - With -hfd pointing to a repo that ships speculative sidecars, the draft resolved to the full main model instead of the sidecar, this wires the discovered sidecar as the draft following the existing fallback pattern.
+  - llama-server -hf repo -hfd repo --spec-type draft-dflash
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10091**: ci : fix SYCL package shared library lookup ([#25987](https://github.com/ggml-org/llama.cpp/pull/25987))
+  - The Ubuntu SYCL release embedded a RUNPATH pointing to the GitHub Actions build directory. llama-server could not locate libllama-server-impl.so beside it and this PR fixes that issue.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10094**: common: auto-select the speculative type from the draft repo sidecars ([#25989](https://github.com/ggml-org/llama.cpp/pull/25989))
+  - Follow-up of #25955, now -hfd pointing to a repo that ships MTP or DFlash sidecars picks the right one automatically without needing --spec-type, so llama-server -hf repo:Q3_K_M -hfd repo:Q8_0 just works.
+  - With -hfd pointing to a repo that ships mtp-/dflash-/eagle3- sidecars and no --spec-type given, the draft resolved to a full model while the sidecar was the intended draft.
+  - When the speculative types are still at their default, discover the sidecars of the draft repo, pick the first available following the existing mtp > dflash > eagle3 priority, and set the corresponding type, so this now works without any extra flag:
+
+
+### Additional Changes
+4 minor improvements: 2 documentation, 2 maintenance.
+
+- **b10090**: webgpu : add CONV_2D_DW (depthwise conv2d) kernel ([#25847](https://github.com/ggml-org/llama.cpp/pull/25847))
+  - Implement `GGML_OP_CONV_2D_DW` for the WebGPU backend, ported from the Vulkan backend's `conv2d_dw.comp`.
+  - Assisted-by: Claude Opus-4.8
+  - Addresses #14909
+- **b10105**: args: refactor mlock/mmap/directio into load-mode ([#20834](https://github.com/ggml-org/llama.cpp/pull/20834))
+  - Ref: https://github.com/ggml-org/llama.cpp/pull/20211#discussion_r2916871694
+  - Obsoletes: #20461
+  - This PR overhauls the three separate loading modes (mlock, mmap, and direct-io) into one single `-lm`/`--load-mode` option to simplify the logic. While working on #20461, I realised that it became quite complex to maintain multiple loading modes when they are mutually exclusive of one another. This PR solves that by allowing only one loading mode to exist at a time.
+- **b10078**: vulkan: Refactor vk_queue to use per-instance mutexes and unique handles ([#23570](https://github.com/ggml-org/llama.cpp/pull/23570))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Refactor so each vk_queue owns a unique vk::Queue handle, then replace the static queue_mutex with a per-instance std::mutex inside vk_queue.
+  - Before, single_queue devices (where only one physical queue exists) used copyFrom() to copy the compute queue's vk::Queue handle into the transfer queue struct — two vk_queue objects pointing at the same underlying vk::Queue. This made per-queue locking impossible because you couldn't have two separate mutexes guarding one queue (Per-Queue Submission Lock).
+- **b10085**: mtmd: use align_corners for Qwen3-VL vision position-embedding interpolation ([#25781](https://github.com/ggml-org/llama.cpp/pull/25781))
+  - Qwen3-VL's learned absolute vision position embedding is interpolated to the runtime patch grid in
+  - `tools/mtmd/models/qwen3vl.cpp` via `resize_position_embeddings()`, which uses the default
+  - `GGML_SCALE_MODE_BILINEAR | GGML_SCALE_FLAG_ANTIALIAS` - in other words, **align_corners=False** (half-pixel).
+
+### Full Commit Range
+- b10069 to b10105 (25 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10069...b10105
+
+---
+
+## 2026-07-20: Update to llama.cpp b10069
+
+### Summary
+Updated llama.cpp from b10066 to b10069, incorporating 4 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b10067**: llama-quant : exclude i32 ffn_gate_tid2eid routing table from quantization ([#25787](https://github.com/ggml-org/llama.cpp/pull/25787))
+  - `llama-quantize` fails on DeepSeek-V4 models. The `ffn_gate_tid2eid` tensor is an i32 token-id -> expert-id routing/index table (used via `GGML_OP_GET_ROWS`), not weights, but it was never added to the name-based quantization exclusion list alongside `ffn_gate_inp.weight`. So `llama-quantize` tries to quantize it and fails, since an i32 tensor cannot be converted to a float quant type (rejected in `tensor_allows_quantization`).
+  - Add `ffn_gate_tid2eid.weight` to the same exclusion in `tensor_allows_quantization` (`src/llama-quant.cpp`), mirroring the existing `ffn_gate_inp.weight` guard, so the routing table is kept at its original type.
+  - The tensor is created as `tn(LLM_TENSOR_FFN_GATE_TID2EID, "weight", i)` (`src/models/deepseek4.cpp`), so its full name is `blk.N.ffn_gate_tid2eid.weight`, which the guard matches.
+
+#### 🐛 Bug Fixes
+- **b10066**: opencl: load and use `kernel_gemm_moe_q6_k_f32_ns` from bin kernel lib ([#25797](https://github.com/ggml-org/llama.cpp/pull/25797))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR allows loading and using `kernel_gemm_moe_q6_k_f32_ns` from binary kernel lib when it is available.
+  - It also fixes a bug when deciding if int8 dp4 kernel should be used for q5_K MoE GEMM -- the original  code incorrectly checks for `kernel_gemm_moe_q4_k_f32_ns_bin` availability.
+- **b10068**: dflash: rotate injected K/V cache when using K/V quantization ([#25823](https://github.com/ggml-org/llama.cpp/pull/25823))
+  - Fix issue: https://github.com/ggml-org/llama.cpp/issues/25725
+  - Resolved by @ggerganov 's suggestion: Simply applying the rotation during injection should fix the problem.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10069**: opencl: Support broadcast for Adreno MUL_MAT and honor `view_offs` for Adreno Q8_0 MUL_MAT for ll... ([#25910](https://github.com/ggml-org/llama.cpp/pull/25910))
+  - This PR is to fix bugs in llama‐server that lead to garbage output for 3 out of 4 streams with Qwen3.5‐family GDN models, i.e., only single user works fine. There are two issues in the Adreno quantized mul_mat:
+  - `view_offs` was dropped and every non‐first sequence read slot‐0’s activations
+  - Broadcast was unsupported. The Adreno GEMM/GEMV kernels assume src1 `ne2==ne3==1`, while a GDN `ssm_out` is a broadcast matmul.
+
+
+### Full Commit Range
+- b10066 to b10069 (4 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10066...b10069
+
+---
+
 ## 2026-07-18: Update to llama.cpp b10066
 
 ### Summary
