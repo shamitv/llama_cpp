@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-07-26: Update to llama.cpp b10107
+
+### Summary
+Updated llama.cpp from b10107 to b10107, incorporating 1 upstream commits.
+
+### Notable Changes
+
+#### 🐛 Bug Fixes
+- **b10107**: hexagon: fix Windows crash when op_poll is enabled ([#26029](https://github.com/ggml-org/llama.cpp/pull/26029))
+  - The PR fixes a crash observed on snapdragon windows target when we enable the op_poll using env variable GGML_HEXAGON_OPPOLL.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Full Commit Range
+- b10107 to b10107 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10107...b10107
+
+---
+
 ## 2026-07-24: Update to llama.cpp b10105
 
 ### Summary
