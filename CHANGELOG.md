@@ -1,5 +1,918 @@
 # Changelog
 
+## 2026-07-26: Update to llama.cpp b10107
+
+### Summary
+Updated llama.cpp from b10107 to b10107, incorporating 1 upstream commits.
+
+### Notable Changes
+
+#### 🐛 Bug Fixes
+- **b10107**: hexagon: fix Windows crash when op_poll is enabled ([#26029](https://github.com/ggml-org/llama.cpp/pull/26029))
+  - The PR fixes a crash observed on snapdragon windows target when we enable the op_poll using env variable GGML_HEXAGON_OPPOLL.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Full Commit Range
+- b10107 to b10107 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10107...b10107
+
+---
+
+## 2026-07-24: Update to llama.cpp b10105
+
+### Summary
+Updated llama.cpp from b10069 to b10105, incorporating 25 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b10075**: hexagon: add f32 CLAMP op support ([#25934](https://github.com/ggml-org/llama.cpp/pull/25934))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add support for f32 CLAMP op to Hexagon backend.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10077**: Add GGML_BACKEND_DL_IMPL invocation for OpenVINO backend ([#25795](https://github.com/ggml-org/llama.cpp/pull/25795))
+  - This adds the missing `GGML_BACKEND_DL_IMPL()` macro invocation, that other backends have, to register dynamic loading functionality. I don't know whether it was missing on purpose, though. Seems to have made it work for me, at least.
+  - Fixes #25586
+- **b10079**: server : properly handle null llama_context ([#25868](https://github.com/ggml-org/llama.cpp/pull/25868))
+  - When researching #25851 I noticed that `llama-server` does not handle case where `llama_context` creation failed and `ctx_tgt` is null, instead it crashes trying to access null context pointer. This PR adds a context nullity check to handle this case.
+  - This is purely cosmetic improvement - instead of:
+  - ```
+- **b10080**: webui : send both backend_sampling == false/true ([#18781](https://github.com/ggml-org/llama.cpp/pull/18781))
+  - I believe the webui does not send `backend_sampling == false` in the request when the checkbox is unchecked. The goal is when the server is started with `-bs` to be able to disable backend sampling from the client.
+  - Also I think the checkbox is currently not synchronized with the server argument like the rest of the sampling parameters. But not sure how to fix this of if it is supported for checkboxes.
+- **b10082**: kleidiai : warn once when a weight type has no KleidiAI kernel ([#25701](https://github.com/ggml-org/llama.cpp/pull/25701))
+  - KleidiAI provides matmul kernels only for `Q4_0` and `Q8_0` (plus `F32` activations). A model quantized to any other type — the whole K-quant and IQ family — silently falls back to the generic ggml CPU kernels, regardless of which CPU backend variant was loaded at startup. This PR adds a one-shot `GGML_LOG_WARN` at the point the fallback actually occurs, so users do not assume KleidiAI is accelerating a weight type it has no kernel for.
+  - Measured cost of the silent fallback on a MediaTek Dimensity 7300 phone (Llama-3.2-1B, PP 512, 4 threads): 43 tok/s prompt processing with Q3_K_L (generic path) vs 121 tok/s with Q4_0 (KleidiAI path).
+  - Following review feedback from @chaxu01, the warning is emitted from `get_tensor_traits()` rather than `supports_op()`: `supports_op()` is a capability query the scheduler may call speculatively during load or placement, which could fire the warning on ops that never execute and consume the one-shot flag before a real fallback. `get_tensor_traits()` runs per node of a graph actually being computed. The relocation also drops the requirement that src0 reside in the KleidiAI buffer type — weights of unsupported types are never placed there, which made the original check unreachable in the real fallback case.
+- **b10083**: cuda: add sqrt_softplus in topk-moe for dsv4 ([#25896](https://github.com/ggml-org/llama.cpp/pull/25896))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add sqrt_softplus to the list of supported topk-moe functions.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10084**: hexagon: check tensor type when reusing descriptors ([#25968](https://github.com/ggml-org/llama.cpp/pull/25968))
+  - This PR fixes incorrect reuse of Hexagon tensor descriptors exposed by Qwen3-VL-2B.
+  - For a full 512-token ubatch, Qwen3-VL's M-RoPE position input tensor is `I32[2048]`, while the `GET_ROWS` output is `F32[2048, 1]`. Since the hexagon op-batch descriptor lookup currently does not compare `type`, the `F32` output can reuse the `I32` descriptor. `GET_ROWS` then returns `HTP_STATUS_NO_SUPPORT` because `dst->type != HTP_TYPE_F32`, and leaves the inference path with invalid logits.
+  - This change includes a `type` check in `same_shape()`, which is only used in `add_tensor()`.
+- **b10087**: Add support for Laguna XS.2 & M.1 ([#25165](https://github.com/ggml-org/llama.cpp/pull/25165))
+  - This PR adds support for Poolside's Laguna XS.2 and M.1 models to llama.cpp. This PR is the official version of this implementation from Poolside; we love the llama.cpp project & we feel like support for our models is long overdue!
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR is broken up into 4 commits. The last three are pretty standard, but the first deserves more attention; there appears to be a backend bug when it comes to dispatching with certain gqa head ratios.
+- **b10088**: llama-arch: fix DeepSeek4 APE tensor representative op ([#25945](https://github.com/ggml-org/llama.cpp/pull/25945))
+  - In DeepSeek4, the compressor and indexer APE tensors are first read with `ggml_get_rows()`, and then the selected rows are added to the attention score. However, in `src/llama-arch.cpp`, both tensors currently use `GGML_OP_ADD` as their representative op.
+  - This PR changes the representative op for these two tensors to `GGML_OP_GET_ROWS`:
+  - `LLM_TENSOR_ATTN_COMPRESSOR_APE`
+- **b10089**: cuda: GET_ROWS quants ([#25962](https://github.com/ggml-org/llama.cpp/pull/25962))
+  - Adds k-quants, i-quants and mxfp4 support to CUDA GET_ROWS, bringing it to parity with the CPU, Metal, Vulkan and SYCL backends.
+  - I needed this for my GGML ASR audio projects: any model with a quantized embedding table (Q4_K_M GGUFs store token_embd as q6_K) had the lookup kicked out of the graph, and CUDA ended up slower than Vulkan on the same hardware, which was a shame. Decode on a Qwen3 1.7B went from 6.18 to 1.72 ms/token with the patch.
+  - The super-block dequantizers are factored out of convert.cu into shared device functions and reused by a new k_get_rows_kq kernel with the same thread layouts. supports_op gates the new types on ne0 % QK_K == 0 (iq4_nl and mxfp4 pack 32-value sub-blocks).
+- **b10092**: ggml: enable PowerPC backend variants on AIX ([#25983](https://github.com/ggml-org/llama.cpp/pull/25983))
+  - Allow the PowerPC CPU backend variants to be built on AIX by extending the platform check in the CMake configuration. This reuses the existing PowerPC backend implementations without changing their behavior.
+  - Also fix a missing semicolon in the PowerPC Q0 matmul implementation.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+- **b10093**: Fix DeepSeek4 crafted template ([#25414](https://github.com/ggml-org/llama.cpp/pull/25414))
+  - It seems like I've been a bit lazy implementing the DS4 template. I used the standard behavior (retain last reasoning trace). However, the reference behavior is different. DS4 will retain *all* reasoning traces in one of two cases:
+  - if `drop_reasoning` is set to false
+  - in case the message history contains at least one tool call
+- **b10098**: hexagon: activation ops update ([#25974](https://github.com/ggml-org/llama.cpp/pull/25974))
+  - <!-- Describe what this PR does and why. Be concise but complete -->GEGLU, SWIGLU and SWIGLU_OAI ops update.
+  - New all-in-one fused GEGLU microkernel.
+  - Non-contiguous-src support for all ACT ops lets these ops accept views/slices without a preceding copy and handle similarly to what other Hexagon backend ops (unary, binary) already support.
+- **b10103**: Add F16 type support to Leaky ReLU function on Metal ([#25981](https://github.com/ggml-org/llama.cpp/pull/25981))
+  - This PR comes as part of the effort in adding/extending ops support to the backends outlined [here](https://github.com/ggml-org/llama.cpp/issues/14909).
+  - Leaky ReLU op implementation supports 16 bit inputs but needed specific check to be extended and actually run it, tests are already present and locally passing on M5.
+
+#### 🚀 Performance Improvements
+- **b10076**: CUDA: vectorize same-type get_rows with int4 copy ([#25929](https://github.com/ggml-org/llama.cpp/pull/25929))
+  - GET_ROWS optimizations for ROCm for a small decode speed boost on Strix Halo (~1%).
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: Yes, Opus 4.8 for the patch.
+- **b10099**: CUDA: Improve NVFP4 W4A4 activation quantization ([#25730](https://github.com/ggml-org/llama.cpp/pull/25730))
+  - This PR improves NVFP4 W4A4 activation quantization in both quality and performance
+  - 1. Quality was gained by adding per-channel-based amax scaling as an alternative path to honoring pre-calibrated scales. This was proposed here https://github.com/ggml-org/llama.cpp/discussions/22042#discussioncomment-16681029
+  - 2. Perf was realized by:
+
+#### 🐛 Bug Fixes
+- **b10069**: opencl: Support broadcast for Adreno MUL_MAT and honor `view_offs` for Adreno Q8_0 MUL_MAT for ll... ([#25910](https://github.com/ggml-org/llama.cpp/pull/25910))
+  - This PR is to fix bugs in llama‐server that lead to garbage output for 3 out of 4 streams with Qwen3.5‐family GDN models, i.e., only single user works fine. There are two issues in the Adreno quantized mul_mat:
+  - `view_offs` was dropped and every non‐first sequence read slot‐0’s activations
+  - Broadcast was unsupported. The Adreno GEMM/GEMV kernels assume src1 `ne2==ne3==1`, while a GDN `ssm_out` is a broadcast matmul.
+- **b10080**: server: return 400 instead of 500 on validation error with X-Conversation-Id ([#25760](https://github.com/ggml-org/llama.cpp/pull/25760))
+  - server: validation errors on requests with X-Conversation-Id crashed into a 500 bad_function_call because on_complete() called next_orig before set_next() ever ran; treat the empty next_orig as "streaming never started" and evict the session so nothing is left behind for discovery or replay.
+  - ui: guard backend_sampling with hasValue() like its neighbor fields so the empty-string placeholder is no longer sent verbatim and rejected by validation.
+  - Fixes #25605
+- **b10081**: common: resolve draft repo to its requested sidecar (-hfd) ([#25955](https://github.com/ggml-org/llama.cpp/pull/25955))
+  - With -hfd pointing to a repo that ships speculative sidecars, the draft resolved to the full main model instead of the sidecar, this wires the discovered sidecar as the draft following the existing fallback pattern.
+  - llama-server -hf repo -hfd repo --spec-type draft-dflash
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10091**: ci : fix SYCL package shared library lookup ([#25987](https://github.com/ggml-org/llama.cpp/pull/25987))
+  - The Ubuntu SYCL release embedded a RUNPATH pointing to the GitHub Actions build directory. llama-server could not locate libllama-server-impl.so beside it and this PR fixes that issue.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10094**: common: auto-select the speculative type from the draft repo sidecars ([#25989](https://github.com/ggml-org/llama.cpp/pull/25989))
+  - Follow-up of #25955, now -hfd pointing to a repo that ships MTP or DFlash sidecars picks the right one automatically without needing --spec-type, so llama-server -hf repo:Q3_K_M -hfd repo:Q8_0 just works.
+  - With -hfd pointing to a repo that ships mtp-/dflash-/eagle3- sidecars and no --spec-type given, the draft resolved to a full model while the sidecar was the intended draft.
+  - When the speculative types are still at their default, discover the sidecars of the draft repo, pick the first available following the existing mtp > dflash > eagle3 priority, and set the corresponding type, so this now works without any extra flag:
+
+
+### Additional Changes
+4 minor improvements: 2 documentation, 2 maintenance.
+
+- **b10090**: webgpu : add CONV_2D_DW (depthwise conv2d) kernel ([#25847](https://github.com/ggml-org/llama.cpp/pull/25847))
+  - Implement `GGML_OP_CONV_2D_DW` for the WebGPU backend, ported from the Vulkan backend's `conv2d_dw.comp`.
+  - Assisted-by: Claude Opus-4.8
+  - Addresses #14909
+- **b10105**: args: refactor mlock/mmap/directio into load-mode ([#20834](https://github.com/ggml-org/llama.cpp/pull/20834))
+  - Ref: https://github.com/ggml-org/llama.cpp/pull/20211#discussion_r2916871694
+  - Obsoletes: #20461
+  - This PR overhauls the three separate loading modes (mlock, mmap, and direct-io) into one single `-lm`/`--load-mode` option to simplify the logic. While working on #20461, I realised that it became quite complex to maintain multiple loading modes when they are mutually exclusive of one another. This PR solves that by allowing only one loading mode to exist at a time.
+- **b10078**: vulkan: Refactor vk_queue to use per-instance mutexes and unique handles ([#23570](https://github.com/ggml-org/llama.cpp/pull/23570))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Refactor so each vk_queue owns a unique vk::Queue handle, then replace the static queue_mutex with a per-instance std::mutex inside vk_queue.
+  - Before, single_queue devices (where only one physical queue exists) used copyFrom() to copy the compute queue's vk::Queue handle into the transfer queue struct — two vk_queue objects pointing at the same underlying vk::Queue. This made per-queue locking impossible because you couldn't have two separate mutexes guarding one queue (Per-Queue Submission Lock).
+- **b10085**: mtmd: use align_corners for Qwen3-VL vision position-embedding interpolation ([#25781](https://github.com/ggml-org/llama.cpp/pull/25781))
+  - Qwen3-VL's learned absolute vision position embedding is interpolated to the runtime patch grid in
+  - `tools/mtmd/models/qwen3vl.cpp` via `resize_position_embeddings()`, which uses the default
+  - `GGML_SCALE_MODE_BILINEAR | GGML_SCALE_FLAG_ANTIALIAS` - in other words, **align_corners=False** (half-pixel).
+
+### Full Commit Range
+- b10069 to b10105 (25 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10069...b10105
+
+---
+
+## 2026-07-20: Update to llama.cpp b10069
+
+### Summary
+Updated llama.cpp from b10066 to b10069, incorporating 4 upstream commits with new features.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b10067**: llama-quant : exclude i32 ffn_gate_tid2eid routing table from quantization ([#25787](https://github.com/ggml-org/llama.cpp/pull/25787))
+  - `llama-quantize` fails on DeepSeek-V4 models. The `ffn_gate_tid2eid` tensor is an i32 token-id -> expert-id routing/index table (used via `GGML_OP_GET_ROWS`), not weights, but it was never added to the name-based quantization exclusion list alongside `ffn_gate_inp.weight`. So `llama-quantize` tries to quantize it and fails, since an i32 tensor cannot be converted to a float quant type (rejected in `tensor_allows_quantization`).
+  - Add `ffn_gate_tid2eid.weight` to the same exclusion in `tensor_allows_quantization` (`src/llama-quant.cpp`), mirroring the existing `ffn_gate_inp.weight` guard, so the routing table is kept at its original type.
+  - The tensor is created as `tn(LLM_TENSOR_FFN_GATE_TID2EID, "weight", i)` (`src/models/deepseek4.cpp`), so its full name is `blk.N.ffn_gate_tid2eid.weight`, which the guard matches.
+
+#### 🐛 Bug Fixes
+- **b10066**: opencl: load and use `kernel_gemm_moe_q6_k_f32_ns` from bin kernel lib ([#25797](https://github.com/ggml-org/llama.cpp/pull/25797))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR allows loading and using `kernel_gemm_moe_q6_k_f32_ns` from binary kernel lib when it is available.
+  - It also fixes a bug when deciding if int8 dp4 kernel should be used for q5_K MoE GEMM -- the original  code incorrectly checks for `kernel_gemm_moe_q4_k_f32_ns_bin` availability.
+- **b10068**: dflash: rotate injected K/V cache when using K/V quantization ([#25823](https://github.com/ggml-org/llama.cpp/pull/25823))
+  - Fix issue: https://github.com/ggml-org/llama.cpp/issues/25725
+  - Resolved by @ggerganov 's suggestion: Simply applying the rotation during injection should fix the problem.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10069**: opencl: Support broadcast for Adreno MUL_MAT and honor `view_offs` for Adreno Q8_0 MUL_MAT for ll... ([#25910](https://github.com/ggml-org/llama.cpp/pull/25910))
+  - This PR is to fix bugs in llama‐server that lead to garbage output for 3 out of 4 streams with Qwen3.5‐family GDN models, i.e., only single user works fine. There are two issues in the Adreno quantized mul_mat:
+  - `view_offs` was dropped and every non‐first sequence read slot‐0’s activations
+  - Broadcast was unsupported. The Adreno GEMM/GEMV kernels assume src1 `ne2==ne3==1`, while a GDN `ssm_out` is a broadcast matmul.
+
+
+### Full Commit Range
+- b10066 to b10069 (4 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10066...b10069
+
+---
+
+## 2026-07-18: Update to llama.cpp b10066
+
+### Summary
+Updated llama.cpp from b10063 to b10066, incorporating 3 upstream commits with performance improvements.
+
+### Notable Changes
+
+#### 🚀 Performance Improvements
+- **b10064**: opencl: transpose q4_K noshuffle scales to allow better coalesced reads for Adreno GPUs. ([#25805](https://github.com/ggml-org/llama.cpp/pull/25805))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR transposes the scales for Q4_K weights repack to allow coalesced load, improving both prefill and token generation performance for dense models having q4_K.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+#### 🐛 Bug Fixes
+- **b10066**: opencl: load and use `kernel_gemm_moe_q6_k_f32_ns` from bin kernel lib ([#25797](https://github.com/ggml-org/llama.cpp/pull/25797))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR allows loading and using `kernel_gemm_moe_q6_k_f32_ns` from binary kernel lib when it is available.
+  - It also fixes a bug when deciding if int8 dp4 kernel should be used for q5_K MoE GEMM -- the original  code incorrectly checks for `kernel_gemm_moe_q4_k_f32_ns_bin` availability.
+
+
+### Additional Changes
+1 minor improvements: 1 maintenance.
+
+- **b10063**: b10063
+  - <details open>
+
+### Full Commit Range
+- b10063 to b10066 (3 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10063...b10066
+
+---
+
+## 2026-06-27: Update to llama.cpp b9821
+
+### Summary
+Updated llama.cpp from b9780 to b9821, incorporating 23 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9780**: vulkan-shaders-gen : fail the build when a shader fails to compile ([#24450](https://github.com/ggml-org/llama.cpp/pull/24450))
+  - `vulkan-shaders-gen` ignores shader-compile **subprocess failures**, so a broken
+  - `libggml-vulkan` can be produced while the build reports success — the breakage only
+  - surfaces at run time. This PR makes the generator fail the build loudly instead:
+- **b9780**: vulkan-shaders-gen : fail the build when a shader fails to compile ([#24450](https://github.com/ggml-org/llama.cpp/pull/24450))
+  - `vulkan-shaders-gen` ignores shader-compile **subprocess failures**, so a broken
+  - `libggml-vulkan` can be produced while the build reports success — the breakage only
+  - surfaces at run time. This PR makes the generator fail the build loudly instead:
+- **b9782**: common: remove unused json-partial ([#24968](https://github.com/ggml-org/llama.cpp/pull/24968))
+  - Unused code, seems like a left over from the old minja system
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9804**: mamba2: remove hardcoded 2x expansion factor and invalid d_inner % d_state check ([#23082](https://github.com/ggml-org/llama.cpp/pull/23082))
+  - This PR removes two unnecessary restrictions in Mamba2 that prevent loading models with custom architectures.
+  - **Changes:**
+  - 1. **Remove hardcoded 2x expansion factor** (`GGML_ASSERT(2 * n_embd == d_inner)`)
+
+#### 🆕 New Features
+- **b9786**: opencl: support non-contig rows in norm ([#24965](https://github.com/ggml-org/llama.cpp/pull/24965))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Support non-contig rows in norm, fix test-backend-ops failure.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9803**: opencl: flush profiling batch at shutdown for incomplete batches ([#25016](https://github.com/ggml-org/llama.cpp/pull/25016))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Profiling entries stay in profiling_info until the 2048 threshold, so smaller batches are never written. This PR adds a flush_profiling_batch() call before writing to include all entries.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9810**: CUDA: add cublasSgemmBatched mapping for HIP/MUSA vendor headers ([#25033](https://github.com/ggml-org/llama.cpp/pull/25033))
+  - Fixes the HIP/MUSA build break introduced by #24426. Adds the missing cublasSgemmBatched to hipblasSgemmBatched /mublasSgemmBatched mapping to the vendor headers.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9813**: vulkan: add INTEL_XE1 arch enum and enable coopmat1 on Intel Xe-LPG Plus ([#24404](https://github.com/ggml-org/llama.cpp/pull/24404))
+  - **Target platforms:** Xe-LPG Plus (Arrow Lake-H iGPU)
+  - Adds `INTEL_XE1` enum variant to `vk_device_architecture`
+  - Adds PTL (Panther Lake) device ID detection for future platform coverage
+- **b9814**: vulkan: opt mul_mat_vecq for mi50 ([#22933](https://github.com/ggml-org/llama.cpp/pull/22933))
+  - In `ggml-vulkan.cpp`, this adds a `subgroups_gcn_enabled` device flag and enables subgroup arithmetic for a small allowlisted set of AMD GPUs based on device name matching.
+  - Previously, AMD GCN devices were excluded from this subgroup path entirely. With this change, supported GCN 5.x devices can use subgroup arithmetic in `ggml_vk_load_shaders`.
+- **b9817**: Improved quantize script ([#222](https://github.com/ggml-org/llama.cpp/pull/222))
+  - I improved the quantize script by adding error handling and allowing to select many models for quantization at once in the command line. I also converted it to Python for generalization as well as extensibility.
+
+#### 🚀 Performance Improvements
+- **b9820**: CUDA:  Improve performance via less synchronizations between token ([#17795](https://github.com/ggml-org/llama.cpp/pull/17795))
+  - See [comment below](https://github.com/ggml-org/llama.cpp/pull/17795#issuecomment-3675566278)
+  - --------------
+  - This PR suggest to remove some superfluous synchronization calls between tokens to be faster on CUDA backends. I see between 1% and 2% perf gain depending on the model, GPU and settings.
+
+#### 🐛 Bug Fixes
+- **b9781**: vulkan: allow reducing graph submission batches to avoid device timeouts ([#24872](https://github.com/ggml-org/llama.cpp/pull/24872))
+  - ~~disable graph submission batching on UMA devices, to avoid "device lost" errors~~
+  - ~~reduce discrete GPU batching from 100 to 64~~
+  - allow overriding the max batching value with the GGML_VK_MAX_NODES_PER_SUBMIT env var
+- **b9787**: [SYCL] fix the failed UT cases of conv_3d ([#24900](https://github.com/ggml-org/llama.cpp/pull/24900))
+  - fix the failed UT cases of conv_3d。
+  - all related cases are passed.
+- **b9789**: quant : fix quantizing moe with mtp ([#24986](https://github.com/ggml-org/llama.cpp/pull/24986))
+  - Fixes #24379
+  - Fixes #24661
+  - Due to the following check and the fact that `n_layer()` instead of `n_layer_all` was being used it was impossible to quantize MoEs with MTP.
+- **b9811**: vulkan: Workaround compiler bug in conv2d coopmat2 path ([#24924](https://github.com/ggml-org/llama.cpp/pull/24924))
+  - This fixes a failure seen in https://github.com/leejet/stable-diffusion.cpp. The compiler messed up alignment with the odd size array.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, for debugging.
+- **b9820**: Sched: Reintroduce less synchronizations between token, with fixed pipeline parallelism. ([#20793](https://github.com/ggml-org/llama.cpp/pull/20793))
+  - Follow up to https://github.com/ggml-org/llama.cpp/pull/20463#issuecomment-4091342946.
+  - https://github.com/ggml-org/llama.cpp/pull/17795 improved performance in the single GPU setting on CUDA, but it was rolled back due to a bug surfacing in multi-GPU pipeline parallel settings.
+  - For the single GPU setting, it moved the scheduling from `sassassasg` to the more efficient `saaasg` pattern, where `s`= sync, `a`= async copy, `g`= graph execution.
+
+
+### Additional Changes
+7 minor improvements: 3 documentation, 2 examples, 2 maintenance.
+
+### Full Commit Range
+- b9780 to b9821 (23 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9780...b9821
+
+---
+
+## 2026-06-24: Update to llama.cpp b9780
+
+### Summary
+Updated llama.cpp from b9733 to b9780, incorporating 36 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9757**: Top-N-Sigma: Remove unconditional softmax+sort ([#22645](https://github.com/ggml-org/llama.cpp/pull/22645))
+  - Currently, the Top-N-Sigma sampler does an unconditional softmax+sort at the end.
+  - In the (common, I believe) case of Top-N-Sigma being followed by Dist, this expensive work is completely wasted.
+  - On my M3 Max MacBook Pro, this PR increases the t/s for `google_gemma-4-E4B-it-Q8_0` by 50%, from ~30t/s to ~45t/s, reducing the time per token by 10ms.
+- **b9780**: vulkan-shaders-gen : fail the build when a shader fails to compile ([#24450](https://github.com/ggml-org/llama.cpp/pull/24450))
+  - `vulkan-shaders-gen` ignores shader-compile **subprocess failures**, so a broken
+  - `libggml-vulkan` can be produced while the build reports success — the breakage only
+  - surfaces at run time. This PR makes the generator fail the build loudly instead:
+- **b9780**: vulkan-shaders-gen : fail the build when a shader fails to compile ([#24450](https://github.com/ggml-org/llama.cpp/pull/24450))
+  - `vulkan-shaders-gen` ignores shader-compile **subprocess failures**, so a broken
+  - `libggml-vulkan` can be produced while the build reports success — the breakage only
+  - surfaces at run time. This PR makes the generator fail the build loudly instead:
+
+#### 🆕 New Features
+- **b9736**: model : glm-dsa load DSA indexer tensors as optional ([#24770](https://github.com/ggml-org/llama.cpp/pull/24770))
+  - Loading any **GLM-5.2** GGUF (`GlmMoeDsaForCausalLM` / `GLM_DSA`) fails with `missing tensor 'blk.3.indexer.k_norm.weight'`. GLM-5.2 ships the DSA lightning indexer on only a subset of layers, but `llama_model_glm_dsa::load_arch_tensors` created the five `indexer_*` tensors on every layer as required.
+  - `GLM_DSA` uses `llama_model_deepseek2::graph` (plain MLA) and never references the indexer tensors (the DSA indexer runtime isn't implemented yet), so they are loaded-but-unused. Marking them `TENSOR_NOT_REQUIRED` lets layers without an indexer load as `nullptr`; the model runs as full MLA attention. DeepSeek-V3.2 (uniform indexer on every layer) is unaffected.
+  - Complements the conversion support in #19460. Verified by loading and generating from a GLM-5.2 GGUF on Metal (previously failed at load).
+- **b9739**: add missing link for win opencl adreno arm64 in release notes ([#24809](https://github.com/ggml-org/llama.cpp/pull/24809))
+  - add missing link for win opencl adreno arm64 in release notes
+- **b9741**: llama : use LLM_KV for quantization_version & file_type ([#24802](https://github.com/ggml-org/llama.cpp/pull/24802))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - `LLM_KV_GENERAL_FILE_TYPE` did not exist yet when the `// TODO: use LLM_KV` comment was added
+- **b9745**: Support Step3.5/3.7 flash mtp3 ([#24340](https://github.com/ggml-org/llama.cpp/pull/24340))
+  - follow-up to [#23274](https://github.com/ggml-org/llama.cpp/pull/23274).(cc @pwilkin )
+  - <details>
+  - <summary>📜 Full data-flow trace — couldn't think of a good way to draw this, so I wrote it all down instead. It's long, but every byte is load-bearing.</summary>
+- **b9750**: jinja : implement call statement ([#24847](https://github.com/ggml-org/llama.cpp/pull/24847))
+  - Implement `call` statement.
+  - Adds support for (with and without `call`/`caller` parameters):
+  - ```jinja
+- **b9754**: common/peg : implement ac parser for stricter grammar generation ([#24869](https://github.com/ggml-org/llama.cpp/pull/24869))
+  - Even after #24839, users are still seeing the model escape the grammar. It's because the exclusion grammar can accept a partial prefix of the delimiter and each use of `until(delim)` is typically followed by a `literal(delim)`.
+  - This PR uses the same AC type and adds an including variant: consume all characters up to and including a delimiter. This way it terminates on first occurrence of `\n</parameter>\n`.
+  - Fixes #24863
+- **b9758**: [SYCL] support bf16 on bin_bcast OP and unary OPs ([#24838](https://github.com/ggml-org/llama.cpp/pull/24838))
+  - The UT cases of bin_bcast OP and unary OPs for bf16 are created.
+  - SYCL backend didn't support the new cases.
+  - Support bf16 on bin_bcast OP and unary OPs.
+- **b9773**: vulkan: Support GET_ROWS_BACK ([#24883](https://github.com/ggml-org/llama.cpp/pull/24883))
+  - Support GET_ROWS_BACK, similar level of support to ggml-cuda.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, used codex to implement, I reviewed/tweaked.
+- **b9774**: vulkan: support all backend tests for SQR/SQRT/SIN/COS/CLAMP/LEAKY_RELU/NORM ([#24582](https://github.com/ggml-org/llama.cpp/pull/24582))
+  - SQR/SQRT/SIN/COS/CLAMP/LEAKY_RELU already supported noncontig, but were missing f16 variants. Port them to use unary.comp since they're all unary ops. NORM was missing support for noncontiguous tensors.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, used codex. I told it what to do and reviewed all the changes.
+- **b9777**: model : Add LFM2.5-ColBERT-350M and LFM2.5-Embedding-350M ([#24913](https://github.com/ggml-org/llama.cpp/pull/24913))
+  - Add support for Liquid AI embedding models
+  - [LiquidAI/LFM2.5-ColBERT-350M](https://huggingface.co/LiquidAI/LFM2.5-ColBERT-350M)
+  - [LiquidAI/LFM2.5-Embedding-350M](https://huggingface.co/LiquidAI/LFM2.5-Embedding-350M)
+
+#### 🚀 Performance Improvements
+- **b9735**: ggml : optimize AMX ([#24806](https://github.com/ggml-org/llama.cpp/pull/24806))
+  - Flatten the partition over n_batch * M so every thread participates in the quantization
+  - | CPU                             | Model                         | Test   |   t/s OLD |   t/s NEW |   Speedup |
+  - |:--------------------------------|:------------------------------|:-------|----------:|----------:|----------:|
+- **b9767**: ggml-webgpu: improve MTP inference by using mat-vec path for small batches ([#24811](https://github.com/ggml-org/llama.cpp/pull/24811))
+  - This PR improves small-batch decoding performance by applying the mat-vec path to these cases. This is particularly expected to improve the performance of speculative decoding, such as MTP.
+  - The following table shows the performance of token decoding with `llama-server` on native WebGPU on M2 Pro (32 GiB RAM).
+  - Based on [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B)
+
+#### 🐛 Bug Fixes
+- **b9740**: arg: try fixing test-args-parser randomly fails ([#24826](https://github.com/ggml-org/llama.cpp/pull/24826))
+  - no idea why `openvino-windows-2022` workflow randomly fails: https://github.com/ggml-org/llama.cpp/actions/runs/27849196743/job/82424736785
+  - the reported error is quite unexpected:
+  - <img width="997" height="397" alt="image" src="https://github.com/user-attachments/assets/d576867c-e22a-4324-a59d-ae09e74f2daf" />
+- **b9742**: fix(hexagon): use padded stride for ssm-conv weights ([#24470](https://github.com/ggml-org/llama.cpp/pull/24470))
+  - Qwen3.5-0.8B Q4_0 and Qwen3.5-2B Q4_0 already produced coherent output on HTP0, but Qwen3.5-4B Q4_0 could degrade into corrupted text on the same backend even though it uses the same model family structure. That made the issue look shape- or partition-dependent rather than a general Qwen3.5 HTP failure.
+  - The difference comes from how the SSM_CONV HVX path partitions `d_inner` across threads. For 0.8B and 2B with the tested thread configuration, the per-thread row partitions were aligned to the HVX vector width, so the existing staged weight layout happened to be safe. For 4B, the partition was not always `VLEN_FP32` aligned, which exposed a stride mismatch in `src1_T`: the buffer was sized with the padded per-thread row count, but `transpose_src1` and the HVX weight loads used the unpadded row count as the stride.
+  - This change makes the padded stride explicit for `src1_T` and aligns the per-thread row count to `VLEN_FP32`, so the staged VTCM weight layout matches the HVX vector access pattern.
+- **b9769**: vulkan: link ggml-cpu when GGML_VULKAN_CHECK_RESULTS / RUN_TESTS are enabled ([#24444](https://github.com/ggml-org/llama.cpp/pull/24444))
+  - -DGGML_VULKAN_CHECK_RESULTS=ON and -DGGML_VULKAN_RUN_TESTS=ON failed to link for some reason, and I noticed the debug code in ggml-vulkan.cpp calls ggml_graph_compute_with_ctx from ggml-cpu, but ggml-vulkan only links ggml-base and Vulkan. CI misses it because neither flag is built there i think..?
+  - Fix: link ggml-cpu under those two options
+  - Tested on Windows/MSVC: fails to link before, builds fine after.
+- **b9776**: vulkan: Apply bias before softmax in FA, to avoid overflow ([#24909](https://github.com/ggml-org/llama.cpp/pull/24909))
+  - Apply a bias in the scalar/cm1 FA paths to avoid fp16 overflow. Should fix https://github.com/leejet/stable-diffusion.cpp/pull/1678.
+  - This bias was already in the cm2 path. cm2 is still generating a bad image, but it appears to be related to conv2d rather than FA (works if I disable coopmat2 for conv2d).
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+
+### Additional Changes
+17 minor improvements: 15 examples, 2 maintenance.
+
+### Full Commit Range
+- b9733 to b9780 (36 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9733...b9780
+
+---
+
+## 2026-06-20: Update to llama.cpp b9733
+
+### Summary
+Updated llama.cpp from b9707 to b9733, incorporating 21 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9715**: Ggml/cuda col2im 1d ([#24417](https://github.com/ggml-org/llama.cpp/pull/24417))
+  - CUDA backend follow-up to the CPU op ( https://github.com/ggml-org/llama.cpp/pull/24206 ), same formulation: a gather kernel, one thread per output, each reading only the ceil(K/s0) columns that scatter into it. F32 / F16 / BF16 with an F32 accumulator.
+  - The flat idx -> (channel, time) decomposition uses fast_div_modulo, which buys back time on the cache resident F32 / F16 shapes where the kernel is ALU exposed; on the DRAM bound long shape it is a no op, as expected.
+  - Validated against the test-backend-ops grid merged with the CPU op, zero additional test code: 33/33 on CUDA0 across the eight geometries and three types, plus the three perf entries. CMake globs the new .cu, so the only wiring is the dispatch case and the supports_op entry next to conv_transpose_1d.
+
+#### 🚀 Performance Improvements
+- **b9717**: ggml-cpu: support K tails in power10 Q8/Q4 MMA matmul ([#24753](https://github.com/ggml-org/llama.cpp/pull/24753))
+  - This patch removes the requirement that K be divisible by kc in the tinyBlas_Q0_PPC tiled matmul path. Process the final K panel using its actual depth and pass the reduced panel size through packing and kernel execution.  This allows more workloads to use the MMA kernel and reduces fallback to mnpack.
+  - Performance Impact:
+  - ~ 60% gain in PP speed with granite-3.38b-instruct Q8_0 and Q4_0 models tested with llama-bench -p 512 -n 1 on power10 ppc64le box.
+
+#### 🐛 Bug Fixes
+- **b9712**: cmake : fix ui build with read-only source ([#24752](https://github.com/ggml-org/llama.cpp/pull/24752))
+  - When building out-of-tree against a read-only source, UI provisioning runs npm in the source tree, so it fails creating `node_modules` there. The fix stages the UI sources into a writable copy under the build dir and runs npm there, leaving the source tree untouched.
+  - Related issue:
+  - https://github.com/ggml-org/llama.cpp/issues/24745
+
+
+### Additional Changes
+18 minor improvements: 15 examples, 3 maintenance.
+
+### Full Commit Range
+- b9707 to b9733 (21 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9707...b9733
+
+---
+
+## 2026-06-18: Update to llama.cpp b9701
+
+### Summary
+Updated llama.cpp from b9656 to b9701, incorporating 36 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9661**: vulkan: add col2im_1d op ([#24425](https://github.com/ggml-org/llama.cpp/pull/24425))
+  - Vulkan backend follow-up to the CPU op ( https://github.com/ggml-org/llama.cpp/pull/24206 ), same formulation: a gather shader, one invocation per output, each reading only the ceil(K/stride) columns that scatter into it. F32 / F16 / BF16, the BF16 path stores as uint16_t and converts through bf16_to_fp32 so it runs even on devices without native bf16.
+  - A 2D dispatch maps invocations directly to (t_out, oc), so there is no flat index decomposition and no div/mod to begin with, unlike the CUDA side.
+  - Validated against the test-backend-ops grid merged with the CPU op, zero additional test code: 33/33 on Vulkan0 across the eight geometries and three types, plus the three perf entries. Wiring sits next to conv_transpose_1d: shader registration in vulkan-shaders-gen, pipelines, push constants, dispatch and the supports_op entry.
+- **b9664**: sycl: support reordered Q4_K/Q5_K/Q6_K MoE MUL_MAT_ID ([#24452](https://github.com/ggml-org/llama.cpp/pull/24452))
+  - Extends the existing SYCL MoE `mul_mat_id` reorder path to Q6_K expert weights.
+  - This completes reordered MoE coverage for mixed K-quant MoE models whose down-projection experts are Q6_K. Existing Q4_K/Q5_K behavior is unchanged.
+  - Validation:
+- **b9667**: vulkan: Support gated_delta_net with S_v=16 ([#24581](https://github.com/ggml-org/llama.cpp/pull/24581))
+  - Add a pipeline variant for S_v=16, and logic to make sure the constraints in the shader are still satisfied.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: Used codex, I reviewed all the changes.
+- **b9668**: vulkan: prefer host-visible memory buffers on UMA devices ([#22930](https://github.com/ggml-org/llama.cpp/pull/22930))
+  - On UMA (Unified Memory Architecture) devices the CPU and GPU share the same physical memory. Despite this, the Vulkan backend was still allocating device-local buffers without the eHostVisible flag, which prevented the CPU from directly accessing GPU tensor data. This meant that even on hardware where a zero-copy path was physically possible, the backend was forced to go through an unnecessary staging copy whenever tensor data needed to be read back to the host (e.g. during loss evaluation or prediction readback in training). The UMA zero copy was not implemented in this PR.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9669**: spec: add backend sampling support for eagle3 ([#24655](https://github.com/ggml-org/llama.cpp/pull/24655))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Following https://github.com/ggml-org/llama.cpp/pull/23287 to add backend sampling support for eagle3.
+  - Performance results on SpeedBench
+- **b9670**: Fix and restrict NVFP4 edge-cases in llama-graph ([#24331](https://github.com/ggml-org/llama.cpp/pull/24331))
+  - Resolve edge-cases for NVFP4 surfaced in https://github.com/ggml-org/llama.cpp/pull/23484. I presume the intended flow of interaction between NVFP4 and lora/bias-adds to be:
+  - `MUL_MAT / MUL_MAT_ID -> NVFP4-post-mul | lora-residuals | bias-add | LLM-arch-w_s`
+  - where `|` denotes optional operators. Current implementation did not adhere to this previously.
+- **b9677**: common: update logging to enforce max_capacity and optimize queue resizing ([#24490](https://github.com/ggml-org/llama.cpp/pull/24490))
+  - I'm working on adding more Op tracing to the hexagon backend and ran into an issue with our current logging implementation. If the logging rate is consistently much higher than the flushing rate then the queue will just keep growing and growing without any bounds eventually resulting in an exception when malloc finally fails.
+  - This PR updates the logger to enforce `max_capacity` limit which is currently set to 4K entries.
+  - I also re-wrote how the queue resizing is done. Now the producer threads are super simple they just block on full queue.
+- **b9689**: metal : add f16 and bf16 support for concat operator ([#24724](https://github.com/ggml-org/llama.cpp/pull/24724))
+  - Extend the Metal backend concat operator to support f16, bf16, i8, i16, and i64.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES. pi:llama.cpp/Qwen3.6-27B
+- **b9690**: metal : implement rope_back operator ([#24725](https://github.com/ggml-org/llama.cpp/pull/24725))
+  - Add Metal backend support for `ROPE_BACK` by reusing existing rope kernels with a function constant to toggle forward/backward rotation.
+  - [x] I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES. pi:llama.cpp/Qwen3.6-27B
+- **b9691**: ggml: Conditionally enable power11 backend based on compiler support ([#24687](https://github.com/ggml-org/llama.cpp/pull/24687))
+  - Guard POWER11 backend creation behind a compiler flag check for -mcpu=power11. This avoids build failures on current GCC/Clang toolchains while preserving forward compatibility once POWER11 support becomes available.
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9699**: [SYCL] support MUL_MAT and OUT_PROD with Q1_0 ([#24721](https://github.com/ggml-org/llama.cpp/pull/24721))
+  - Implement the feature request: https://github.com/ggml-org/llama.cpp/issues/21641
+  - support MUL_MAT and OUT_PROD with Q1_0.
+  - all related UT cases are passed.
+
+#### 🚀 Performance Improvements
+- **b9678**: opencl: optimize mul_mat_f16_f32 for decode ([#24504](https://github.com/ggml-org/llama.cpp/pull/24504))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - The mul_mat_f16_f32 kernels do not perform well for decoding due to its work assignment, where each subgroup either produces a single result or in some cases half of a subgroup stays idle. This PR increase the work of each workgroup to better utilize the GPU.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+
+#### 🐛 Bug Fixes
+- **b9656**: chat: harden peg-native tool call parsing ([#24329](https://github.com/ggml-org/llama.cpp/pull/24329))
+  - While working we hit a silent bug on llama 3.3 dense: the assistant turn came back empty, no error shown. It only happened with tools enabled. The model emits a tool call in a variant format that the peg-native parser rejects, which blew up the whole turn. I landed a debug log first to confirm exactly what the model was emitting, then the actual fix: accept the "type": "function" variant, and fail soft on parse errors instead of tearing down the turn.
+  - A bug was discovered while working on this PR https://github.com/ggml-org/llama.cpp/pull/23226 that allows the system to see when an error occurs; otherwise, it's silent (empty assistant turn). This PR adds the missing error if the PEG fails.
+  - <img width="579" height="279" alt="604615515-bd9a70de-baf7-44bb-99c4-9701cd714d17" src="https://github.com/user-attachments/assets/f09ec7f8-eab5-402b-a503-3b19133747bb" />
+- **b9658**: chat: include full unparsed prompt in debug message on parse error ([#24650](https://github.com/ggml-org/llama.cpp/pull/24650))
+  - As in topic.
+  - Minimal change to enable dumping full unparsed prompt.
+  - Need for debugging parser errors.
+- **b9660**: chat : fix LFM2 tool-call parsing double-escaping ([#24667](https://github.com/ggml-org/llama.cpp/pull/24667))
+  - Prevent double escaping in the LFM2 tool-calling parser
+  - Output before fix:
+  - ```json
+- **b9674**: SYCL: fix use-after-free bug with async memcpy in MoE prefill ([#24676](https://github.com/ggml-org/llama.cpp/pull/24676))
+  - Make the source buffer persistent to make sure it survives the async host-to-device SYCL copy beyond the function scope. We rely on the existing synchronization to protect it against use-after-scope (or overwrite-before-drain).
+  - This dedicated buffer is metadata-only; for current MoE models it is well under 1 MiB.
+  - This a bugfix for a use-after-free bug in #23142.
+- **b9680**: ci: fix vulkan docker images ([#24595](https://github.com/ggml-org/llama.cpp/pull/24595))
+  - Starting with `b9438` vulkan docker images produced by CI are broken.  We run out of memory during shaders generation. CI doesn't report an error, but  build artifact are corrupted.
+  - https://github.com/ggml-org/llama.cpp/actions/runs/27397273833/job/80967212036#step:9:2828
+  - ```
+- **b9686**: spec: fix segfault error on long prompts for eagle3 ([#24707](https://github.com/ggml-org/llama.cpp/pull/24707))
+  - Fix https://github.com/ggml-org/llama.cpp/issues/24637
+  - Eagle3 speculative decoding crashes with a segmentation on long prompts. The draft decoder sizes its input-embeddings batch with the wrong embedding dimension, producing an out-of-bounds read that only manifests once the prompt is long enough for the copy offset to cross the allocated buffer.
+  - Printing `n_embd_inp` / `n_embd` / `n_embd_out` shows a draft-only mismatch (Gemma4 26B-A4B):
+- **b9687**: fix: skip main_gpu validation when no gpus are available ([#23405](https://github.com/ggml-org/llama.cpp/pull/23405))
+  - Setting `--split-mode none` on a CPU-only build causes model loading to fail (see trace below), because main_gpu defaults to 0 and the bounds check fired against an empty device list. The accompanying warning already states that split mode should have no effect without GPU support - so this PR makes it so we skip the GPU filtering block entirely.
+  - ```none
+  - [52521] warning: llama.cpp was compiled without support for GPU offload. Setting the split mode has no effect.
+- **b9693**: metal : check for BF16 support in concat kernel ([#24747](https://github.com/ggml-org/llama.cpp/pull/24747))
+  - cont #24724
+  - Fixes https://github.com/ggml-org/llama.cpp/pull/24724#issuecomment-4736311329
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9694**: openvino: Fix Windows x64 (OpenVINO) release link. ([#24731](https://github.com/ggml-org/llama.cpp/pull/24731))
+  - Fixes the Windows x64 (OpenVINO) release link.
+  - The `windows-openvino` release job output-writing step is updated to use `shell: bash` to match the ` >> $GITHUB_OUTPUT` syntax.
+  - This step ran with PowerShell, which requires the $ env:$GITHUB_OUTPUT syntax. As a result, `needs.windows-openvino.outputs.openvino_version` was empty when generating the release notes and produced a broken link like:
+- **b9697**: ci : fix check-release message parsing ([#24751](https://github.com/ggml-org/llama.cpp/pull/24751))
+  - cont #23734
+  - Fixes https://github.com/ggml-org/llama.cpp/actions/runs/27677733066/job/81899124840
+  - The `check-release` job would fail if the commit message had quotes in it.
+
+
+### Additional Changes
+14 minor improvements: 7 documentation, 4 examples, 3 maintenance.
+
+### Full Commit Range
+- b9656 to b9701 (36 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9656...b9701
+
+---
+
+## 2026-06-15: Update to llama.cpp b9645
+
+### Summary
+Updated llama.cpp from b9611 to b9645, incorporating 19 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9611**: fit : avoid including llama-ext.h in fit.h ([#24506](https://github.com/ggml-org/llama.cpp/pull/24506))
+  - cont #23485
+  - We should be careful to not include `llama-ext.h` in too many places. The header contains mostly temporary workarounds and it's impact has to be limited so that we can remove them over time.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9616**: ci : unbreak release harder ([#24545](https://github.com/ggml-org/llama.cpp/pull/24545))
+  - cont #23871
+  - Some release builds broke due to missing line continuation.
+
+#### 🆕 New Features
+- **b9626**: Add arch support for cohere2-MoE ([#24260](https://github.com/ggml-org/llama.cpp/pull/24260))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - There's a new [early preview](https://www.reddit.com/r/LocalLLaMA/comments/1tylzy2/coheres_unreleased_coding_model_early_access_for/
+  - ) of CohereLab's `North-Mini-Code-1.0` MoE coding model with [weights](https://huggingface.co/CohereLabs/North-Mini-Code-1.0/tree/main) that I wanted to test and add full implementation for.
+- **b9628**: ci : add sycl to check-release ([#24583](https://github.com/ggml-org/llama.cpp/pull/24583))
+  - cont #24387
+  - Forgot to add `check-release` on SYCL jobs.
+- **b9630**: Add cohere2moe to llama-vocab for TINY_AYA ([#24601](https://github.com/ggml-org/llama.cpp/pull/24601))
+  - `cohere2moe` is missing from llama-vocap.cpp, resulting in it not being recognized and not loading
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9632**: jinja : add count/d/e filter aliases ([#24606](https://github.com/ggml-org/llama.cpp/pull/24606))
+  - Add missing filter aliases.
+  - `count` -> `length`
+  - `d` -> `default`
+- **b9637**: chat: add dedicated Cohere2MoE (North Code) parser ([#24615](https://github.com/ggml-org/llama.cpp/pull/24615))
+  - The Cohere2 MoE template is pretty special, so using the autoparser even with workarounds didn't really work. Needed a dedicated parser.
+  - Please use the template in `models/templates/Cohere2-MoE.jinja`  - some GGUFs have an old / incorrect template for some reason.
+- **b9642**: CUDA: only support F32/F16 for GGML_OP_REPEAT ([#24533](https://github.com/ggml-org/llama.cpp/pull/24533))
+  - `ggml_backend_cuda_device_supports_op` reported `GGML_OP_REPEAT` as supported  for every type except `I32`/`I16` (a blacklist). The CUDA path only implements `F32` and `F16`: other types (`BF16`, k-quants, ...) hit a `GGML_ASSERT` / `GGML_ABORT` in `ggml_cuda_op_bin_bcast` (`binbcast.cu`) at runtime instead of falling back to the CPU backend. `supports_op` should not advertise dtypes whose CUDA execution path asserts.
+  - Switch the check to a whitelist of the types the kernel actually implements  (`F32`/`F16`). Unsupported types now fall back to CPU; `I32`/`I16` behaviour is unchanged.
+- **b9645**: metal : add repeat bf16 ([#24638](https://github.com/ggml-org/llama.cpp/pull/24638))
+  - cont #24533
+  - Add BF16 variant of repeat kernel.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+#### 🚀 Performance Improvements
+- **b9622**: vulkan: Use cm2 decode_vector for mul_mat_id B matrix loads ([#23991](https://github.com/ggml-org/llama.cpp/pull/23991))
+  - This allows vec4 loads of the B elements. Also increase BK to 64 when this is enabled. Neither of these alone is consistently faster, but together these give a nice speedup.
+  - In ggml-vulkan.cpp, we need to make sure the B matrix alignment and stride are multiples of 4.
+  - ```
+
+#### 🐛 Bug Fixes
+- **b9623**: jinja : fix split and replace with empty first arg ([#24574](https://github.com/ggml-org/llama.cpp/pull/24574))
+  - Fixes #24555
+  - Properly support `split`/`rsplit`/`replace` methods with empty string as first argument (the two former will raise an error, as opposed to currently unsupported non-specified split (consecutive whitespace)).
+- **b9625**: jinja : fix negative step slice with start/stop values ([#24580](https://github.com/ggml-org/llama.cpp/pull/24580))
+  - Fixes #24556
+  - When doing negative step slices the `start` and `stop` values were being ignored.
+
+
+### Additional Changes
+7 minor improvements: 1 documentation, 6 examples.
+
+### Full Commit Range
+- b9611 to b9645 (19 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9611...b9645
+
+---
+
+## 2026-06-12: Update to llama.cpp b9611
+
+### Summary
+Updated llama.cpp from b9611 to b9611, incorporating 1 upstream commits with breaking changes.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9611**: fit : avoid including llama-ext.h in fit.h ([#24506](https://github.com/ggml-org/llama.cpp/pull/24506))
+  - cont #23485
+  - We should be careful to not include `llama-ext.h` in too many places. The header contains mostly temporary workarounds and it's impact has to be limited so that we can remove them over time.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Full Commit Range
+- b9611 to b9611 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9611...b9611
+
+---
+
+## 2026-06-12: Update to llama.cpp b9611
+
+### Summary
+Updated llama.cpp from b9611 to b9611, incorporating 1 upstream commits with breaking changes.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9611**: fit : avoid including llama-ext.h in fit.h ([#24506](https://github.com/ggml-org/llama.cpp/pull/24506))
+  - cont #23485
+  - We should be careful to not include `llama-ext.h` in too many places. The header contains mostly temporary workarounds and it's impact has to be limited so that we can remove them over time.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Full Commit Range
+- b9611 to b9611 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9611...b9611
+
+---
+
+## 2026-06-12: Update to llama.cpp b9611
+
+### Summary
+Updated llama.cpp from b9596 to b9611, incorporating 10 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9604**: [SYCL] Fix CI build & release for SYCL backend ([#24387](https://github.com/ggml-org/llama.cpp/pull/24387))
+  - Fix CI build & release for SYCL backend:
+  - 1. restore build & release SYCL backend in CI
+  - 2. remove action for github cache.
+- **b9611**: fit : avoid including llama-ext.h in fit.h ([#24506](https://github.com/ggml-org/llama.cpp/pull/24506))
+  - cont #23485
+  - We should be careful to not include `llama-ext.h` in too many places. The header contains mostly temporary workarounds and it's impact has to be limited so that we can remove them over time.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+#### 🆕 New Features
+- **b9601**: vulkan: ifdef eMesaHoneykrisp (build fix) ([#24479](https://github.com/ggml-org/llama.cpp/pull/24479))
+  - Fixes build/CI after #24306.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, had codex find which version adds the enum, and then added the ifdef
+- **b9605**: ggml: support concat for scalar types at cuda backend ([#24011](https://github.com/ggml-org/llama.cpp/pull/24011))
+  - Make CUDA CONCAT support common non-quantized scalar tensor types, not just F32.
+  - The CUDA CONCAT kernel now works for same-type, non-quantized scalar tensors with 1, 2, 4, or 8 byte elements.
+  - F16, BF16, I8, I16, I32, I64, and F32.
+
+#### 🚀 Performance Improvements
+- **b9601**: vulkan: use medium matmul tile on Asahi Linux ([#24306](https://github.com/ggml-org/llama.cpp/pull/24306))
+  - This PR detects Apple AGX architecture and sets matmul tile size to medium. Currently the Asahi driver in Mesa reports a different vendor ID than VK_VENDOR_ID_APPLE so the 'picking medium tile size for apple' route doesn't trigger and falls back to large. This causes degraded prefill performance.
+  - ```
+  - xingjianliu@fedora:~/repos/llama.cpp$ ./build/bin/llama-bench -m ~/repos/llama-2-7b.Q4_0.gguf
+- **b9603**: opencl: add q5_0/q5_1 gemm and gemv kernels for Adreno ([#24319](https://github.com/ggml-org/llama.cpp/pull/24319))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Add q5_0 and q5_1 GEMM and GEMV kernels to the Adreno backend to improve performance for q5 quantized models.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+
+### Additional Changes
+4 minor improvements: 2 examples, 2 maintenance.
+
+- **b9596**: server: skip unused log lines on router mode ([#24463](https://github.com/ggml-org/llama.cpp/pull/24463))
+  - Skip irrelevant log lines to avoid confusion
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9606**: [Speculative decoding] feat: add EAGLE3 speculative decoding support ([#18039](https://github.com/ggml-org/llama.cpp/pull/18039))
+  - > [!IMPORTANT]
+  - > The old PR has been backed up in this branch: https://github.com/ruixiang63/llama.cpp/tree/eagle3-v1-backup
+  - The new commits in this PR have been rebased onto the latest master branch, refactored to use the new speculative API, cherry-picked from https://github.com/ggml-org/llama.cpp/pull/22728, and made compatible with MTP.
+- **b9608**: vendor : update cpp-httplib to 0.47.0 ([#24395](https://github.com/ggml-org/llama.cpp/pull/24395))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b9610**: b9610
+  - <details open>
+
+### Full Commit Range
+- b9596 to b9611 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9596...b9611
+
+---
+
+## 2026-06-11: Update to llama.cpp b9596
+
+### Summary
+Updated llama.cpp from b9581 to b9596, incorporating 10 upstream commits with breaking changes and new features.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b9584**: ci : fix windows release ([#24369](https://github.com/ggml-org/llama.cpp/pull/24369))
+  - Fix Windows release build.
+  - The `windows-2025` runner has started forwarding to `windows-2025-vs2026`, breaking build.
+  - Test run: https://github.com/CISC/llama.cpp/actions/runs/27220214596
+- **b9591**: Remove padding and multiple D2D copies for MTP ([#24086](https://github.com/ggml-org/llama.cpp/pull/24086))
+  - Based on @ggerganov's suggestion at https://github.com/ggml-org/llama.cpp/pull/23940#issuecomment-4602287259
+  - Make `ggml_gated_delta_net` take only the initial recurrent state (D, 1, n_seqs) and pass the snapshot count K as an op parameter instead of inferring it from state->ne[1].
+  - Remove the padding hack and copy all emitted snapshots into the recurrent cache with a single strided ggml_cpy
+
+#### 🆕 New Features
+- **b9581**: vulkan: reduce iq1 shared memory usage for mul_mm ([#24287](https://github.com/ggml-org/llama.cpp/pull/24287))
+  - Ifdef iq1s_grid_gpu so it's only used in mmvq, this keeps the shared memory usage under 16KB for mul_mm.
+  - Fixes #24284.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9587**: speculative : fix "ngram-map-k4v" name in logging ([#24253](https://github.com/ggml-org/llama.cpp/pull/24253))
+  - This is a non-functional change.
+  - When using `--spec-type ngram-map-k4v`, the log messages at startup and runtime say `ngram-map-k`. Added logic in the in the constructor of `common_speculative_impl_ngram_map_k` to pass the correct `COMMON_SPECULATIVE_TYPE_NGRAM_MAP_K4V` when `config.key_only` is `false`.
+  - After this change, the log messages use the correct name.
+- **b9594**: vocab : refactor normalizer flags into options struct, add strip_accents ([#24371](https://github.com/ggml-org/llama.cpp/pull/24371))
+  - WPM previously applied NFD unconditionally, so accented words on case-sensitive models (e.g. `German_Semantic_V3`, which sets `strip_accents: false`) didn't match `transformers`.
+  - NFD is now applied only when `strip_accents` is set.
+  - ---
+
+#### 🐛 Bug Fixes
+- **b9589**: CUDA: Fix ssm_scan_f32 data-races ([#24360](https://github.com/ggml-org/llama.cpp/pull/24360))
+  - Add required `__synchthreads()` to avoid data-races in `ssm_scan_f32`. Also remove unused smem from the kernel.
+  - Should supersede https://github.com/ggml-org/llama.cpp/pull/23983 as it fixes the underlying issues (which are data-races, where https://github.com/ggml-org/llama.cpp/commit/4fbecf73a583e9312249f8b7ef7c587b0eb1fcc3 applies to HIP/MUSA backends as well). For more details on the races, refer the individual commit messages.
+  - Should resolve sporadic failures of CUDA CI such as https://github.com/ggml-org/llama.cpp/actions/runs/27192383880/job/80275487186?pr=24331 (verified this on a local DGX Spark)
+- **b9590**: chat: fix LFM2/LFM2.5 ignoring json_schema ([#24377](https://github.com/ggml-org/llama.cpp/pull/24377))
+  - The LFM2 specialized template handler only built a grammar for tool-calling, silently ignoring json_schema from response_format.
+  - Use
+  - ```shell
+
+
+### Additional Changes
+3 minor improvements: 2 examples, 1 maintenance.
+
+- **b9585**: Fix granite speech model inference by applying embedding scale when deepstack is not used ([#24357](https://github.com/ggml-org/llama.cpp/pull/24357))
+  - Granite speech inference stopped working as a result of #23545 (found via git bisect). It would just output a bunch of asterisks indefinitely. The culprit was an if statement in llama-graph.cpp that didn't scale raw embeddings, which was correct for granite vision (since it has deepstack layers), but not for granite speech.
+  - This commit fixes that by adding a guard for deepstack layers to that if statement. This fixes granite speech without affecting granite vision.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9596**: server: skip unused log lines on router mode ([#24463](https://github.com/ggml-org/llama.cpp/pull/24463))
+  - Skip irrelevant log lines to avoid confusion
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9592**: vendor : update LibreSSL to 4.3.2 ([#24397](https://github.com/ggml-org/llama.cpp/pull/24397))
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+
+### Full Commit Range
+- b9581 to b9596 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9581...b9596
+
+---
+
+## 2026-06-09: Update to llama.cpp b9581
+
+### Summary
+Updated llama.cpp from b9541 to b9581, incorporating 32 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9564**: [ggml-webgpu] Implement 2D workgroups for scale, binary, and unary ops ([#24044](https://github.com/ggml-org/llama.cpp/pull/24044))
+  - When running the WebGPU backend with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp/), it dispatched the following kernels with too many workgroups: `scale, add, mul, silu`.
+  - Apply the same technique as https://github.com/ggml-org/llama.cpp/pull/23750/ to dispatch 2D workgroups to run these models.
+  - Tested with `test-backend-ops -b WebGPU` and CI suite locally.
+- **b9568**: mtp: support for gemma-4 E2B and E4B assistants ([#24282](https://github.com/ggml-org/llama.cpp/pull/24282))
+  - Just a few small updates to enable conversion and loading of the smaller E2B and E4B gemma-4 assistant models.
+  - The main issue was that those models include two additional tensors that we currently do not support.
+  - `masked_embedding.centroids.weight` and `masked_embedding.token_ordering`.
+- **b9570**: ggml-webgpu: Add clang-format job ([#24308](https://github.com/ggml-org/llama.cpp/pull/24308))
+  - To avoid dealing with conflicting clang-format versions for contributors, this job ensures that the formatting is standardized. See discussion in https://github.com/ggml-org/llama.cpp/pull/24044.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9575**: Ggml/cpu col2im 1d ([#24206](https://github.com/ggml-org/llama.cpp/pull/24206))
+  - CPU part of #23424, split per review feedback; the CUDA backend follows in a separate PR.
+  - Modern neural audio vocoders (the BigVGAN family and its descendants) build their generator from upsampling blocks: a transposed 1D convolution followed by an AMP / Snake stack. The transposed conv is the upsampler, Snake ( https://github.com/ggml-org/llama.cpp/pull/22667 ) is the periodic activation, and both sit on the hot path of every generated frame.
+  - A ConvTranspose1d factorizes exactly as a GEMM followed by an overlap-add:
+- **b9580**: vulkan: add `v_dot2_f32_f16` support in matrix-matrix multiplication and Flash Attention ([#24123](https://github.com/ggml-org/llama.cpp/pull/24123))
+  - This PR adds basic support for the Vulkan extension `VK_VALVE_shader_mixed_float_dot_product`. The background to this is that AMD Vega20, Navi14 and RDNA2+ GPUs have fp16 dot2 instructions for machine learning acceleration that are not emitted by the shader compiler due to numerical inconsistencies. The extension allows shaders to manually emit them.
+  - This PR adds support for the `v_dot2_f32_f16` fp16 packed dot product with fp32 accumulator in matrix-matrix multiplications and Flash Attention. This is a good improvement for AMD GPUs with this instruction, but without coopmat support.
+  - <details>
+- **b9581**: vulkan: reduce iq1 shared memory usage for mul_mm ([#24287](https://github.com/ggml-org/llama.cpp/pull/24287))
+  - Ifdef iq1s_grid_gpu so it's only used in mmvq, this keeps the shared memory usage under 16KB for mul_mm.
+  - Fixes #24284.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+
+#### 🚀 Performance Improvements
+- **b9551**: kv-cache : avoid kv cells copies ([#24277](https://github.com/ggml-org/llama.cpp/pull/24277))
+  - cont #23398
+  - alt #24270
+  - The `llama_kv_cells` copy in `apply_ubatch` can become expensive in some host configurations. This will be refactored properly, but for now a quick patch to avoid the performance hit.
+- **b9558**: vulkan: Use cm2 decode_vector for mul_mat_id B matrix loads ([#23991](https://github.com/ggml-org/llama.cpp/pull/23991))
+  - This allows vec4 loads of the B elements. Also increase BK to 64 when this is enabled. Neither of these alone is consistently faster, but together these give a nice speedup.
+  - In ggml-vulkan.cpp, we need to make sure the B matrix alignment and stride are multiples of 4.
+  - ```
+
+#### 🐛 Bug Fixes
+- **b9544**: common/chat : fix LFM2/LFM2.5 reasoning round-trip and <think> leak ([#24234](https://github.com/ggml-org/llama.cpp/pull/24234))
+  - Follow-up on review comment https://github.com/ggml-org/llama.cpp/pull/24178#pullrequestreview-4438323720 made by @aldehir.
+  - For LFM2/LFM2.5 models, copy `reasoning_content` into `thinking`.
+  - [LFM2.5-8B-A1B](https://huggingface.co/LiquidAI/LFM2.5-8B-A1B) is always a reasoning model. The chat template doesn't have a switch to disable it. This leads to a leak of `thinking` into `content` with reasoning disabled (`-rea off`). (reported here https://github.com/ggml-org/llama.cpp/pull/24178#issuecomment-4638237698).
+- **b9548**: speculative : fix vocab compatibility check ([#24256](https://github.com/ggml-org/llama.cpp/pull/24256))
+  - Fixes `enum` being coerced to `bool` before comparison.
+  - This effectively made the check always succeed.
+- **b9550**: kv-cache: follow the source cache size when sharing cells ([#24267](https://github.com/ggml-org/llama.cpp/pull/24267))
+  - With --fit the trunk context can shrink below the draft default, the assistant then builds views sized for its own kv_size into the smaller shared K/V tensors and trips the ggml_view_4d assert during graph reserve. Follow the source cache size when sharing cells.
+  - Reproduced and verified on CUDA (RTX PRO 6000 Blackwell, single GPU) and confirmed by @Stastez on ROCm (dual GPU) in the original report: https://github.com/ggml-org/llama.cpp/pull/23398#issuecomment-4643048368
+  - The override also normalizes a small base/SWA sizing mismatch between the two caches (4608 vs 4096) that exists independently of --fit.
+- **b9555**: metal : fix im2col 1D case (audio models) ([#24220](https://github.com/ggml-org/llama.cpp/pull/24220))
+  - Fix a regression cause by #23901 , happens on conv1d op (audio models)
+  - With this change, audio models work correctly:
+  - ```
+- **b9556**: HIP: add gfx1152 and gfx1153 to RDNA3.5 ([#24129](https://github.com/ggml-org/llama.cpp/pull/24129))
+  - Add gfx1152 and gfx1153 definitions to RDNA3.5 macro in `ggml/src/ggml-cuda/vendors/hip.h`.
+  - Resolves https://github.com/ROCm/TheRock/issues/5579 where users report corrupted output with TheRock nightlies + llama.cpp build from source. Patching this change in resolves the issue.
+- **b9565**: [ggml-webgpu] Handle buffer overlap / buffer aliasing for concat operator ([#24000](https://github.com/ggml-org/llama.cpp/pull/24000))
+  - While testing the WebGPU backend with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp/), I encountered the following error:
+  - ```
+  - Device error! Reason: 2, Message: Writable storage buffer binding aliasing found between [BindGroup "concat_f32"]
+- **b9566**: graph: guard iswa kq_mask on its own buffer ([#24294](https://github.com/ggml-org/llama.cpp/pull/24294))
+  - Fix load crash for draft-mtp models with a SWA-only draft head (e.g. StepFun Step-3.7-Flash). The draft's base (non-SWA) sub-cache has no layers, so its kq_mask buffer stays null and set_input_kq_mask asserts during the seq_rm probe at load. Guard each kq_mask on its own buffer in set_input and can_reuse, base and swa.
+  - Following #23398 (Gemma 4 MTP), regression on StepFun Step-3.7-Flash loading reported by @vbooka1, confirmed by @forforever73. Thanks @ggerganov for the can_reuse guards; guarding on the mask's own buffer (not self_k_idxs_swa) covers the SWA-only case too. Tested on Step-3.7-Flash (Q2_K_XL + Q8/BF16 draft, q8_0 and f16 KV): loads clean, greedy output identical with/without MTP. Needs --spec-draft-n-max 1 (Step MTP head is single-token).
+- **b9572**: ggml-cpu : fix rms_norm_back wrong output under in-place aliasing ([#24305](https://github.com/ggml-org/llama.cpp/pull/24305))
+  - `ggml_compute_forward_rms_norm_back_f32` could produce wrong results when the destination aliases an input. `GGML_OP_RMS_NORM_BACK` is listed in `ggml_op_can_inplace`, so the scheduler may reuse `src0` (`dz`) or `src1` (`x`)'s buffer for `dx`. The old multi-step `cpy/scale/acc/scale` sequence overwrote that buffer in the `dx := x` step and then re-read it in the `+= dz` step. This replaces it with a single fused read-before-write loop, which is safe under either aliasing.
+  - Requested by @ggerganov in ggml-org/ggml#1519, where I originally reported and fixed this (#1491). Submitting the single ops.cpp change here as asked; no regression test per that thread. Built `ggml-cpu` locally on macOS to confirm it compiles.
+- **b9573**: model : fix plamo2 attention_key/value_length regression ([#24317](https://github.com/ggml-org/llama.cpp/pull/24317))
+  - Fixes incorrect tensor sizes and FPE due to bad assert.
+  - At some point after #16075, possibly during one of the refactors; hard to tell, these metadata overrides got lost.
+  - The assert was probably copy-pasted from `mamba-base`, but there `n_head` is reassigned while the same (`hparams.ssm_dt_rank`) variable is called `n_heads` here.
+
+
+### Additional Changes
+15 minor improvements: 1 documentation, 11 examples, 3 maintenance.
+
+### Full Commit Range
+- b9541 to b9581 (32 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9541...b9581
+
+---
+
+## 2026-06-06: Update to llama.cpp b9538
+
+### Summary
+Updated llama.cpp from b9528 to b9538, incorporating 10 upstream commits with new features and performance improvements.
+
+### Notable Changes
+
+#### 🆕 New Features
+- **b9528**: ui: run npm install when package-lock.json is newer than node_modules ([#24171](https://github.com/ggml-org/llama.cpp/pull/24171))
+  - This PR makes ui-assets.cmake rerun npm install whenever package-lock.json is newer than the node_modules/.package-lock.json marker that npm writes on every successful install. Same timestamp comparison technique already used by npm_build_should_skip. No extra install on up-to-date trees.
+  - Follow-up to #24119 (reported by @el00ruobuob): when node_modules predates that PR, the build script skips npm install (it only runs it when node_modules is missing), so the new `@vitest/browser-playwright` import in vite.config.ts fails with ERR_MODULE_NOT_FOUND.
+- **b9534**: vulkan: add fwht support for Intel with shmem reduction ([#23964](https://github.com/ggml-org/llama.cpp/pull/23964))
+  - Add a FWHT shader path that does not rely on subgroup size and collectives for Intel GPUs.
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+  - AI usage disclosure: YES, Claude wrote the code, I corrected and reviewed.
+- **b9536**: opencl: improve get_rows, cpy, concat and q6_k flat gemv ([#24160](https://github.com/ggml-org/llama.cpp/pull/24160))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - Current implementations of get_rows, cpy and concat perform poorly with Qwen3.5. In particular, they all assign one workgroup to one row. When there is only one large row or a lot of very small rows, GPU becomes underutilized. This is improved in this PR.
+  - This PR also tweaks how threads are mapped to data to improve coalescing in Q6_K flat gemv kernel. This helps with models with Q6_K output weights.
+
+#### 🚀 Performance Improvements
+- **b9531**: TP: round up granularity to 128 ([#24180](https://github.com/ggml-org/llama.cpp/pull/24180))
+  - On master for `-sm tensor` the tensors are split to the minimum possible granularity. However, for performance it seems to be preferable to round the granularity up to a larger power of 2, 128 seems to be a good value. This should only make a difference when
+  - 1. the number of GPUs or the tensor dimensions are not a power of 2 and if
+  - 2. FP16/BF16/FP32 or a legacy quant are used.
+
+#### 🐛 Bug Fixes
+- **b9529**: model : fix llama_model::n_gpu_layers() ([#24188](https://github.com/ggml-org/llama.cpp/pull/24188))
+  - cont #24060
+  - fix #24183
+  - fix #24182
+- **b9533**: model: fix build failed ([#24193](https://github.com/ggml-org/llama.cpp/pull/24193))
+  - Small merge conflict from https://github.com/ggml-org/llama.cpp/pull/23545
+  - cc @ggml-org/maintainers if someone can give a quick approval
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b9535**: common/chat : unify and fix LFM2/LFM2.5 tool parser ([#24178](https://github.com/ggml-org/llama.cpp/pull/24178))
+  - LFM2 and LFM2.5 share the same pythonic style tool-calling format, with the only difference being that LFM2 also wraps the system tool list in <|tool_list_start|>/<|tool_list_end|>.
+  - Two parsers are merged into `common_chat_params_init_lfm2(..., tool_list_tokens)` and share logic.
+  - Also fix and extend argument parsing:
+- **b9537**: context : fix off-by-one comparisons to n_gpu_layers ([#24208](https://github.com/ggml-org/llama.cpp/pull/24208))
+  - cont #24060
+  - Compare `n_gpu_layers` against `n_layer_all` instead of `n_layer`.
+
+
+### Additional Changes
+2 minor improvements: 1 examples, 1 maintenance.
+
+- **b9530**: llama-cli: fix model params not propagated ([#23893](https://github.com/ggml-org/llama.cpp/pull/23893))
+  - Fixes #23847
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+  - I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- **b9538**: model : rename local n_layer_all variable ([#24209](https://github.com/ggml-org/llama.cpp/pull/24209))
+  - cont #24060
+  - Non-functional change, just variable clarification.
+
+### Full Commit Range
+- b9528 to b9538 (10 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b9528...b9538
+
+---
+
 ## 2026-06-05: Update to llama.cpp b9528
 
 ### Summary
