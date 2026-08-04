@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-04: Update to llama.cpp b10262
+
+### Summary
+Updated llama.cpp from b10262 to b10262, incorporating 1 upstream commits.
+
+### Additional Changes
+1 minor improvements: 1 documentation.
+
+- **b10262**: vulkan backend ops: implemented GATED_LINEAR_ATTN ([#25601](https://github.com/ggml-org/llama.cpp/pull/25601))
+  - Added vulkan support for GGML_OP_GATED_LINEAR_ATTN
+  - This backend op used to not be supported on vulkan and fell back to cpu. Now the kernel follows the existing wkv6.comp pattern w/ a GLA-specific update-before-read ordering and an output "scale" push constant.
+  - supports_op is limited to F32 and head_size == 64 (shader hardcodes BLOCK_SIZE 64, same as WKV6).
+
+### Full Commit Range
+- b10262 to b10262 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10262...b10262
+
+---
+
 ## 2026-07-26: Update to llama.cpp b10107
 
 ### Summary
