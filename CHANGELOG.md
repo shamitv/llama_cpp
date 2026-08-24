@@ -1,5 +1,104 @@
 # Changelog
 
+## 2026-08-11: Update to llama.cpp b10359
+
+### Summary
+Updated llama.cpp from b10327 to b10359, incorporating 21 upstream commits with breaking changes, new features, and performance improvements.
+
+### Notable Changes
+
+#### ⚠️ Breaking Changes
+- **b10332**: ci: rm `GGML_HIP_ROCWMMA_FATTN` ([#26760](https://github.com/ggml-org/llama.cpp/pull/26760))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - `-DGGML_HIP_ROCWMMA_FATTN` option was removed in #26046 but there were still traces of this in the codebase. While working on the `gpu-rocm` CI, I didn't notice it was dead code and thus removing it now, together with all other references.
+  - <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
+- **b10336**: ggml-webgpu: simplify flash_attn shaders and refactor several WGSL shaders ([#26134](https://github.com/ggml-org/llama.cpp/pull/26134))
+  - This PR refactors several WGSL files and simplifies the flash attention WGSL files. The changes to each WGSL shader are as follows:
+  - `concat.wgsl, rms_norm_mul.wgsl, row_norm.wgsl, solve_tri.wgsl, ssm_scan.wgsl`: Remove unused params.
+  - `conv2d.wgsl, conv2d_dw.wgsl, im2col.wgsl`: Define the macros as the actual type for weights, input, and output buffer and remove some unnecessary functions.
+- **b10338**: model-saver : fix expert shared/chunk FFN length key clobber ([#26693](https://github.com/ggml-org/llama.cpp/pull/26693))
+  - The saver called `add_kv` with `LLM_KV_EXPERT_SHARED_FEED_FORWARD_LENGTH` twice, the second time passing `n_ff_chexp`. `gguf_set_val_u32` removes-then-appends, so the second call clobbers the first: the saved `shared_feed_forward_length` ends up as `n_ff_chexp` (0 for every arch except GroveMoE), and `expert_chunk_feed_forward_length` is never written at all.
+  - So a save->load roundtrip of any MoE model with a shared expert loses `n_ff_shexp`. On reload the arch falls back to `n_ff` for the shexp tensor shape, that no longer matches the saved tensor, and the model FAILS to load. Hits qwen2moe, qwen3-next, granite-moe, hunyuan-moe, ernie4.5, bailingmoe2, nemotron-h, and the other shared-expert MoEs.
+  - Fix: the second call writes `LLM_KV_EXPERT_CHUNK_FEED_FORWARD_LENGTH`.
+
+#### 🆕 New Features
+- **b10327**: CUDA: fix thread/block count in quantized cpy kernel launches ([#26731](https://github.com/ggml-org/llama.cpp/pull/26731))
+  - The quantized cpy kernels in `cpy.cu` are launched with 1 thread per block, so 31 of 32 warp lanes are always idle. The dequantizing (q->f32) wrappers additionally launch `ne` blocks instead of `ne/32`, so ~97% of blocks exit immediately at the bounds check.
+  - This PR changes the launch config to use `CUDA_CPY_BLOCK_SIZE` (64) threads per block, same as the scalar copy paths in the same file. Kernel code is unchanged as the index math already supported wider blocks. The outputs remain bit-identical.
+  - Main path affected is context shift with quantized KV cache (dequant -> RoPE -> requant over the whole K cache). Token generation is unaffected since KV writes go through SET_ROWS, hence the flat e2e numbers.
+- **b10329**: server, ui: only offer a working directory when a tool reads it ([#26762](https://github.com/ggml-org/llama.cpp/pull/26762))
+  - The working directory chip used to appear as soon as the server exposed any builtin tool at all. Start llama-server with --tools get_datetime and you would still get a control asking you to pick a folder, even though the only tool available just returns the current date and has no notion of paths. Same thing if you kept the filesystem tools off in the settings: the chip stayed, and whatever folder you picked went nowhere. It now shows up only when at least one tool that actually works in that folder is available and enabled, and the /cwd command follows the same rule.
+  - Rather than hardcoding a list of tool names in the WebUI, which would go stale the day someone adds a tool, the knowledge stays where it belongs: each tool declares whether it resolves paths and runs commands against the working directory. The flag sits in server_tool next to the write permission and travels through the same /tools listing, so the client reads a capability instead of guessing from names. On the UI side, the store keeps the set of declared tools and crosses it with the per-tool toggles the user controls, which is what makes the settings case work as well as the server case. A new tool that touches the filesystem sets one boolean and the chip appears on its own.
+- **b10342**: Granite-Switch Architecture ([#25107](https://github.com/ggml-org/llama.cpp/pull/25107))
+  - Adaptation of Granite-Switch model (https://huggingface.co/ibm-granite/granite-switch-4.1-3b-preview) for llama.cpp,
+  - Today Granite-Switch supports HF and vLLM backends.
+  - Granite-Switch OSS project: https://github.com/generative-computing/granite-switch
+- **b10344**: model: add MTP support for Nemotron model ([#26725](https://github.com/ggml-org/llama.cpp/pull/26725))
+  - This PR adds MTP support for the Nemotron Nano model. Performance is not yet optimal and depends on PR https://github.com/ggml-org/llama.cpp/pull/26623 being merged first.
+  - I tested this PR on the top of PR https://github.com/ggml-org/llama.cpp/pull/26623, and the performance looks good.
+  - <!-- You can provide more details and link related discussions here. Delete this section if not applicable -->
+- **b10353**: ggml : require contiguous src for ROLL on CUDA and Metal ([#25928](https://github.com/ggml-org/llama.cpp/pull/25928))
+  - `ggml_roll` only asserts `nb[0] == ggml_type_size(a->type)`, so a permuted tensor is a valid input. The CUDA (`ggml/src/ggml-cuda/roll.cu`) and Metal (`kernel_roll_f32`) roll kernels both compute source and destination offsets from `ne` alone and never read the `nb` strides, so a non-contiguous src silently produces wrong results. The CPU implementation does use the strides and is correct.
+  - Neither backend declared a contiguity requirement in `supports_op`, so the scheduler never fell back to CPU. This adds that requirement to both, matching the existing `GGML_OP_ROPE` guard in the CUDA switch, and adds a permuted `test_roll` case.
+  - The new test case uses `ggml_permute(ctx, a, 0, 2, 1, 3)`, which leaves `nb[0]` untouched so the builder assert still passes.
+- **b10354**: ggml-cpu : fix CPU affinity mask being ignored on Android ([#26838](https://github.com/ggml-org/llama.cpp/pull/26838))
+  - Fixes #26836.
+  - `-C`/`--cpu-mask` and `--cpu-strict` are silently ignored on Android. The mask is accepted, the process exits 0, nothing is printed, and every thread keeps the full CPU set.
+  - The affinity implementation in `ggml/src/ggml-cpu/ggml-cpu.c` is guarded by `#elif defined(__gnu_linux__)`, which Clang does not define for Android target triples:
+- **b10356**: Add CI targets for ROCm 7.14 ([#25775](https://github.com/ggml-org/llama.cpp/pull/25775))
+  - ROCm 7.14 is the first production release using TheRock build system. It can be installed using multi-arch deliverables from wheels, debs, rpms, tarballs or runfiles.
+  - Add llama.cpp targets for both Linux and Windows to allow usage.
+  - https://rocm.blogs.amd.com/ecosystems-and-partners/rocm-7.14-blog/README.html
+- **b10359**: Add backend sampler for penalties sampler ([#25262](https://github.com/ggml-org/llama.cpp/pull/25262))
+  - This PR migrates **penalties sampling** (repeat, frequency, and presence) from the CPU to the GPU backend.
+  - **The Problem:** Previously, penalty sampling was CPU-only, which forced all subsequent samplers in the chain to execute on the CPU as well.
+  - **The Solution:** Moving this to the backend allows for continuous GPU-bound sampling. This is highly recommended for modern models like Qwen 3.5/3.6. They directly advice to use penalties sampling https://huggingface.co/Qwen/Qwen3.5-35B-A3B
+- **b10359**: ggml-webgpu: fix CI errors from #25025 and #25262 ([#26566](https://github.com/ggml-org/llama.cpp/pull/26566))
+  - This PR fixes two CI errors in the WebGPU backend
+  - New flash_attn_ext test introduced by https://github.com/ggml-org/llama.cpp/pull/25025: The workgroup storage limit size is `32768` bytes in Dawn, but this isn’t enough to allocate the workgroup buffers on the current subgroup matrices path for the parameters of the new flash_attn test. This PR switches to `flash_attn_reg_tile` path in that case.
+  - Penalties sampler enabled by https://github.com/ggml-org/llama.cpp/pull/25262: The CI failed with the error `llama_sampler_backend_support: device 'WebGPU' does not have support for op CPY needed for sampler 'penalties’`. Adding I32 support to CPY fixes the error.
+
+#### 🚀 Performance Improvements
+- **b10357**: opencl: transpose the FA prefill K tile in local memory for perf optimization ([#26428](https://github.com/ggml-org/llama.cpp/pull/26428))
+  - <!-- Describe what this PR does and why. Be concise but complete -->
+  - This PR is to optimize the current FA OpenCL C kernels:
+  - The flash-attention prefill kernels (flash_attn_f32_f16 / _q8_0 / _q4_0) stage the K tile in local memory and the QK loop reads.
+
+#### 🐛 Bug Fixes
+- **b10333**: ggml-cpu : fix missing Q5_0 dispatch in SpaceMiT backend ([#26792](https://github.com/ggml-org/llama.cpp/pull/26792))
+  - When testing SpaceMiT IME acceleration on K3 development board, I found models using Q5_0 quantization weights output garbled messy text once the SpaceMiT backend is turned on. After code tracing, the root problem is that the dispatch function `compute_forward` lacks a branch handling `GGML_TYPE_Q5_0`.
+  - Note: I added the environment variable `SPACEMIT_DISABLE_TCM=1` to bypass a crash caused by missing spacemit-tcm driver on the current K3 system image. This parameter has nothing to do with our current bug, and models without Q5_0 layers run normally with this flag enabled.
+  - I prepared two compilation targets from identical source code, differing only in whether SpaceMiT acceleration is compiled in:
+
+
+### Additional Changes
+7 minor improvements: 4 documentation, 3 maintenance.
+
+### Full Commit Range
+- b10327 to b10359 (21 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10327...b10359
+
+---
+
+## 2026-08-04: Update to llama.cpp b10262
+
+### Summary
+Updated llama.cpp from b10262 to b10262, incorporating 1 upstream commits.
+
+### Additional Changes
+1 minor improvements: 1 documentation.
+
+- **b10262**: vulkan backend ops: implemented GATED_LINEAR_ATTN ([#25601](https://github.com/ggml-org/llama.cpp/pull/25601))
+  - Added vulkan support for GGML_OP_GATED_LINEAR_ATTN
+  - This backend op used to not be supported on vulkan and fell back to cpu. Now the kernel follows the existing wkv6.comp pattern w/ a GLA-specific update-before-read ordering and an output "scale" push constant.
+  - supports_op is limited to F32 and head_size == 64 (shader hardcodes BLOCK_SIZE 64, same as WKV6).
+
+### Full Commit Range
+- b10262 to b10262 (1 commits)
+- Upstream releases: https://github.com/ggml-org/llama.cpp/compare/b10262...b10262
+
+---
+
 ## 2026-07-26: Update to llama.cpp b10107
 
 ### Summary
